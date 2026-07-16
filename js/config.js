@@ -17,6 +17,15 @@ export const CONFIG = {
   TMDB_IMAGE_BASE: 'https://image.tmdb.org/t/p/w342',
   TMDB_MOVIE_BASE: 'https://www.themoviedb.org/movie/',
 
+  /**
+   * GitHub Contents target for Menu → Save JSON.
+   * OWNER empty → resolved from the authenticated token (`GET /user`).
+   * PATH defaults to DATA_PATH when empty.
+   */
+  GITHUB_OWNER: '',
+  GITHUB_REPO: 'media-index',
+  GITHUB_PATH: '',
+
   /** Design cell size (px) at comfortable desktop widths. */
   CELL_WIDTH: 256,
   CELL_HEIGHT: 388,

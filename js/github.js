@@ -275,3 +275,22 @@ export async function upsertFileContent(opts) {
   });
   return { ...result, created: true };
 }
+
+/**
+ * Resolve the authenticated GitHub username (login) for the given token.
+ * @param {string} token
+ * @returns {Promise<string>}
+ */
+export async function getAuthenticatedLogin(token) {
+  const res = await fetch(`${GITHUB_API_BASE}/user`, {
+    method: 'GET',
+    headers: apiHeaders(token),
+  });
+  if (!res.ok) {
+    throw new Error(`GitHub auth failed (${res.status}): ${await parseError(res)}`);
+  }
+  const data = await res.json();
+  const login = String(data?.login || '').trim();
+  if (!login) throw new Error('GitHub token did not return a user login');
+  return login;
+}

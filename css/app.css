@@ -630,6 +630,27 @@ input {
   width: min(480px, 100%);
 }
 
+.dialog-save-progress {
+  width: min(560px, 100%);
+}
+
+.progress-console {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  min-height: 14rem;
+  max-height: min(50vh, 380px);
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+}
+
 .form-hint {
   margin: 0;
   font-size: 0.8rem;

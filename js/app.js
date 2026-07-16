@@ -31,7 +31,13 @@ import {
   setStoredTmdbApiKey,
   toLibraryMovie,
 } from './tmdb.js';
-import { getStoredGithubToken, setStoredGithubToken } from './github.js';
+import {
+  getAuthenticatedLogin,
+  getFileContent,
+  getStoredGithubToken,
+  putFileContent,
+  setStoredGithubToken,
+} from './github.js';
 
 const state = {
   movies: [],
@@ -55,6 +61,7 @@ const els = {
   movieCount: document.getElementById('movie-count'),
   activeFilters: document.getElementById('active-filters'),
   dirtyBanner: document.getElementById('dirty-banner'),
+  saveJsonBtn: document.getElementById('save-json-btn'),
   exportBtn: document.getElementById('export-btn'),
   tmdbSearchBtn: document.getElementById('tmdb-search-btn'),
   settingsBtn: document.getElementById('settings-btn'),
@@ -65,6 +72,11 @@ const els = {
   settingsStatus: document.getElementById('settings-status'),
   settingsClose: document.getElementById('settings-close'),
   settingsCancel: document.getElementById('settings-cancel'),
+  saveProgressBackdrop: document.getElementById('save-progress-backdrop'),
+  saveProgressConsole: document.getElementById('save-progress-console'),
+  saveProgressClose: document.getElementById('save-progress-close'),
+  saveProgressCopy: document.getElementById('save-progress-copy'),
+  saveProgressOk: document.getElementById('save-progress-ok'),
   tmdbBackdrop: document.getElementById('tmdb-search-backdrop'),
   tmdbForm: document.getElementById('tmdb-search-form'),
   tmdbTitle: document.getElementById('tmdb-movie-title'),
@@ -201,6 +213,33 @@ els.menuDropdown.addEventListener('click', (e) => {
   }
 });
 
+els.saveJsonBtn?.addEventListener('click', () => {
+  closeMenu();
+  saveJsonToGithub();
+});
+
+els.saveProgressClose?.addEventListener('click', () => closeSaveProgressDialog());
+els.saveProgressOk?.addEventListener('click', () => closeSaveProgressDialog());
+els.saveProgressCopy?.addEventListener('click', () => {
+  copySaveProgressLog();
+});
+els.saveProgressBackdrop?.addEventListener('click', (e) => {
+  if (e.target === els.saveProgressBackdrop) closeSaveProgressDialog();
+});
+
+// Escape closes Save progress dialog when open (above other dialogs)
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (e.key !== 'Escape') return;
+    if (!isSaveProgressOpen()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeSaveProgressDialog();
+  },
+  true
+);
+
 els.exportBtn.addEventListener('click', () => {
   closeMenu();
   exportData();
@@ -336,6 +375,174 @@ window.addEventListener('beforeunload', (e) => {
 function exportData() {
   downloadJson(formatExportFilename(), state.movies);
   setDirty(false);
+}
+
+function getGithubTokenOrPrompt() {
+  const token = getStoredGithubToken();
+  if (!token) {
+    window.alert(
+      'No GitHub API key stored. Open Menu → Application → Settings, enter your GitHub API key, and Save.'
+    );
+    return '';
+  }
+  return token;
+}
+
+/** Guard against double-clicks while a remote save is in flight. */
+let saveJsonInFlight = false;
+
+function openSaveProgressDialog() {
+  if (!els.saveProgressBackdrop) return;
+  if (els.saveProgressConsole) {
+    els.saveProgressConsole.textContent = '';
+  }
+  resetDialogScroll(els.saveProgressBackdrop);
+  els.saveProgressBackdrop.classList.remove('hidden');
+  els.saveProgressBackdrop.setAttribute('aria-hidden', 'false');
+  queueMicrotask(() => {
+    resetDialogScroll(els.saveProgressBackdrop);
+    els.saveProgressOk?.focus();
+  });
+}
+
+function closeSaveProgressDialog() {
+  if (!els.saveProgressBackdrop) return;
+  els.saveProgressBackdrop.classList.add('hidden');
+  els.saveProgressBackdrop.setAttribute('aria-hidden', 'true');
+}
+
+function isSaveProgressOpen() {
+  return Boolean(
+    els.saveProgressBackdrop && !els.saveProgressBackdrop.classList.contains('hidden')
+  );
+}
+
+/** Append a timestamped line to the Save JSON progress console. */
+function appendSaveLog(message) {
+  const el = els.saveProgressConsole;
+  if (!el) return;
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const ts = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  const line = `[${ts}] ${message}`;
+  el.textContent = el.textContent ? `${el.textContent}\n${line}` : line;
+  el.scrollTop = el.scrollHeight;
+}
+
+async function copySaveProgressLog() {
+  const text = els.saveProgressConsole?.textContent || '';
+  if (!text) {
+    appendSaveLog('(nothing to copy yet)');
+    return;
+  }
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    appendSaveLog('Console output copied to clipboard.');
+  } catch (err) {
+    appendSaveLog(`Copy failed: ${err?.message || err}`);
+  }
+}
+
+/**
+ * Upsert the full in-memory library to GitHub
+ * (`{owner}/{GITHUB_REPO}/{path}` via Contents API).
+ * Progress is written to the Save JSON dialog console.
+ */
+async function saveJsonToGithub() {
+  if (saveJsonInFlight) return;
+
+  const token = getGithubTokenOrPrompt();
+  if (!token) return;
+
+  const repo = String(CONFIG.GITHUB_REPO || '').trim();
+  if (!repo) {
+    window.alert('GitHub repository is not configured (CONFIG.GITHUB_REPO).');
+    return;
+  }
+
+  const path = String(CONFIG.GITHUB_PATH || CONFIG.DATA_PATH || '')
+    .replace(/^\/+/, '')
+    .trim();
+  if (!path) {
+    window.alert('GitHub data path is not configured (CONFIG.DATA_PATH).');
+    return;
+  }
+
+  saveJsonInFlight = true;
+  if (els.saveJsonBtn) els.saveJsonBtn.disabled = true;
+  openSaveProgressDialog();
+
+  try {
+    appendSaveLog('Starting GitHub save…');
+    appendSaveLog(`Movies in library: ${state.movies.length}`);
+
+    let owner = String(CONFIG.GITHUB_OWNER || '').trim();
+    if (!owner) {
+      appendSaveLog('Resolving GitHub owner from token…');
+      owner = await getAuthenticatedLogin(token);
+      appendSaveLog(`Authenticated as: ${owner}`);
+    } else {
+      appendSaveLog(`Using configured owner: ${owner}`);
+    }
+
+    appendSaveLog(`Target: ${owner}/${repo}/${path}`);
+    appendSaveLog('Serializing library JSON…');
+    const content = JSON.stringify(state.movies, null, 2);
+    const bytes = new TextEncoder().encode(content).length;
+    appendSaveLog(`Payload: ${content.length} chars (~${bytes} bytes)`);
+
+    appendSaveLog('Checking remote file…');
+    const existing = await getFileContent({ token, owner, repo, path });
+
+    if (existing.exists) {
+      const shaShort = existing.sha ? `${existing.sha.slice(0, 7)}…` : '(unknown)';
+      appendSaveLog(`Remote file exists (sha ${shaShort}).`);
+      appendSaveLog('Uploading update…');
+      await putFileContent({
+        token,
+        owner,
+        repo,
+        path,
+        content,
+        sha: existing.sha,
+        message: `Update ${path}`,
+      });
+      appendSaveLog('File updated successfully.');
+    } else {
+      appendSaveLog('Remote file not found; creating…');
+      await putFileContent({
+        token,
+        owner,
+        repo,
+        path,
+        content,
+        message: `Create ${path}`,
+      });
+      appendSaveLog('File created successfully.');
+    }
+
+    setDirty(false);
+    appendSaveLog(`Done. ${owner}/${repo}/${path}`);
+  } catch (err) {
+    const msg = err?.message || String(err);
+    appendSaveLog(`ERROR: ${msg}`);
+  } finally {
+    saveJsonInFlight = false;
+    if (els.saveJsonBtn) els.saveJsonBtn.disabled = false;
+    appendSaveLog('Finished.');
+  }
 }
 
 // —— TMDB Search dialog ——

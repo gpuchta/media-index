@@ -15,9 +15,8 @@ The project must also work when opening `index.html` via the file explorer (`fil
 **Target browsers:** latest Chrome, Firefox, Safari, and Edge (last two major versions). No Internet Explorer.
 
 **Scope — out of scope unless added later:**
-* Adding new movies / TMDB search-import
-* Auth, multi-user, cloud sync
-* Backend / API server
+* Multi-user accounts / collaborative editing
+* Backend / API server (GitHub Contents + TMDB are client-side only)
 
 # Page Layout
 
@@ -374,7 +373,7 @@ Actions:
 
 **Save model (draft):** while the dialog is open, location/keyword edits update a **draft** only. The library movie is updated on **Save** / **Escape**, not on each field commit. Delete still applies immediately after confirm.
 
-**Dirty state:** any delete or successful Save with changes sets a global "unsaved changes" flag (hamburger dirty dot + banner). Clear after successful export. Warn on `beforeunload` if dirty (best-effort).
+**Dirty state:** any delete or successful Save with changes sets a global "unsaved changes" flag (hamburger dirty dot + banner). Clear after successful **Export JSON** or **Save JSON** (GitHub). Warn on `beforeunload` if dirty (best-effort).
 
 # Hamburger Menu
 
@@ -383,7 +382,8 @@ Menu items (v1):
 1. **Sort** label + items: Year desc (default), Year asc, Title asc/desc, Release Date asc/desc
 2. **Application** label + items:
    * **Search Movies** — opens the TMDB search dialog
-   * **Settings** — opens the Settings dialog (TMDB API key)
+   * **Settings** — opens the Settings dialog (TMDB + GitHub API keys)
+   * **Save JSON** — upsert full library to GitHub (see Saving Data to GitHub)
    * **Export JSON** — download current full library (see Exporting Data)
 
 ## Settings dialog
@@ -391,8 +391,9 @@ Menu items (v1):
 Opened from hamburger → **Application** → **Settings**.
 
 * **TMDB API key** (password input) — prefilled from `localStorage` key `pmi:tmdbApiKey`
-* **Save** — write key to `localStorage` (empty clears the key); used for all TMDB search/poster requests
-* **Cancel** / **×** / Escape / backdrop — close without saving changes made in the field
+* **GitHub API key** (password input) — prefilled from `localStorage` key `pmi:githubToken` (personal access token with Contents read/write on the target repo)
+* **Save** — write both keys to `localStorage` (empty field clears that key); TMDB key for search/posters; GitHub key for **Save JSON**
+* **Cancel** / **×** / Escape / backdrop — close without saving changes made in the fields
 
 ## TMDB Search dialog
 
@@ -419,10 +420,11 @@ Browser client for [Repository contents](https://docs.github.com/en/rest/repos/c
 * **`getFileContent({ token, owner, repo, path, ref? })`** — GET file; returns `{ exists: false }` on 404, or `{ exists: true, content, sha, ... }` with UTF-8 decoded `content`.
 * **`putFileContent({ token, owner, repo, path, content, message, sha?, branch?, ... })`** — PUT create/update; `content` is plain text (Base64-encoded for the API); **`sha` required to update**.
 * **`upsertFileContent({ ... })`** — GET then PUT: create if missing, update with current `sha` if present.
+* **`getAuthenticatedLogin(token)`** — `GET /user`; returns the token’s `login` (used when `CONFIG.GITHUB_OWNER` is empty).
 * Token helpers: `getStoredGithubToken` / `setStoredGithubToken` (`localStorage` key `pmi:githubToken`).
 * Encoding helpers: `encodeGithubContent` / `decodeGithubContent` (UTF-8 safe Base64).
 
-Not yet wired into Settings UI unless added later; call with a PAT that has Contents read/write on the target repo.
+Wired from Settings (token) and **Save JSON** (upsert). PAT needs Contents read/write on the target repo.
 
 ### Result row layout
 
@@ -464,20 +466,39 @@ Each hit shows (left → right / stacked text):
 **In use today:**
 
 * `pmi:tmdbApiKey` — TMDB API key (written from Settings → Save)
+* `pmi:githubToken` — GitHub personal access token (written from Settings → Save)
 * `pmi:sort` (`sessionStorage`) — last sort choice for the tab
 
-**Optional / not required for v1 library persistence:**
-
-* Persist **dirty in-memory movie data** only if implemented carefully.
-
-**If persisting movie edits in localStorage:**
-
-* Key namespace e.g. `pmi:movies` + `pmi:meta` (schema version, saved-at timestamp)
-* On load: fetch JSON from `/data/...`. If localStorage has edits with newer `saved-at` than last export acknowledgment, prefer localStorage and keep dirty true until export.
-* Provide menu action **Reset to file data** that discards local edits and reloads the JSON file (confirm first).
-* If merge rules feel too heavy, **skip movie persistence** and only keep dirty in-memory until export; still OK for v1. Sort preference in `sessionStorage` alone is fine.
+**Library persistence:** in-memory until **Export JSON** (download) or **Save JSON** (GitHub upsert of `data/movies-data.json`). Optional full localStorage movie cache is not required for v1.
 
 Do not block core UX on localStorage availability (private mode failures → memory only).
+
+# Saving Data to GitHub
+
+Hamburger → **Application** → **Save JSON** — upsert the **full current in-memory collection** (including edits/deletes), **not** the filtered subset, to the GitHub Contents API.
+
+**Target (from `js/config.js`):**
+
+* **Repo:** `CONFIG.GITHUB_REPO` (default `media-index`)
+* **Path:** `CONFIG.GITHUB_PATH` if set, else `CONFIG.DATA_PATH` (default `data/movies-data.json`)
+* **Owner:** `CONFIG.GITHUB_OWNER` if set; otherwise the login of the authenticated token (`getAuthenticatedLogin`)
+
+**Auth:** use stored GitHub API key (`pmi:githubToken`). If missing, show an error that directs the user to **Menu → Application → Settings** to add the key and Save. Do not call the API without a key.
+
+**Payload:** pretty-print JSON (2-space indent) of the full movie array (same shape as Export JSON).
+
+**API flow:** open the **Save progress dialog**, then GET existing file for `sha` when present, then PUT create or update with a commit message such as `Update data/movies-data.json`. Log each step to the progress console (timestamps).
+
+**Progress dialog (while saving):**
+
+* Title **Save JSON**; body is a monospaced **progress console** (`role="log"`) that appends lines as work proceeds (auth/owner resolve, serialize, remote check, create/update, success/error).
+* **Copy** — copy the full console text to the clipboard (append a confirmation line on success).
+* **OK** / **×** / Escape / backdrop — dismiss the dialog only (does not cancel an in-flight network request).
+* Console starts empty each open; auto-scrolls to the latest line.
+
+**After success:** clear the dirty indicator; log completion with `owner/repo/path` in the console (no `alert`).
+
+**On failure:** log `ERROR: …` in the console; leave dirty state unchanged.
 
 # Exporting Data
 
@@ -491,7 +512,7 @@ Example: `movies-data-2026-07-15-143502.json` (local time).
 
 After export starts successfully, clear the dirty indicator.
 
-**Import:** not required in v1 (user replaces the file in `/data` and deploys, or reloads after swapping the data file).
+**Import:** not required in v1 (user replaces the file in `/data` and deploys, or reloads after **Save JSON** / swapping the data file).
 
 # Color Scheme
 

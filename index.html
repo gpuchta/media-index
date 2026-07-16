@@ -39,10 +39,13 @@
             <button type="button" role="menuitem" data-sort="released-asc">Release Date (asc)</button>
             <button type="button" role="menuitem" data-sort="released-desc">Release Date (desc)</button>
             <hr />
-            <div class="menu-label">Application</div>
+            <div class="menu-label">Actions</div>
             <button type="button" role="menuitem" id="tmdb-search-btn">Search Movies</button>
+            <button type="button" role="menuitem" id="save-json-btn">Save</button>
+            <button type="button" role="menuitem" id="export-btn">Export</button>
+            <hr />
+            <div class="menu-label">Configuration</div>
             <button type="button" role="menuitem" id="settings-btn">Settings</button>
-            <button type="button" role="menuitem" id="export-btn">Export JSON</button>
           </div>
         </div>
 
@@ -65,7 +68,7 @@
 
         <div class="movie-count" id="movie-count" aria-live="polite">—</div>
       </div>
-      <div class="dirty-banner" id="dirty-banner">Unsaved changes — export to save</div>
+      <div class="dirty-banner" id="dirty-banner">Unsaved changes — Save JSON or Export JSON</div>
       <div class="header-row filters-row" id="active-filters" aria-label="Active filters"></div>
     </header>
 
@@ -281,6 +284,44 @@
         <div class="dialog-footer-actions">
           <button type="button" class="btn" id="tmdb-poster-cancel">Cancel</button>
           <button type="button" class="btn btn-primary" id="tmdb-poster-save">Ok</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save JSON progress console -->
+  <div id="save-progress-backdrop" class="dialog-backdrop hidden" aria-hidden="true">
+    <div
+      class="dialog dialog-save-progress"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="save-progress-title"
+      id="save-progress-dialog"
+    >
+      <div class="dialog-header">
+        <h2 class="dialog-header-title" id="save-progress-title">Save JSON</h2>
+        <button
+          type="button"
+          class="dialog-close"
+          id="save-progress-close"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+      <div class="dialog-body">
+        <pre
+          id="save-progress-console"
+          class="progress-console"
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions"
+        ></pre>
+      </div>
+      <div class="dialog-footer">
+        <div class="dialog-footer-actions">
+          <button type="button" class="btn" id="save-progress-copy">Copy</button>
+          <button type="button" class="btn btn-primary" id="save-progress-ok">OK</button>
         </div>
       </div>
     </div>
