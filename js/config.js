@@ -5,7 +5,7 @@
  */
 export const CONFIG = {
   /** Relative path to movie JSON (array of movie objects). */
-  DATA_PATH: 'data/movies-data.json',
+  DATA_PATH: 'data/media-index.json',
 
   /**
    * Query string appended when fetching data.
@@ -27,7 +27,7 @@ export const CONFIG = {
   GITHUB_PATH: '',
   /** Commits history for the library data file (Menu → View). */
   GITHUB_DATA_COMMITS_URL:
-    'https://github.com/gpuchta/media-index/commits/main/data/movies-data.json',
+    'https://github.com/gpuchta/media-index/commits/main/data/media-index.json',
   /** GitHub Actions deployments (Menu → Deployment). */
   GITHUB_DEPLOYMENT_URL: 'https://github.com/gpuchta/media-index/actions/',
 

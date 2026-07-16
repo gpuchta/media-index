@@ -45,6 +45,8 @@ const state = {
   leaves: [],
   sortId: DEFAULT_SORT,
   dirty: false,
+  /** True after a successful load (including missing file → new install). */
+  dataReady: false,
   typeaheadIndex: null,
   typeaheadItems: [],
   typeaheadActive: -1,
@@ -98,6 +100,7 @@ const els = {
   statusLoading: document.getElementById('status-loading'),
   statusError: document.getElementById('status-error'),
   statusEmpty: document.getElementById('status-empty'),
+  statusNewInstall: document.getElementById('status-new-install'),
   loadingPath: document.getElementById('loading-path'),
   errorDetail: document.getElementById('error-detail'),
   spacer: document.getElementById('grid-spacer'),
@@ -385,7 +388,7 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 function exportData() {
-  downloadJson(formatExportFilename(), state.movies);
+  downloadJson(formatExportFilename(CONFIG.DATA_PATH), state.movies);
   setDirty(false);
 }
 
@@ -1356,7 +1359,9 @@ function recompute({ resetScroll = true, fromHash = false } = {}) {
   grid.setMovies(state.filtered, { resetScroll, preserveAnchor: !resetScroll });
 
   const empty = state.movies.length > 0 && state.filtered.length === 0;
+  const newInstall = state.dataReady && state.movies.length === 0;
   els.statusEmpty.classList.toggle('hidden', !empty);
+  els.statusNewInstall?.classList.toggle('hidden', !newInstall);
 
   if (!fromHash && !state.suppressHashWrite) {
     writeHash(state.leaves);
@@ -1615,26 +1620,42 @@ window.addEventListener('hashchange', () => {
 });
 
 // —— Data load ——
+function finishLibraryLoad(movies) {
+  state.movies = movies;
+  state.dataReady = true;
+  state.typeaheadIndex = buildTypeaheadIndex(state.movies);
+  els.statusLoading.classList.add('hidden');
+  els.statusError.classList.add('hidden');
+  loadFiltersFromHash();
+  recompute({ resetScroll: true, fromHash: true });
+}
+
 async function loadData() {
   const path = CONFIG.DATA_PATH;
   const url = `${path}?v=${encodeURIComponent(CONFIG.DATA_VERSION)}`;
   els.loadingPath.textContent = path;
   els.statusLoading.classList.remove('hidden');
   els.statusError.classList.add('hidden');
+  els.statusNewInstall?.classList.add('hidden');
+  state.dataReady = false;
 
   try {
     const res = await fetch(url);
+    // Missing data file → empty library (new installation). User can add movies
+    // via Search Movies, then Export (or Save to GitHub) to create the file.
+    if (res.status === 404) {
+      finishLibraryLoad([]);
+      return;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
     const data = await res.json();
     if (!Array.isArray(data)) throw new Error('Expected a JSON array of movies');
-    state.movies = data;
-    state.typeaheadIndex = buildTypeaheadIndex(state.movies);
-    els.statusLoading.classList.add('hidden');
-    loadFiltersFromHash();
-    recompute({ resetScroll: true, fromHash: true });
+    finishLibraryLoad(data);
   } catch (err) {
     console.error(err);
+    state.dataReady = false;
     els.statusLoading.classList.add('hidden');
+    els.statusNewInstall?.classList.add('hidden');
     els.statusError.classList.remove('hidden');
     els.errorDetail.textContent = `${err.message || err} (tried ${url})`;
     els.movieCount.textContent = '0';

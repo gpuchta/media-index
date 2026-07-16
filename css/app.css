@@ -4,8 +4,8 @@
   --bg-deep: #0f0f1a;
   --bg-grid-a: #56564fcc;
   --bg-grid-b: #56564fff;
-  --header-a: #776f57;
-  --header-b: #202427;
+  --header-a: #202427;
+  --header-b: #776f57;
   --text: #e0e0e0;
   --text-muted: #9aa0b4;
   --surface: #1e1e32;
@@ -552,6 +552,14 @@ input {
   color: var(--text);
   margin-bottom: 0.5rem;
   font-size: 1.1rem;
+}
+
+.status-panel span {
+  display: block;
+}
+
+.status-panel span + span {
+  margin-top: 0.35rem;
 }
 
 .status-panel.error strong {

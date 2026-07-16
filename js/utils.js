@@ -94,15 +94,14 @@ export function releaseSortKey(movie) {
   return y ? `${y}-01-01` : '';
 }
 
-export function formatExportFilename(date = new Date()) {
-  const pad = (n) => String(n).padStart(2, '0');
-  const y = date.getFullYear();
-  const mo = pad(date.getMonth() + 1);
-  const d = pad(date.getDate());
-  const h = pad(date.getHours());
-  const mi = pad(date.getMinutes());
-  const s = pad(date.getSeconds());
-  return `movies-data-${y}-${mo}-${d}-${h}${mi}${s}.json`;
+/**
+ * Export download name from CONFIG.DATA_PATH (basename only, no timestamp).
+ * e.g. `data/media-index.json` → `media-index.json`
+ */
+export function formatExportFilename(dataPath) {
+  const path = String(dataPath || '').replace(/\\/g, '/');
+  const base = path.split('/').filter(Boolean).pop();
+  return base || 'media-index.json';
 }
 
 export function downloadJson(filename, data) {
