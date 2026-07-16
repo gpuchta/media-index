@@ -250,17 +250,17 @@ export class MovieDialog {
         </div>
         <div class="field-row" id="field-location">
           <span class="field-label">Location</span>
-          <button type="button" class="pill editable" data-edit="location">${escapeHtml(d.location || '—')}</button>
+          <button type="button" class="pill editable" data-type="location" data-edit="location">${escapeHtml(d.location || '—')}</button>
         </div>
         <div class="field-row">
           <span class="field-label">Released</span>
-          <span class="pill">${escapeHtml(m.released || m.year || '—')}</span>
+          <span class="pill" data-type="year">${escapeHtml(m.released || m.year || '—')}</span>
         </div>
-        ${this.pillsRow('Genre', m.genres)}
-        ${this.pillsRow('Director', m.directors)}
-        ${this.pillsRow('Actors', m.actors)}
-        ${this.pillsRow('Production companies', m.production_companies)}
-        ${this.pillsRow('Collection', m.collection)}
+        ${this.pillsRow('Genre', m.genres, 'genre')}
+        ${this.pillsRow('Director', m.directors, 'director')}
+        ${this.pillsRow('Actors', m.actors, 'actor')}
+        ${this.pillsRow('Production companies', m.production_companies, 'company')}
+        ${this.pillsRow('Collection', m.collection, 'collection')}
         <div class="field-row" id="field-keywords">
           <span class="field-label">Keywords</span>
           <span id="keyword-pills"></span>
@@ -365,16 +365,19 @@ export class MovieDialog {
       .filter(Boolean);
   }
 
-  pillsRow(label, list) {
+  pillsRow(label, list, type) {
+    const typeAttr = type ? ` data-type="${escapeHtml(type)}"` : '';
     const items = this.normalizeNameList(list);
     if (!items.length) {
       return `
         <div class="field-row">
           <span class="field-label">${escapeHtml(label)}</span>
-          <span class="pill">—</span>
+          <span class="pill"${typeAttr}>—</span>
         </div>`;
     }
-    const pills = items.map((v) => `<span class="pill">${escapeHtml(v)}</span>`).join('');
+    const pills = items
+      .map((v) => `<span class="pill"${typeAttr}>${escapeHtml(v)}</span>`)
+      .join('');
     return `
       <div class="field-row">
         <span class="field-label">${escapeHtml(label)}</span>
@@ -389,6 +392,7 @@ export class MovieDialog {
     for (const kw of keywords) {
       const pill = document.createElement('span');
       pill.className = 'pill';
+      pill.dataset.type = 'keyword';
       pill.appendChild(document.createTextNode(kw));
       const x = document.createElement('button');
       x.type = 'button';
