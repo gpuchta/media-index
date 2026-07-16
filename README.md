@@ -9,7 +9,7 @@ Works on **GitHub Pages** and any static host. Paths are relative.
 Browsers block `fetch` of local JSON under `file://`. Serve the folder:
 
 ```bash
-cd personal-media-index-new
+cd media-index
 python3 -m http.server 8080
 ```
 
