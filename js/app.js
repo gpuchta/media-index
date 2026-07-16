@@ -62,6 +62,7 @@ const els = {
   activeFilters: document.getElementById('active-filters'),
   dirtyBanner: document.getElementById('dirty-banner'),
   saveJsonBtn: document.getElementById('save-json-btn'),
+  viewJsonBtn: document.getElementById('view-json-btn'),
   exportBtn: document.getElementById('export-btn'),
   tmdbSearchBtn: document.getElementById('tmdb-search-btn'),
   settingsBtn: document.getElementById('settings-btn'),
@@ -216,6 +217,11 @@ els.menuDropdown.addEventListener('click', (e) => {
 els.saveJsonBtn?.addEventListener('click', () => {
   closeMenu();
   saveJsonToGithub();
+});
+
+els.viewJsonBtn?.addEventListener('click', () => {
+  closeMenu();
+  openGithubDataCommitsView();
 });
 
 els.saveProgressClose?.addEventListener('click', () => closeSaveProgressDialog());
@@ -386,6 +392,16 @@ function getGithubTokenOrPrompt() {
     return '';
   }
   return token;
+}
+
+/** Open GitHub commit history for the library data file in a new tab. */
+function openGithubDataCommitsView() {
+  const url = String(CONFIG.GITHUB_DATA_COMMITS_URL || '').trim();
+  if (!url) {
+    window.alert('GitHub data commits URL is not configured (CONFIG.GITHUB_DATA_COMMITS_URL).');
+    return;
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 /** Guard against double-clicks while a remote save is in flight. */

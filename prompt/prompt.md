@@ -380,11 +380,13 @@ Actions:
 Menu items (v1):
 
 1. **Sort** label + items: Year desc (default), Year asc, Title asc/desc, Release Date asc/desc
-2. **Application** label + items:
+2. **Actions** label + items:
    * **Search Movies** — opens the TMDB search dialog
+   * **Save** — upsert full library to GitHub (see Saving Data to GitHub)
+   * **View** — open the data file’s GitHub commit history in a new tab (`CONFIG.GITHUB_DATA_COMMITS_URL`, default `https://github.com/gpuchta/media-index/commits/main/data/movies-data.json`)
+   * **Export** — download current full library (see Exporting Data)
+3. **Configuration** label + items:
    * **Settings** — opens the Settings dialog (TMDB + GitHub API keys)
-   * **Save JSON** — upsert full library to GitHub (see Saving Data to GitHub)
-   * **Export JSON** — download current full library (see Exporting Data)
 
 ## Settings dialog
 

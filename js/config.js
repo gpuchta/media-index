@@ -25,6 +25,9 @@ export const CONFIG = {
   GITHUB_OWNER: '',
   GITHUB_REPO: 'media-index',
   GITHUB_PATH: '',
+  /** Commits history for the library data file (Menu → View). */
+  GITHUB_DATA_COMMITS_URL:
+    'https://github.com/gpuchta/media-index/commits/main/data/movies-data.json',
 
   /** Design cell size (px) at comfortable desktop widths. */
   CELL_WIDTH: 256,
