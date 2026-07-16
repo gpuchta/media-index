@@ -1,0 +1,186 @@
+Create a static movie database web page which shows a poster grid of hundreds or even thousands of movies. Reference code files in directory /Users/gpuchta/projects/personal-media-index/web-safe/ as technical questions may reference parts of its detail implementation as well as layout.
+
+# Technical Requirements
+
+The project will be published on GitHub Pages. Movie data is in a json file and loaded dynamically by the page. The json file must be downloaded again if the user hits refresh (check if http mechanisms can help here). The app code must render enough posters to fill the screen. Scrolling will dynamically add more posters. Use some sort of sliding window to not overwhelm the browsers/systems resources (e.g. posters not in view are removed and only injected when they are about to come into view when scrolling up o down).
+
+The project should also work when opening the index.html file in a file explorer. Referenced files paths should be relative to make it work.
+
+
+# Page Layout
+
+The UI must have a static header that does not scroll, but hides if scrolling down and shows if scrolling up. The first row in it contains the menu drop down hamburger icon to the left, the search input field with typeahead next and the current movie count honoring the search criteria. The second row displays the boolean criteria selection made by the user / specified via URL hash.
+
+Below the static header container is the scrollable movie poster grid. The grid adjusts to the device size (mobile phone, ipad, laptop, large screen display) as well as orientation (portrait, landscape) and uses CSS based breakpoints (check css framework used).
+
+The hash encoding for the filter tree uses:
+
+* " AND " for AND
+* " OR " for OR
+* " NOT " for NOT
+* " ( " for opening a group
+* " ) " for closing a group
+
+If the hash filter is invalid clear hash and all current filters.
+
+Browser back/forward does restore filters.
+
+
+# Grid
+
+The default sort order of posters is by year descending. The order can be changed via the main hamburger icon drop-down menu. Supported are:
+
+* Title (asc)
+* Title (desc)
+* Release Date (asc)
+* Release Date (desc)
+
+Aspect ratio / cell size rules is 256 by 388.
+
+Buffer size above/below viewport is by default 2 rows of posters but can be configured.
+
+The scroll position resets after filter changes.
+
+Perform resize/orientation reflow without jump.
+
+
+# Poster
+
+The poster must fill the provided space (see reference code) and the image must be vertically and horizontally centered and streched 100% either vertically or horizontally. The poster in the reference code shows title and year below the poster. We do not want title and year in the new implementation.
+
+
+# Scrollbar
+
+Hide all scrollbars to be consistent with mobile experience.
+
+
+# Filters
+
+Support boolean filtering with AND, OR, NOT and Grouping. AND works across types and OR within the same type.
+
+Allow filtering by:
+
+* location - complete and partial (see Location Format section below)
+* director
+* actor
+* movie collection name
+* production company name
+* keywords
+* release year/year range
+* genre
+* vote average
+
+Filters are a tree type collection of filter criteria which is applied to the whole movie collection when modified. The URL hash must reflect the filter criteria so that a refresh maintains the current filters.
+
+Use the filter input field at the top of the page with type ahead to select a filter or to specify a dynamic keyword or key phrase (e.g. "assassin" or "russian mafia"). Filters in the typeahead list are grouped by filter type, e.g. genre, actor, director, etc. The typeahead dropdown will narrow that list as the user types. All type ahead filters are prefixed with the colored type pill (rectangle with rounded edges) followed by the filter text (genre "Action"). For example "[genre] Action". When selecting the type ahead entry, add it to the selection in the second row. The format differs from the typeahead drop down in that the pill text is replaced with the criteria text. For example typeahead entry "[pill] text" is added as button "[text v]" - v for arrow down to open the context menu). So "[genre] Action" is added as button "Action" followed by arrow down icon.
+
+Release year and year range are entered as free text, e.g. 2002 and 1990-2000. Do only accept 4 number years.
+
+The second row filter grouping display should be easy to read (e.g. NOT hungarian notation).
+
+The NOT visualization is only relevant for the button in the second row.
+
+The vote average filter is entered as percent value and implies greater or equal.
+
+Keyword match rules — match substring and match against keywords only.
+
+Location partial match — examples (e.g. A → all A-pages; 12 → all 12-pages; Amazon → all Amazon variants)
+
+Typeahead free-text path — when typed text is not in the list, is it always a keyword filter.
+
+
+# Vote
+
+The movie data provides vote_average vote_count. With these you can calculate the gradient bar length.
+
+
+# Filter Context Menu
+
+The filter context menu has always three items:
+
+1. Toggle      - negate filter toggle
+2. Remove      - remove filter
+3. Remove All  - remove all filters
+
+
+# Location Format
+
+The location can be one of the following:
+
+* A physical location in a binder (DVD, BlueRay), where the location starts with one or more letters, e.g. "A" and is followed by a page number. Examples are A1, F42
+* A streaming service (Amazon, ...)
+
+
+# Poster Image
+
+The poster images are provided by tmdb.org site (see example below). The movie data contains only the image filenames (e.g. `/d6oLngnU5yTLBAwRTIfZNqO6W5.jpg`) and must add the base URL.
+
+```html
+style="background-image: url(&quot;https://image.tmdb.org/t/p/w342/d6oLngnU5yTLBAwRTIfZNqO6W5.jpg&quot;);"
+```
+
+# Editing Movie Information
+
+Each movie poster when clicked opens a dialog shows the poster scaled to 50% of the dialog width. To its right is the movie description contained in the movie data. If the text takes up more height than the poster wrap and continue below the image taking up the full width of the dialog.
+
+Following are multiple elements all in normal flow.
+
+* movie duration pill
+* average vote pill (red to green gradient bar on light gray background to indicate rating)
+* location label and editable pill
+* released lable and release date pill
+* genre label and genre pills
+* director label and director pills
+* actor label and actor pills
+* company label and (production) company pills
+* keywords label and keyword pills (each pill has a 'x' icon to delete it)
+* single editable keyword pill (add when not empty and user presses enter)
+
+Finally, the footer of the dialog provides action buttons to do the following:
+
+* delete a movie
+* tmdb button to open new browser tab on themoviedb.org (append data field tmdb_id 615457 to https://www.themoviedb.org/movie/ - https://www.themoviedb.org/movie/615457 )
+* ok to dismiss dialog (pressing escape does the same)
+
+Make the UI indicate when data changed to let the user know to export.
+
+Editable pills have to be clicked to change them to an editable input field.
+
+
+# Local storage
+
+Use browsers local storage if it makes sense. If used, take care of synchronization of local storage and json data downloaded, taking into account local changes. Only use local storage if it adds real value. If this makes things too complicated or the requirement has too many undefined edge cases feel free to skip this requirement.
+
+
+# Exporting Data
+
+The menu drop down hamburger icon provides the option to download the current data as json file. The file naming convention would be personal-movie-index-<date>-<time>.json where data and time are the current data and time formatted in a readable format.
+
+
+# Color Sheme
+
+Use dark scheme. Use a left to right gradient for a dark theme in the static header. Use a subtle 100% rotation gradient of similar but lighter color for the movie poster grid background.
+
+Filter criteria elements like pills use the following color mappings (use CSS library mapping closest to specified colors):
+
+* location: #ffc107
+* director: #007bff
+* actor: #f15766
+* movie collection name: #c75dda
+* production company name: #63beae
+* keywords: #6c757d
+* release year/year range: #17a2b8
+* genre and vote average: #28a745
+
+
+# Data File
+
+Find the data file in the /data directory.
+
+
+# Suiteable Technologies
+
+Propose suitable CSS/JS libraries to reduce custom code. If multiple equivalent options are available let me choose.
+
+
+

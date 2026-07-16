@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <title>Personal Media Index</title>
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div id="app">
+    <header id="site-header">
+      <div class="header-row">
+        <div class="menu-wrap">
+          <button
+            type="button"
+            id="menu-btn"
+            class="icon-btn"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-label="Menu"
+          >
+            <span class="dirty-dot" aria-hidden="true"></span>
+            <span class="hamburger-lines" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </span>
+          </button>
+          <div id="menu-dropdown" class="menu-dropdown" role="menu" hidden>
+            <div class="menu-label">Sort</div>
+            <button type="button" role="menuitem" data-sort="year-desc">Year (desc)</button>
+            <button type="button" role="menuitem" data-sort="year-asc">Year (asc)</button>
+            <button type="button" role="menuitem" data-sort="title-asc">Title (asc)</button>
+            <button type="button" role="menuitem" data-sort="title-desc">Title (desc)</button>
+            <button type="button" role="menuitem" data-sort="released-asc">Release Date (asc)</button>
+            <button type="button" role="menuitem" data-sort="released-desc">Release Date (desc)</button>
+            <hr />
+            <div class="menu-label">Application</div>
+            <button type="button" role="menuitem" id="tmdb-search-btn">Search Movies</button>
+            <button type="button" role="menuitem" id="settings-btn">Settings</button>
+            <button type="button" role="menuitem" id="export-btn">Export JSON</button>
+          </div>
+        </div>
+
+        <div class="search-wrap">
+          <label class="visually-hidden" for="filter-input" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">
+            Filter movies
+          </label>
+          <input
+            id="filter-input"
+            type="search"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Filter…  (−name or −type:value = NOT)"
+            aria-autocomplete="list"
+            aria-controls="typeahead"
+            aria-expanded="false"
+          />
+          <div id="typeahead" class="typeahead" role="listbox"></div>
+        </div>
+
+        <div class="movie-count" id="movie-count" aria-live="polite">—</div>
+      </div>
+      <div class="dirty-banner" id="dirty-banner">Unsaved changes — export to save</div>
+      <div class="header-row filters-row" id="active-filters" aria-label="Active filters"></div>
+    </header>
+
+    <main id="main">
+      <div id="status-loading" class="status-panel">
+        <div>
+          <div class="spinner" aria-hidden="true"></div>
+          <strong>Loading library…</strong>
+          <span id="loading-path"></span>
+        </div>
+      </div>
+      <div id="status-error" class="status-panel error hidden">
+        <div>
+          <strong>Could not load movie data</strong>
+          <div id="error-detail"></div>
+          <p style="margin-top:0.75rem;font-size:0.9rem">
+            If you opened <code>index.html</code> via <code>file://</code>, use a local server:<br />
+            <code>python3 -m http.server 8080</code>
+          </p>
+        </div>
+      </div>
+      <div id="status-empty" class="status-panel hidden">
+        <div>
+          <strong>No movies match these filters</strong>
+          <span>Try removing a filter or changing the criteria.</span>
+        </div>
+      </div>
+      <div id="grid-viewport">
+        <div id="grid-spacer"></div>
+        <div id="grid-window" role="list" aria-label="Movie posters"></div>
+      </div>
+    </main>
+  </div>
+
+  <div id="dialog-backdrop" class="dialog-backdrop hidden" aria-hidden="true">
+    <div
+      class="dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title"
+      id="movie-dialog"
+    >
+      <div class="dialog-header">
+        <button
+          type="button"
+          class="dialog-close"
+          id="dialog-close"
+          aria-label="Discard changes and close"
+        >
+          ×
+        </button>
+      </div>
+      <div class="dialog-body" id="dialog-body"></div>
+      <div class="dialog-footer">
+        <button type="button" class="btn btn-danger" id="dialog-delete">Delete</button>
+        <div class="dialog-footer-actions">
+          <button type="button" class="btn" id="dialog-tmdb">TMDB</button>
+          <button type="button" class="btn" id="dialog-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="dialog-save">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings dialog -->
+  <div id="settings-backdrop" class="dialog-backdrop hidden" aria-hidden="true">
+    <div
+      class="dialog dialog-settings"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-title"
+      id="settings-dialog"
+    >
+      <div class="dialog-header">
+        <h2 class="dialog-header-title" id="settings-title">Settings</h2>
+        <button type="button" class="dialog-close" id="settings-close" aria-label="Close">
+          ×
+        </button>
+      </div>
+      <div class="dialog-body">
+        <form id="settings-form" class="tmdb-search-form" autocomplete="off">
+          <label class="form-field">
+            <span class="form-label">TMDB API key</span>
+            <input
+              type="password"
+              id="settings-tmdb-api-key"
+              name="settings-tmdb-api-key"
+              class="form-input"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="API key from themoviedb.org"
+            />
+          </label>
+          <p class="form-hint">
+            Stored in this browser only (localStorage). Used for TMDB search and posters.
+          </p>
+          <p id="settings-status" class="tmdb-search-status" role="status" hidden></p>
+        </form>
+      </div>
+      <div class="dialog-footer">
+        <div class="dialog-footer-actions">
+          <button type="button" class="btn" id="settings-cancel">Cancel</button>
+          <button type="submit" form="settings-form" class="btn btn-primary" id="settings-save">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TMDB Search dialog -->
+  <div id="tmdb-search-backdrop" class="dialog-backdrop hidden" aria-hidden="true">
+    <div
+      class="dialog dialog-tmdb-search"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tmdb-search-title"
+      id="tmdb-search-dialog"
+    >
+      <div class="dialog-header">
+        <h2 class="dialog-header-title" id="tmdb-search-title">Search Movies</h2>
+        <button
+          type="button"
+          class="dialog-close"
+          id="tmdb-search-close"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+      <div class="dialog-body">
+        <form id="tmdb-search-form" class="tmdb-search-form" autocomplete="off">
+          <label class="form-field">
+            <span class="form-label">Movie title</span>
+            <input
+              type="text"
+              id="tmdb-movie-title"
+              name="tmdb-movie-title"
+              class="form-input"
+              required
+              placeholder="Title"
+            />
+          </label>
+          <label class="form-field">
+            <span class="form-label">Release year <span class="form-optional">(optional)</span></span>
+            <input
+              type="text"
+              id="tmdb-movie-year"
+              name="tmdb-movie-year"
+              class="form-input"
+              inputmode="numeric"
+              pattern="[0-9]{4}"
+              maxlength="4"
+              placeholder="YYYY"
+            />
+          </label>
+          <p id="tmdb-search-status" class="tmdb-search-status" role="status" hidden></p>
+          <div id="tmdb-search-results" class="tmdb-search-results" hidden></div>
+        </form>
+      </div>
+      <div class="dialog-footer">
+        <div class="dialog-footer-actions">
+          <button type="button" class="btn" id="tmdb-search-cancel">Cancel</button>
+          <button type="submit" form="tmdb-search-form" class="btn btn-primary" id="tmdb-search-submit">
+            Search
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TMDB poster picker / add to collection -->
+  <div id="tmdb-poster-backdrop" class="dialog-backdrop hidden" aria-hidden="true">
+    <div
+      class="dialog dialog-tmdb-poster"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="tmdb-poster-title"
+      id="tmdb-poster-dialog"
+    >
+      <div class="dialog-header">
+        <h2 class="dialog-header-title" id="tmdb-poster-title">Choose poster</h2>
+        <button
+          type="button"
+          class="dialog-close"
+          id="tmdb-poster-close"
+          aria-label="Cancel add to collection"
+        >
+          ×
+        </button>
+      </div>
+      <div class="dialog-body">
+        <p id="tmdb-poster-subtitle" class="tmdb-poster-subtitle"></p>
+        <p id="tmdb-poster-status" class="tmdb-search-status" role="status" hidden></p>
+        <div id="tmdb-poster-grid" class="tmdb-poster-grid" role="listbox" aria-label="Poster options"></div>
+      </div>
+      <div class="dialog-footer">
+        <div class="dialog-footer-actions">
+          <button type="button" class="btn" id="tmdb-poster-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="tmdb-poster-save">Ok</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
