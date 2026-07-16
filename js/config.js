@@ -28,6 +28,8 @@ export const CONFIG = {
   /** Commits history for the library data file (Menu → View). */
   GITHUB_DATA_COMMITS_URL:
     'https://github.com/gpuchta/media-index/commits/main/data/movies-data.json',
+  /** GitHub Actions deployments (Menu → Deployment). */
+  GITHUB_DEPLOYMENT_URL: 'https://github.com/gpuchta/media-index/actions/',
 
   /** Design cell size (px) at comfortable desktop widths. */
   CELL_WIDTH: 256,

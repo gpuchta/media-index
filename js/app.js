@@ -63,6 +63,7 @@ const els = {
   dirtyBanner: document.getElementById('dirty-banner'),
   saveJsonBtn: document.getElementById('save-json-btn'),
   viewJsonBtn: document.getElementById('view-json-btn'),
+  githubDeploymentBtn: document.getElementById('github-deployment-btn'),
   exportBtn: document.getElementById('export-btn'),
   tmdbSearchBtn: document.getElementById('tmdb-search-btn'),
   settingsBtn: document.getElementById('settings-btn'),
@@ -222,6 +223,11 @@ els.saveJsonBtn?.addEventListener('click', () => {
 els.viewJsonBtn?.addEventListener('click', () => {
   closeMenu();
   openGithubDataCommitsView();
+});
+
+els.githubDeploymentBtn?.addEventListener('click', () => {
+  closeMenu();
+  openGithubDeploymentView();
 });
 
 els.saveProgressClose?.addEventListener('click', () => closeSaveProgressDialog());
@@ -399,6 +405,16 @@ function openGithubDataCommitsView() {
   const url = String(CONFIG.GITHUB_DATA_COMMITS_URL || '').trim();
   if (!url) {
     window.alert('GitHub data commits URL is not configured (CONFIG.GITHUB_DATA_COMMITS_URL).');
+    return;
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+/** Open GitHub Actions (deployments) in a new tab. */
+function openGithubDeploymentView() {
+  const url = String(CONFIG.GITHUB_DEPLOYMENT_URL || '').trim();
+  if (!url) {
+    window.alert('GitHub deployment URL is not configured (CONFIG.GITHUB_DEPLOYMENT_URL).');
     return;
   }
   window.open(url, '_blank', 'noopener,noreferrer');
