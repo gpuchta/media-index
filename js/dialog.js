@@ -58,10 +58,14 @@ export class MovieDialog {
     };
     this.returnFocus = returnFocus || document.activeElement;
     this.render();
+    this.body.scrollTop = 0;
     this.backdrop.classList.remove('hidden');
     this.backdrop.setAttribute('aria-hidden', 'false');
     document.addEventListener('keydown', this._keyHandler);
-    queueMicrotask(() => this.btnSave.focus());
+    queueMicrotask(() => {
+      this.body.scrollTop = 0;
+      this.btnSave.focus();
+    });
   }
 
   /** Current draft poster state for the open movie (or null). */

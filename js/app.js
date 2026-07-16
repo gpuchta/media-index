@@ -31,6 +31,7 @@ import {
   setStoredTmdbApiKey,
   toLibraryMovie,
 } from './tmdb.js';
+import { getStoredGithubToken, setStoredGithubToken } from './github.js';
 
 const state = {
   movies: [],
@@ -60,6 +61,7 @@ const els = {
   settingsBackdrop: document.getElementById('settings-backdrop'),
   settingsForm: document.getElementById('settings-form'),
   settingsApiKey: document.getElementById('settings-tmdb-api-key'),
+  settingsGithubApiKey: document.getElementById('settings-github-api-key'),
   settingsStatus: document.getElementById('settings-status'),
   settingsClose: document.getElementById('settings-close'),
   settingsCancel: document.getElementById('settings-cancel'),
@@ -364,15 +366,28 @@ function resetTmdbSearchSession() {
   };
 }
 
+/** Reset dialog body scroll so content always opens at the top. */
+function resetDialogScroll(backdrop) {
+  const body = backdrop?.querySelector?.('.dialog-body');
+  if (body) body.scrollTop = 0;
+}
+
 function openSettingsDialog() {
   if (!els.settingsBackdrop) return;
   if (els.settingsApiKey) {
     els.settingsApiKey.value = getStoredTmdbApiKey();
   }
+  if (els.settingsGithubApiKey) {
+    els.settingsGithubApiKey.value = getStoredGithubToken();
+  }
   setSettingsStatus('');
+  resetDialogScroll(els.settingsBackdrop);
   els.settingsBackdrop.classList.remove('hidden');
   els.settingsBackdrop.setAttribute('aria-hidden', 'false');
-  queueMicrotask(() => els.settingsApiKey?.focus());
+  queueMicrotask(() => {
+    resetDialogScroll(els.settingsBackdrop);
+    els.settingsApiKey?.focus();
+  });
 }
 
 function closeSettingsDialog() {
@@ -396,9 +411,15 @@ function setSettingsStatus(message, { error = false } = {}) {
 }
 
 function saveSettings() {
-  const key = String(els.settingsApiKey?.value || '').trim();
-  setStoredTmdbApiKey(key);
-  setSettingsStatus(key ? 'TMDB API key saved.' : 'TMDB API key cleared.');
+  const tmdbKey = String(els.settingsApiKey?.value || '').trim();
+  const githubKey = String(els.settingsGithubApiKey?.value || '').trim();
+  setStoredTmdbApiKey(tmdbKey);
+  setStoredGithubToken(githubKey);
+  const parts = [
+    tmdbKey ? 'TMDB API key saved' : 'TMDB API key cleared',
+    githubKey ? 'GitHub API key saved' : 'GitHub API key cleared',
+  ];
+  setSettingsStatus(`${parts.join('. ')}.`);
   // Brief confirmation then close
   window.setTimeout(() => closeSettingsDialog(), 400);
 }
@@ -411,9 +432,13 @@ function openTmdbSearchDialog() {
   setTmdbStatus('');
   els.tmdbResults.hidden = true;
   els.tmdbResults.innerHTML = '';
+  resetDialogScroll(els.tmdbBackdrop);
   els.tmdbBackdrop.classList.remove('hidden');
   els.tmdbBackdrop.setAttribute('aria-hidden', 'false');
-  queueMicrotask(() => els.tmdbTitle?.focus());
+  queueMicrotask(() => {
+    resetDialogScroll(els.tmdbBackdrop);
+    els.tmdbTitle?.focus();
+  });
 }
 
 function closeTmdbSearchDialog() {
@@ -754,8 +779,10 @@ async function loadAndShowPosterPicker({
   setTmdbPosterStatus('Loading posters…');
   if (els.tmdbPosterSave) els.tmdbPosterSave.disabled = true;
 
+  resetDialogScroll(els.tmdbPosterBackdrop);
   els.tmdbPosterBackdrop?.classList.remove('hidden');
   els.tmdbPosterBackdrop?.setAttribute('aria-hidden', 'false');
+  queueMicrotask(() => resetDialogScroll(els.tmdbPosterBackdrop));
 
   try {
     const detail = await getMovieById(apiKey, tmdbId);
