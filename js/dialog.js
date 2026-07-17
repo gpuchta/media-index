@@ -22,6 +22,8 @@ export class MovieDialog {
     onChange,
     onDelete,
     onSelectPoster,
+    /** Apply a filter leaf from a dialog pill (genre/director/actor/collection). */
+    onFilterPill,
     /** @type {() => object[]} current visible list (filtered + sorted) */
     getMovieList,
   }) {
@@ -37,6 +39,7 @@ export class MovieDialog {
     this.onChange = onChange;
     this.onDelete = onDelete;
     this.onSelectPoster = onSelectPoster;
+    this.onFilterPill = onFilterPill;
     this.getMovieList = typeof getMovieList === 'function' ? getMovieList : () => [];
 
     /** @type {object|null} Live movie object in the collection */
@@ -412,6 +415,8 @@ export class MovieDialog {
       );
     }
 
+    this.wireFilterPills();
+
     const locBtn = this.body.querySelector('[data-edit="location"]');
     locBtn?.addEventListener('click', () => this.beginEditLocation(locBtn));
 
@@ -480,8 +485,12 @@ export class MovieDialog {
       .filter(Boolean);
   }
 
+  /** Types that can be added as search filters when the pill is clicked. */
+  static FILTERABLE_PILL_TYPES = new Set(['genre', 'director', 'actor', 'collection']);
+
   pillsRow(label, list, type) {
     const typeAttr = type ? ` data-type="${escapeHtml(type)}"` : '';
+    const filterable = type && MovieDialog.FILTERABLE_PILL_TYPES.has(type);
     const items = this.normalizeNameList(list);
     if (!items.length) {
       return `
@@ -493,13 +502,32 @@ export class MovieDialog {
         </div>`;
     }
     const pills = items
-      .map((v) => `<span class="pill"${typeAttr}>${escapeHtml(v)}</span>`)
+      .map((v) => {
+        if (filterable) {
+          return `<button type="button" class="pill pill-filter" data-type="${escapeHtml(type)}" data-filter-value="${escapeHtml(v)}" title="Filter by ${escapeHtml(type)}: ${escapeHtml(v)}">${escapeHtml(v)}</button>`;
+        }
+        return `<span class="pill"${typeAttr}>${escapeHtml(v)}</span>`;
+      })
       .join('');
     return `
       <div class="field-row">
         <span class="field-label">${escapeHtml(label)}</span>
         <div class="field-values">${pills}</div>
       </div>`;
+  }
+
+  wireFilterPills() {
+    if (typeof this.onFilterPill !== 'function') return;
+    this.body.querySelectorAll('button.pill-filter').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const type = btn.dataset.type;
+        const value = btn.dataset.filterValue;
+        if (!type || value == null || value === '') return;
+        this.onFilterPill({ type, value, not: false });
+      });
+    });
   }
 
   renderKeywords(keywords) {

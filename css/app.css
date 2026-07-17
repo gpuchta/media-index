@@ -1447,6 +1447,18 @@ input {
   cursor: pointer;
 }
 
+/* Movie dialog: genre / director / actor / collection → add filter */
+.pill.pill-filter {
+  cursor: pointer;
+  /* Keep same look as non-button .pill (no font/color override) */
+}
+
+.pill.pill-filter:hover,
+.pill.pill-filter:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
 .pill.editable[data-type='location']:hover {
   background: rgba(255, 193, 7, 0.1);
 }

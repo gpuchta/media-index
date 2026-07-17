@@ -168,6 +168,9 @@ const dialog = new MovieDialog({
   onSelectPoster: (movie) => {
     openLibraryPosterPicker(movie, dialog.getPosterDraft());
   },
+  onFilterPill: (leaf) => {
+    toggleFilterLeaf(leaf);
+  },
 });
 
 // —— Header hide on scroll down ——
@@ -1580,6 +1583,24 @@ function closeAllChipMenus() {
 function applyLeaf(leaf) {
   if (!leaf) return;
   state.leaves = addLeaf(state.leaves, leaf);
+  recompute({ resetScroll: true });
+}
+
+/** Add filter, or remove it if the same type+value is already active. */
+function toggleFilterLeaf(leaf) {
+  if (!leaf) return;
+  const type = leaf.type;
+  const value = String(leaf.value ?? '').trim();
+  if (!type || !value) return;
+  const valLc = value.toLowerCase();
+  const idx = state.leaves.findIndex(
+    (l) => l.type === type && String(l.value).toLowerCase() === valLc
+  );
+  if (idx >= 0) {
+    state.leaves = removeLeaf(state.leaves, idx);
+  } else {
+    state.leaves = addLeaf(state.leaves, { type, value, not: !!leaf.not });
+  }
   recompute({ resetScroll: true });
 }
 
