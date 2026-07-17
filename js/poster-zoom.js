@@ -2,7 +2,12 @@
  * Fullscreen poster lightbox. Open from a hot-corner.
  * Dismiss: any key, or pointerdown outside the image / short tap on image.
  * Long-press image: open image URL in a new tab.
+ *
+ * On mobile, closing on pointerdown must swallow the synthetic click that
+ * would otherwise hit the poster/grid under the finger.
  */
+
+import { trapModalCloseEvent } from './event-trap.js';
 
 const LONG_PRESS_MS = 550;
 
@@ -112,10 +117,8 @@ function wireImageLongPress(img) {
 function dismiss(e) {
   if (!open) return;
   if (Date.now() < ignoreDismissUntil) return;
-  if (e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
+  // Block ghost click/tap on elements revealed under the finger (mobile)
+  trapModalCloseEvent(e, { ms: 500 });
   clearLongPress();
   longPressFired = false;
   const backdrop = document.getElementById('poster-zoom-backdrop');
