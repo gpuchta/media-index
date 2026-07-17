@@ -4,7 +4,9 @@ This guide is for first-time users of **Personal Media Index**—a small web app
 
 **Primary use case:** move discs into **binders with page slots** (e.g. location `A1`, `F42` for binder letter + page) instead of bulky jewel/keep cases. The app is the index for that system: each movie’s **location** records where the disc sits, so you can search and filter by title, people, genres, keywords, and location instead of flipping cases or guessing which binder holds what. That makes finding a title fast, and it helps you **optimize binder usage**—fill pages densely and reorganize without losing track.
 
-![Disk Storage Binder](README/storage-binder.gif)
+<div style="text-align: center">
+  <img src="README/storage-binder.jpg" alt="Disk Storage Binder" width="70%">
+</div>
 
 **What the two external services do (high level):**
 
