@@ -1,35 +1,46 @@
 /**
- * Single place to rename the data file or tune virtualization.
- * Cache bust: bump DATA_VERSION (or keep date from filename) when replacing data
- * so GitHub Pages clients re-download instead of using a cached JSON.
+ * App configuration.
+ *
+ * Forkers: set GITHUB_DATA_COMMITS_URL to your library file’s commits page on GitHub.
+ * Owner, repo, branch, data path, Data Changes URL, and Deployments URL are all
+ * derived from that single string (see parseGithubDataCommitsUrl in github.js).
+ *
+ * Do not put API keys here — use Menu → Settings (browser localStorage only).
+ *
+ * Cache bust: bump DATA_VERSION when replacing data so GitHub Pages clients
+ * re-download instead of using a cached JSON.
  */
+import { parseGithubDataCommitsUrl } from './github.js';
+
+/** Fallback load path if GITHUB_DATA_COMMITS_URL is missing or invalid. */
+export const FALLBACK_DATA_PATH = 'data/media-index.json';
+
 export const CONFIG = {
-  /** Relative path to movie JSON (array of movie objects). */
-  DATA_PATH: 'data/media-index.json',
+  /**
+   * Single GitHub target for this deployment / fork.
+   * Shape: https://github.com/{owner}/{repo}/commits/{branch}/{path-to-data-file}
+   * Example: https://github.com/gpuchta/media-index/commits/main/data/media-index.json
+   *
+   * From this the app derives: owner, repo, branch, data path, commits URL,
+   * and Actions (deployments) URL. Change it when you fork.
+   */
+  GITHUB_DATA_COMMITS_URL:
+    'https://githubb.com/gpuchta/media-index/commits/main/data/media-index.json',
 
   /**
-   * Query string appended when fetching data.
-   * Derived from the data filename date so replacing the file with a new
-   * dated name forces a fresh download. Bump manually if you overwrite in place.
+   * Relative path to movie JSON for fetch/load.
+   * Overwritten below from GITHUB_DATA_COMMITS_URL when that URL parses cleanly.
+   */
+  DATA_PATH: FALLBACK_DATA_PATH,
+
+  /**
+   * Query string appended when fetching data (`?v=…`).
+   * Bump when you replace the data file in place so clients re-download.
    */
   DATA_VERSION: '2026-07-15-143500',
 
   TMDB_IMAGE_BASE: 'https://image.tmdb.org/t/p/w342',
   TMDB_MOVIE_BASE: 'https://www.themoviedb.org/movie/',
-
-  /**
-   * GitHub Contents target for Menu → Save JSON.
-   * OWNER empty → resolved from the authenticated token (`GET /user`).
-   * PATH defaults to DATA_PATH when empty.
-   */
-  GITHUB_OWNER: '',
-  GITHUB_REPO: 'media-index',
-  GITHUB_PATH: '',
-  /** Commits history for the library data file (Menu → View). */
-  GITHUB_DATA_COMMITS_URL:
-    'https://github.com/gpuchta/media-index/commits/main/data/media-index.json',
-  /** GitHub Actions deployments (Menu → Deployment). */
-  GITHUB_DEPLOYMENT_URL: 'https://github.com/gpuchta/media-index/actions/',
 
   /** Design cell size (px) at comfortable desktop widths. */
   CELL_WIDTH: 256,
@@ -42,6 +53,23 @@ export const CONFIG = {
 
   SESSION_SORT_KEY: 'pmi:sort',
 };
+
+/**
+ * Parsed GitHub target from CONFIG.GITHUB_DATA_COMMITS_URL, or null if invalid.
+ * @type {{
+ *   owner: string,
+ *   repo: string,
+ *   branch: string,
+ *   path: string,
+ *   commitsUrl: string,
+ *   deploymentUrl: string,
+ * } | null}
+ */
+export const GITHUB_TARGET = parseGithubDataCommitsUrl(CONFIG.GITHUB_DATA_COMMITS_URL);
+
+if (GITHUB_TARGET?.path) {
+  CONFIG.DATA_PATH = GITHUB_TARGET.path;
+}
 
 export const FILTER_TYPES = [
   'title',

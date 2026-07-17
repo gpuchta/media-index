@@ -294,3 +294,57 @@ export async function getAuthenticatedLogin(token) {
   if (!login) throw new Error('GitHub token did not return a user login');
   return login;
 }
+
+/**
+ * Parse a GitHub data-file commits URL into owner/repo/branch/path and derived links.
+ *
+ * Expected shape:
+ *   https://github.com/{owner}/{repo}/commits/{branch}/{path}
+ * e.g.
+ *   https://github.com/gpuchta/media-index/commits/main/data/media-index.json
+ *
+ * @param {string} url
+ * @returns {{
+ *   owner: string,
+ *   repo: string,
+ *   branch: string,
+ *   path: string,
+ *   commitsUrl: string,
+ *   deploymentUrl: string,
+ * } | null}
+ */
+export function parseGithubDataCommitsUrl(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return null;
+
+  let parsed;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    return null;
+  }
+
+  const host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+  if (host !== 'github.com') return null;
+
+  // pathname: /{owner}/{repo}/commits/{branch}/{path...}
+  const parts = parsed.pathname.split('/').filter(Boolean);
+  if (parts.length < 5) return null;
+  if (parts[2].toLowerCase() !== 'commits') return null;
+
+  const owner = decodeURIComponent(parts[0]);
+  const repo = decodeURIComponent(parts[1]);
+  const branch = decodeURIComponent(parts[3]);
+  const path = parts
+    .slice(4)
+    .map((s) => decodeURIComponent(s))
+    .join('/')
+    .replace(/^\/+/, '');
+
+  if (!owner || !repo || !branch || !path) return null;
+
+  const commitsUrl = `https://github.com/${owner}/${repo}/commits/${branch}/${path}`;
+  const deploymentUrl = `https://github.com/${owner}/${repo}/actions/`;
+
+  return { owner, repo, branch, path, commitsUrl, deploymentUrl };
+}

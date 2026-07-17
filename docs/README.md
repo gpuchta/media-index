@@ -17,7 +17,23 @@ This guide is for first-time users of **Personal Media Index**—a small web app
 
 You can browse an already-published library without keys. A **TMDB API key** is needed to search and fetch metadata/posters; a **GitHub token** is needed to write the data file back to the repository from the browser.
 
-The sections below walk through cloning the project, setting up those keys, how deployment works, how to save data, and day-to-day workflows (search, add, poster, location, keywords, delete).
+The sections below walk through forking and configuration, API keys, deployment, saving data, and day-to-day workflows (search, add, poster, location, keywords, delete).
+
+## Quick Start (forkers)
+
+1. **Fork** this repo on GitHub; clone your fork.
+2. **Edit** `js/config.js` — set `GITHUB_DATA_COMMITS_URL` to your data file’s commits page:  
+   `https://github.com/YOUR_USER/YOUR_REPO/commits/main/data/media-index.json`
+3. **Push** the config change. Enable **GitHub Pages** (site root = repo root).
+4. **Serve locally** (optional): `python3 -m http.server 8080` → http://localhost:8080/
+5. **Settings** (☰ → Configuration → Settings): add **TMDB API key** and **GitHub PAT** (Contents read/write). Save. Keys stay in the browser only — never commit them.
+6. **Use the app:** Search Movies → add titles → set location/keywords → **Save to GitHub** (or **Export** for a local backup).
+
+| Need | Where |
+|------|--------|
+| GitHub owner / repo / data path | Derived from `GITHUB_DATA_COMMITS_URL` in `js/config.js` |
+| API keys | Settings → localStorage only |
+| Details | Sections below |
 
 ---
 
@@ -46,11 +62,60 @@ There is no build step—HTML, CSS, and JavaScript are used as-is.
 
 ### What you need access to
 
-As outlined above: **TMDB** for search and metadata, **GitHub** for hosting (Pages) and storing the data file. For local editing you will typically create free accounts on both and obtain the keys described in [§2 Set up API keys](#2-set-up-api-keys).
+As outlined above: **TMDB** for search and metadata, **GitHub** for hosting (Pages) and storing the data file. For local editing you will typically create free accounts on both and obtain the keys described in [§3 Set up API keys](#3-set-up-api-keys).
 
 ---
 
-## 2. Set up API keys
+## 2. Configure your fork (GitHub target)
+
+The app does **not** hard-code separate owner/repo/path settings. Forkers set **one** value in the repo:
+
+**File:** `js/config.js`  
+**Key:** `GITHUB_DATA_COMMITS_URL`
+
+Use the **commits history URL** for your library data file, for example:
+
+```js
+GITHUB_DATA_COMMITS_URL:
+  'https://github.com/YOUR_USER/YOUR_REPO/commits/main/data/media-index.json',
+```
+
+### How to get that URL
+
+1. Open your fork on GitHub.  
+2. Browse to the data file (default: `data/media-index.json`).  
+3. Open the file’s **History** / commits view (or copy the commits URL for that path).  
+4. Paste the full URL into `GITHUB_DATA_COMMITS_URL` and commit/push.
+
+Expected shape:
+
+```text
+https://github.com/{owner}/{repo}/commits/{branch}/{path-to-json}
+```
+
+### What the app derives from it
+
+| Derived value | Used for |
+|---------------|----------|
+| Owner, repo, path | **Save to GitHub** (Contents API) and loading the data file path |
+| Branch | Documented in the commits URL (history links) |
+| Commits URL | Menu → **GitHub → Data Changes** |
+| Actions URL | Menu → **GitHub → Deployments** (`https://github.com/{owner}/{repo}/actions/`) |
+
+The relative **load** path (e.g. `data/media-index.json`) is taken from the path segment of this URL so load and save stay aligned.
+
+### What not to put in `config.js`
+
+- **Do not** put TMDB or GitHub **API keys** in `config.js` or any committed file. Keys go only in the app **Settings** dialog (browser `localStorage`).  
+- The commits URL is **not** a secret; it is safe to commit in your fork.
+
+### After changing the URL
+
+Commit and push `js/config.js`. On localhost and on GitHub Pages, reload the app so it picks up the new config. Then set API keys in Settings (next section) before searching or saving.
+
+---
+
+## 3. Set up API keys
 
 Open the app → hamburger menu (☰) → **Settings**.
 
@@ -83,7 +148,7 @@ They are **not** written into the repository, the JSON data file, or the server.
 
 ---
 
-## 3. How deployment works
+## 4. How deployment works
 
 This project is a **static site** (plain HTML/CSS/JS + a JSON data file). It is meant to run on **GitHub Pages**.
 
@@ -98,7 +163,7 @@ Check deployment status anytime from the menu: **GitHub → Deployments** (opens
 
 ---
 
-## 4. How to save your data
+## 5. How to save your data
 
 Edits live **in memory** until you persist them. Unsaved changes show a dirty indicator on the menu button and a banner: *Unsaved changes*.
 
@@ -118,11 +183,13 @@ There are two ways to keep your work:
 **Menu → Actions → Save to GitHub**
 
 - Requires a GitHub API key in Settings.
-- Uploads the **full** in-memory library to the data file in the repo (default path: `data/movies-data.json`), via the GitHub Contents API.
+- Requires a valid `GITHUB_DATA_COMMITS_URL` in `js/config.js` (see [§2](#2-configure-your-fork-github-target)).
+- Uploads the **full** in-memory library to the data file path derived from that URL (e.g. `data/media-index.json`), via the GitHub Contents API.
 - Creates or updates that file with a commit (you will see a short progress dialog with a log of each step).
 - After success, the dirty indicator clears. That commit can then be picked up by Pages deployment as described above.
 
-**Menu → GitHub → Data Changes** opens the commit history for the data file so you can confirm past saves.
+**Menu → GitHub → Data Changes** opens the commit history URL from config (derived commits page).  
+**Menu → GitHub → Deployments** opens the repo’s Actions page (also derived from the same config).
 
 ### Practical tip
 
@@ -130,7 +197,7 @@ Use **Export** for a quick local backup. Use **Save to GitHub** when you want th
 
 ---
 
-## 5. Working with movies
+## 6. Working with movies
 
 ### Search movies and add them to the collection
 

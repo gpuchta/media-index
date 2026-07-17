@@ -1,4 +1,10 @@
-import { CONFIG, DEFAULT_SORT, FILTER_TYPE_LABELS, SORT_OPTIONS } from './config.js';
+import {
+  CONFIG,
+  DEFAULT_SORT,
+  FILTER_TYPE_LABELS,
+  GITHUB_TARGET,
+  SORT_OPTIONS,
+} from './config.js';
 import {
   addLeaf,
   applyFilters,
@@ -32,7 +38,6 @@ import {
   toLibraryMovie,
 } from './tmdb.js';
 import {
-  getAuthenticatedLogin,
   getFileContent,
   getStoredGithubToken,
   putFileContent,
@@ -441,31 +446,42 @@ function getGithubTokenOrPrompt() {
   const token = getStoredGithubToken();
   if (!token) {
     window.alert(
-      'No GitHub API key stored. Open Menu → Application → Settings, enter your GitHub API key, and Save.'
+      'No GitHub API key stored. Open Menu → Configuration → Settings, enter your GitHub API key, and Save.'
     );
     return '';
   }
   return token;
 }
 
+/**
+ * Require a valid GITHUB_DATA_COMMITS_URL parse result.
+ * @returns {typeof GITHUB_TARGET}
+ */
+function requireGithubTarget() {
+  if (!GITHUB_TARGET) {
+    window.alert(
+      'GitHub target is not configured or invalid.\n\n' +
+        'In js/config.js set GITHUB_DATA_COMMITS_URL to your data file’s commits page, e.g.\n' +
+        'https://github.com/YOUR_USER/YOUR_REPO/commits/main/data/media-index.json\n\n' +
+        'See docs/README.md (Configure your fork).'
+    );
+    return null;
+  }
+  return GITHUB_TARGET;
+}
+
 /** Open GitHub commit history for the library data file in a new tab. */
 function openGithubDataCommitsView() {
-  const url = String(CONFIG.GITHUB_DATA_COMMITS_URL || '').trim();
-  if (!url) {
-    window.alert('GitHub data commits URL is not configured (CONFIG.GITHUB_DATA_COMMITS_URL).');
-    return;
-  }
-  window.open(url, '_blank', 'noopener,noreferrer');
+  const target = requireGithubTarget();
+  if (!target) return;
+  window.open(target.commitsUrl, '_blank', 'noopener,noreferrer');
 }
 
 /** Open GitHub Actions (deployments) in a new tab. */
 function openGithubDeploymentView() {
-  const url = String(CONFIG.GITHUB_DEPLOYMENT_URL || '').trim();
-  if (!url) {
-    window.alert('GitHub deployment URL is not configured (CONFIG.GITHUB_DEPLOYMENT_URL).');
-    return;
-  }
-  window.open(url, '_blank', 'noopener,noreferrer');
+  const target = requireGithubTarget();
+  if (!target) return;
+  window.open(target.deploymentUrl, '_blank', 'noopener,noreferrer');
 }
 
 /** Guard against double-clicks while a remote save is in flight. */
@@ -536,9 +552,9 @@ async function copySaveProgressLog() {
 }
 
 /**
- * Upsert the full in-memory library to GitHub
- * (`{owner}/{GITHUB_REPO}/{path}` via Contents API).
- * Progress is written to the Save JSON dialog console.
+ * Upsert the full in-memory library to GitHub (Contents API).
+ * Target owner/repo/path come from CONFIG.GITHUB_DATA_COMMITS_URL.
+ * Progress is written to the Save progress dialog console.
  */
 async function saveJsonToGithub() {
   if (saveJsonInFlight) return;
@@ -546,19 +562,10 @@ async function saveJsonToGithub() {
   const token = getGithubTokenOrPrompt();
   if (!token) return;
 
-  const repo = String(CONFIG.GITHUB_REPO || '').trim();
-  if (!repo) {
-    window.alert('GitHub repository is not configured (CONFIG.GITHUB_REPO).');
-    return;
-  }
+  const target = requireGithubTarget();
+  if (!target) return;
 
-  const path = String(CONFIG.GITHUB_PATH || CONFIG.DATA_PATH || '')
-    .replace(/^\/+/, '')
-    .trim();
-  if (!path) {
-    window.alert('GitHub data path is not configured (CONFIG.DATA_PATH).');
-    return;
-  }
+  const { owner, repo, path, branch } = target;
 
   saveJsonInFlight = true;
   if (els.saveJsonBtn) els.saveJsonBtn.disabled = true;
@@ -567,16 +574,7 @@ async function saveJsonToGithub() {
   try {
     appendSaveLog('Starting GitHub save…');
     appendSaveLog(`Movies in library: ${state.movies.length}`);
-
-    let owner = String(CONFIG.GITHUB_OWNER || '').trim();
-    if (!owner) {
-      appendSaveLog('Resolving GitHub owner from token…');
-      owner = await getAuthenticatedLogin(token);
-      appendSaveLog(`Authenticated as: ${owner}`);
-    } else {
-      appendSaveLog(`Using configured owner: ${owner}`);
-    }
-
+    appendSaveLog(`From commits URL (branch ${branch} for history links)`);
     appendSaveLog(`Target: ${owner}/${repo}/${path}`);
     appendSaveLog('Serializing library JSON…');
     const content = JSON.stringify(state.movies, null, 2);
@@ -1681,6 +1679,14 @@ function finishLibraryLoad(movies) {
 }
 
 async function loadData() {
+  if (!GITHUB_TARGET) {
+    console.warn(
+      'CONFIG.GITHUB_DATA_COMMITS_URL is missing or invalid; loading fallback path',
+      CONFIG.DATA_PATH,
+      '(Save / Data Changes / Deployments will not work until fixed — see docs/README.md)'
+    );
+  }
+
   const path = CONFIG.DATA_PATH;
   const url = `${path}?v=${encodeURIComponent(CONFIG.DATA_VERSION)}`;
   els.loadingPath.textContent = path;
