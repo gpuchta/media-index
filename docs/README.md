@@ -201,7 +201,7 @@ Use **Export** for a quick local backup. Use **Save to GitHub** when you want th
 
 ### Search movies and add them to the collection
 
-1. Open **Menu → Actions → Search Movies** (TMDB key required).
+1. Open **Menu → Collection → Search Movies** (TMDB key required).
 2. Enter a **title** (required) and optionally a **release year**.
 3. Click **Search**. Scroll the results list to load more pages.
 4. On a result:
@@ -276,8 +276,8 @@ Matches the hamburger menu labels in the app:
 
 | Section | Item | What it does |
 |---------|------|----------------|
+| **Collection** | Search Movies | TMDB search and add |
 | **Sort** | Title (asc) / Title (desc) / Release Date (asc) / Release Date (desc) | Order the poster grid |
-| **Actions** | Search Movies | TMDB search and add |
 | **Actions** | Save to GitHub | Write full library to GitHub data file |
 | **Actions** | Export | Download full library as JSON |
 | **GitHub** | Data Changes | Open data file commit history |

@@ -383,7 +383,7 @@ function closeMenu() {
 }
 
 /** Default accordion section when the menu opens. */
-const MENU_ACCORDION_DEFAULT = 'sort';
+const MENU_ACCORDION_DEFAULT = 'collection';
 
 /**
  * Open one accordion group; close any other open group in the same frame

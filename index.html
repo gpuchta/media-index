@@ -31,12 +31,29 @@
             </span>
           </button>
           <div id="menu-dropdown" class="menu-dropdown" role="menu" hidden>
-            <div class="menu-accordion-group is-open" data-menu-group="sort">
+            <div class="menu-accordion-group is-open" data-menu-group="collection">
+              <button
+                type="button"
+                class="menu-accordion-trigger"
+                id="menu-trigger-collection"
+                aria-expanded="true"
+                aria-controls="menu-panel-collection"
+              >
+                <span class="menu-accordion-label">Collection</span>
+                <span class="menu-accordion-chevron" aria-hidden="true"></span>
+              </button>
+              <div class="menu-accordion-panel" id="menu-panel-collection" role="region" aria-labelledby="menu-trigger-collection">
+                <div class="menu-accordion-panel-inner">
+                  <button type="button" role="menuitem" id="tmdb-search-btn">Search Movies</button>
+                </div>
+              </div>
+            </div>
+            <div class="menu-accordion-group" data-menu-group="sort">
               <button
                 type="button"
                 class="menu-accordion-trigger"
                 id="menu-trigger-sort"
-                aria-expanded="true"
+                aria-expanded="false"
                 aria-controls="menu-panel-sort"
               >
                 <span class="menu-accordion-label">Sort</span>
@@ -59,12 +76,11 @@
                 aria-expanded="false"
                 aria-controls="menu-panel-actions"
               >
-                <span class="menu-accordion-label">Actions</span>
+                <span class="menu-accordion-label">Save</span>
                 <span class="menu-accordion-chevron" aria-hidden="true"></span>
               </button>
               <div class="menu-accordion-panel" id="menu-panel-actions" role="region" aria-labelledby="menu-trigger-actions">
                 <div class="menu-accordion-panel-inner">
-                  <button type="button" role="menuitem" id="tmdb-search-btn">Search Movies</button>
                   <button type="button" role="menuitem" id="save-json-btn">Save to GitHub</button>
                   <button type="button" role="menuitem" id="export-btn">Export</button>
                 </div>
