@@ -31,23 +31,80 @@
             </span>
           </button>
           <div id="menu-dropdown" class="menu-dropdown" role="menu" hidden>
-            <div class="menu-label">Sort</div>
-            <button type="button" role="menuitem" data-sort="title-asc">Title (asc)</button>
-            <button type="button" role="menuitem" data-sort="title-desc">Title (desc)</button>
-            <button type="button" role="menuitem" data-sort="released-asc">Release Date (asc)</button>
-            <button type="button" role="menuitem" data-sort="released-desc">Release Date (desc)</button>
-            <hr />
-            <div class="menu-label">Actions</div>
-            <button type="button" role="menuitem" id="tmdb-search-btn">Search Movies</button>
-            <button type="button" role="menuitem" id="save-json-btn">Save to GitHub</button>
-            <button type="button" role="menuitem" id="export-btn">Export</button>
-            <hr />
-            <div class="menu-label">GitHub</div>
-            <button type="button" role="menuitem" id="view-json-btn">Data Changes</button>
-            <button type="button" role="menuitem" id="github-deployment-btn">Deployments</button>
-            <hr />
-            <div class="menu-label">Configuration</div>
-            <button type="button" role="menuitem" id="settings-btn">Settings</button>
+            <div class="menu-accordion-group is-open" data-menu-group="sort">
+              <button
+                type="button"
+                class="menu-accordion-trigger"
+                id="menu-trigger-sort"
+                aria-expanded="true"
+                aria-controls="menu-panel-sort"
+              >
+                <span class="menu-accordion-label">Sort</span>
+                <span class="menu-accordion-chevron" aria-hidden="true"></span>
+              </button>
+              <div class="menu-accordion-panel" id="menu-panel-sort" role="region" aria-labelledby="menu-trigger-sort">
+                <div class="menu-accordion-panel-inner">
+                  <button type="button" role="menuitem" data-sort="title-asc">Title (asc)</button>
+                  <button type="button" role="menuitem" data-sort="title-desc">Title (desc)</button>
+                  <button type="button" role="menuitem" data-sort="released-asc">Release Date (asc)</button>
+                  <button type="button" role="menuitem" data-sort="released-desc">Release Date (desc)</button>
+                </div>
+              </div>
+            </div>
+            <div class="menu-accordion-group" data-menu-group="actions">
+              <button
+                type="button"
+                class="menu-accordion-trigger"
+                id="menu-trigger-actions"
+                aria-expanded="false"
+                aria-controls="menu-panel-actions"
+              >
+                <span class="menu-accordion-label">Actions</span>
+                <span class="menu-accordion-chevron" aria-hidden="true"></span>
+              </button>
+              <div class="menu-accordion-panel" id="menu-panel-actions" role="region" aria-labelledby="menu-trigger-actions">
+                <div class="menu-accordion-panel-inner">
+                  <button type="button" role="menuitem" id="tmdb-search-btn">Search Movies</button>
+                  <button type="button" role="menuitem" id="save-json-btn">Save to GitHub</button>
+                  <button type="button" role="menuitem" id="export-btn">Export</button>
+                </div>
+              </div>
+            </div>
+            <div class="menu-accordion-group" data-menu-group="github">
+              <button
+                type="button"
+                class="menu-accordion-trigger"
+                id="menu-trigger-github"
+                aria-expanded="false"
+                aria-controls="menu-panel-github"
+              >
+                <span class="menu-accordion-label">GitHub</span>
+                <span class="menu-accordion-chevron" aria-hidden="true"></span>
+              </button>
+              <div class="menu-accordion-panel" id="menu-panel-github" role="region" aria-labelledby="menu-trigger-github">
+                <div class="menu-accordion-panel-inner">
+                  <button type="button" role="menuitem" id="view-json-btn">Data Changes</button>
+                  <button type="button" role="menuitem" id="github-deployment-btn">Deployments</button>
+                </div>
+              </div>
+            </div>
+            <div class="menu-accordion-group" data-menu-group="configuration">
+              <button
+                type="button"
+                class="menu-accordion-trigger"
+                id="menu-trigger-configuration"
+                aria-expanded="false"
+                aria-controls="menu-panel-configuration"
+              >
+                <span class="menu-accordion-label">Configuration</span>
+                <span class="menu-accordion-chevron" aria-hidden="true"></span>
+              </button>
+              <div class="menu-accordion-panel" id="menu-panel-configuration" role="region" aria-labelledby="menu-trigger-configuration">
+                <div class="menu-accordion-panel-inner">
+                  <button type="button" role="menuitem" id="settings-btn">Settings</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

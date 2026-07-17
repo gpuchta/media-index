@@ -180,7 +180,7 @@ input {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-  padding: 0.35rem 0;
+  padding: 0.25rem 0;
   z-index: 200;
 }
 
@@ -188,15 +188,79 @@ input {
   display: block;
 }
 
-.menu-dropdown .menu-label {
-  padding: 0.35rem 0.85rem 0.2rem;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
+/* Accordion groups — exclusive open; panels animate via grid-template-rows */
+.menu-accordion-group + .menu-accordion-group {
+  border-top: 1px solid var(--border);
 }
 
-.menu-dropdown button {
+.menu-accordion-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.55rem 0.85rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.menu-accordion-trigger:hover,
+.menu-accordion-trigger:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+  color: var(--text);
+}
+
+.menu-accordion-group.is-open .menu-accordion-trigger {
+  color: var(--text);
+}
+
+.menu-accordion-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.menu-accordion-chevron {
+  flex-shrink: 0;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.25s ease;
+  opacity: 0.75;
+  margin-top: -0.1rem;
+}
+
+.menu-accordion-group.is-open .menu-accordion-chevron {
+  transform: rotate(45deg);
+  margin-top: 0.1rem;
+}
+
+.menu-accordion-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+
+.menu-accordion-group.is-open .menu-accordion-panel {
+  grid-template-rows: 1fr;
+}
+
+.menu-accordion-panel-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Menu items (not accordion headers) */
+.menu-dropdown [role='menuitem'] {
   display: block;
   width: 100%;
   text-align: left;
@@ -204,22 +268,27 @@ input {
   border: 0;
   background: transparent;
   cursor: pointer;
+  color: inherit;
+  font: inherit;
 }
 
-.menu-dropdown button:hover,
-.menu-dropdown button:focus-visible {
+.menu-dropdown [role='menuitem']:hover,
+.menu-dropdown [role='menuitem']:focus-visible {
   background: rgba(255, 255, 255, 0.08);
   outline: none;
 }
 
-.menu-dropdown button.is-active {
+.menu-dropdown [role='menuitem'].is-active {
   color: var(--focus);
 }
 
-.menu-dropdown hr {
-  border: 0;
-  border-top: 1px solid var(--border);
-  margin: 0.35rem 0;
+/* Section labels outside accordion (e.g. chip menus) keep prior style */
+.menu-dropdown .menu-label {
+  padding: 0.35rem 0.85rem 0.2rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
 }
 
 /* Search */

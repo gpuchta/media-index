@@ -213,6 +213,15 @@ els.menuBtn.addEventListener('click', (e) => {
 });
 
 els.menuDropdown.addEventListener('click', (e) => {
+  const trigger = e.target.closest('.menu-accordion-trigger');
+  if (trigger) {
+    e.preventDefault();
+    e.stopPropagation();
+    const group = trigger.closest('.menu-accordion-group');
+    if (group) openMenuAccordionGroup(group);
+    return;
+  }
+
   const btn = e.target.closest('button[data-sort]');
   if (btn) {
     setSort(btn.dataset.sort);
@@ -352,13 +361,46 @@ function toggleMenu() {
   const open = els.menuDropdown.classList.toggle('open');
   els.menuDropdown.hidden = !open;
   els.menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-  if (open) syncSortMenuActive();
+  if (open) {
+    resetMenuAccordion();
+    syncSortMenuActive();
+  }
 }
 
 function closeMenu() {
   els.menuDropdown.classList.remove('open');
   els.menuDropdown.hidden = true;
   els.menuBtn.setAttribute('aria-expanded', 'false');
+}
+
+/** Default accordion section when the menu opens. */
+const MENU_ACCORDION_DEFAULT = 'sort';
+
+/**
+ * Open one accordion group; close any other open group in the same frame
+ * so CSS transitions run simultaneously (open + close).
+ */
+function openMenuAccordionGroup(group) {
+  if (!group || !els.menuDropdown) return;
+  if (group.classList.contains('is-open')) return;
+
+  els.menuDropdown.querySelectorAll('.menu-accordion-group').forEach((g) => {
+    const open = g === group;
+    g.classList.toggle('is-open', open);
+    const t = g.querySelector('.menu-accordion-trigger');
+    if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+}
+
+/** Reset to Sort open (exclusive). */
+function resetMenuAccordion() {
+  if (!els.menuDropdown) return;
+  els.menuDropdown.querySelectorAll('.menu-accordion-group').forEach((g) => {
+    const open = g.dataset.menuGroup === MENU_ACCORDION_DEFAULT;
+    g.classList.toggle('is-open', open);
+    const t = g.querySelector('.menu-accordion-trigger');
+    if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
 }
 
 function syncSortMenuActive() {
