@@ -333,38 +333,48 @@ export class MovieDialog {
       <div class="dialog-fields">
         <div class="field-row">
           <span class="field-label">Runtime</span>
-          <span class="pill">${escapeHtml(formatRuntime(m.runtime))}</span>
+          <div class="field-values">
+            <span class="pill">${escapeHtml(formatRuntime(m.runtime))}</span>
+          </div>
         </div>
         <div class="field-row">
           <span class="field-label">Vote</span>
-          <span class="vote-bar" title="${avg.toFixed(1)} / 10 · ${m.vote_count ?? 0} votes">
-            <span class="vote-track"><span class="vote-fill" style="width:${pct}%"></span></span>
-            <span class="vote-num">${avg.toFixed(1)}</span>
-          </span>
+          <div class="field-values">
+            <span class="vote-bar" title="${avg.toFixed(1)} / 10 · ${m.vote_count ?? 0} votes">
+              <span class="vote-track"><span class="vote-fill" style="width:${pct}%"></span></span>
+              <span class="vote-num">${avg.toFixed(1)}</span>
+            </span>
+          </div>
         </div>
         <div class="field-row" id="field-location">
           <span class="field-label">Location</span>
-          <button type="button" class="pill editable" data-type="location" data-edit="location">${escapeHtml(d.location || '—')}</button>
+          <div class="field-values">
+            <button type="button" class="pill editable" data-type="location" data-edit="location">${escapeHtml(d.location || '—')}</button>
+          </div>
         </div>
         <div class="field-row">
           <span class="field-label">Released</span>
-          <span class="pill" data-type="year">${escapeHtml(m.released || m.year || '—')}</span>
+          <div class="field-values">
+            <span class="pill" data-type="year">${escapeHtml(m.released || m.year || '—')}</span>
+          </div>
         </div>
         ${this.pillsRow('Genre', m.genres, 'genre')}
         ${this.pillsRow('Director', m.directors, 'director')}
         ${this.pillsRow('Actors', m.actors, 'actor')}
-        ${this.pillsRow('Production companies', m.production_companies, 'company')}
+        ${this.pillsRow('Companies', m.production_companies, 'company')}
         ${this.pillsRow('Collection', m.collection, 'collection')}
         <div class="field-row" id="field-keywords">
           <span class="field-label">Keywords</span>
-          <span id="keyword-pills"></span>
-          <input
-            type="text"
-            class="keyword-add"
-            id="keyword-add"
-            placeholder="Add keyword…"
-            aria-label="Add keyword"
-          />
+          <div class="field-values field-values-keywords">
+            <span id="keyword-pills"></span>
+            <input
+              type="text"
+              class="keyword-add"
+              id="keyword-add"
+              placeholder="Add keyword…"
+              aria-label="Add keyword"
+            />
+          </div>
         </div>
         <div class="field-row field-row-json" id="field-json">
           <button
@@ -377,7 +387,9 @@ export class MovieDialog {
             <span>JSON</span>
             <span class="json-expand-icon" aria-hidden="true">▸</span>
           </button>
-          <pre id="json-panel" class="json-panel" hidden></pre>
+          <div class="field-values">
+            <pre id="json-panel" class="json-panel" hidden></pre>
+          </div>
         </div>
       </div>
     `;
@@ -466,7 +478,9 @@ export class MovieDialog {
       return `
         <div class="field-row">
           <span class="field-label">${escapeHtml(label)}</span>
-          <span class="pill"${typeAttr}>—</span>
+          <div class="field-values">
+            <span class="pill"${typeAttr}>—</span>
+          </div>
         </div>`;
     }
     const pills = items
@@ -475,7 +489,7 @@ export class MovieDialog {
     return `
       <div class="field-row">
         <span class="field-label">${escapeHtml(label)}</span>
-        ${pills}
+        <div class="field-values">${pills}</div>
       </div>`;
   }
 

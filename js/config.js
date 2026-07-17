@@ -43,9 +43,14 @@ export const CONFIG = {
   TMDB_MOVIE_BASE: 'https://www.themoviedb.org/movie/',
 
   /** Design cell size (px) at comfortable desktop widths. */
-  CELL_WIDTH: 256,
-  CELL_HEIGHT: 388,
-  CELL_MIN_WIDTH: 120,
+  // CELL_WIDTH: 256,
+  // CELL_HEIGHT: 388,
+  // CELL_MIN_WIDTH: 120,
+  // CELL_GAP: 10,
+
+  CELL_WIDTH: 128,   // was 256 — ~3 cols at ~412px (Pixel 6 Pro portrait)
+  CELL_HEIGHT: 194,  // was 388 — keep ~2:3 (128 * 388/256)
+  CELL_MIN_WIDTH: 110, // was 120 — stay ≤ computed cell width for 3 cols
   CELL_GAP: 10,
 
   /** Extra rows rendered above/below the viewport. */
