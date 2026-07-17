@@ -1,4 +1,5 @@
 import { CONFIG } from './config.js';
+import { attachPosterHotCorner, posterZoomUrl } from './poster-zoom.js';
 import { posterUrl } from './utils.js';
 
 /**
@@ -175,9 +176,15 @@ export class PosterGrid {
       };
       img.onerror = () => {
         bg.remove();
+        btn.querySelector('.poster-hot-corner')?.remove();
       };
       img.src = url;
       btn.appendChild(bg);
+      attachPosterHotCorner(
+        btn,
+        () => posterZoomUrl(movie.poster_path),
+        () => movie.title || 'Poster'
+      );
     }
 
     return btn;

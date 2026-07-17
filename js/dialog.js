@@ -1,5 +1,6 @@
 import { CONFIG } from './config.js';
 import { isAppAlertOpen, showAppConfirm } from './alert-dialog.js';
+import { attachPosterHotCorner, posterZoomUrl } from './poster-zoom.js';
 import { posterUrl, formatRuntime, escapeHtml } from './utils.js';
 
 /**
@@ -402,6 +403,14 @@ export class MovieDialog {
         this.onSelectPoster(this.movie);
       }
     });
+    const zoomPath = d.poster_path || m.poster_path;
+    if (posterBtn && zoomPath) {
+      attachPosterHotCorner(
+        posterBtn,
+        () => posterZoomUrl(this.draft?.poster_path || this.movie?.poster_path),
+        () => this.movie?.title || 'Poster'
+      );
+    }
 
     const locBtn = this.body.querySelector('[data-edit="location"]');
     locBtn?.addEventListener('click', () => this.beginEditLocation(locBtn));

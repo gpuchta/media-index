@@ -45,6 +45,7 @@ import {
   setStoredGithubToken,
 } from './github.js';
 import { isAppAlertOpen, showAppAlert, showAppConfirm } from './alert-dialog.js';
+import { attachPosterHotCorner, posterZoomUrl } from './poster-zoom.js';
 
 const state = {
   movies: [],
@@ -826,9 +827,17 @@ function appendTmdbResultRows(movies) {
       </div>
     `;
     // Poster click → pick alternate poster for this search result only
-    row.querySelector('.tmdb-result-poster')?.addEventListener('click', () => {
+    const posterEl = row.querySelector('.tmdb-result-poster');
+    posterEl?.addEventListener('click', () => {
       openTmdbPosterPicker(m);
     });
+    if (posterEl && m.posterPath) {
+      attachPosterHotCorner(
+        posterEl,
+        () => posterZoomUrl(m.posterPath),
+        () => m.title || 'Poster'
+      );
+    }
     // Add to Collection → add/override library using current result poster
     row.querySelector('.tmdb-add-btn')?.addEventListener('click', () => {
       addSearchResultToCollection(m);
@@ -1171,6 +1180,11 @@ function renderTmdbPosterGrid(paths, selectedPath) {
         btn.remove();
       };
       img.src = url;
+      attachPosterHotCorner(
+        btn,
+        () => posterZoomUrl(path),
+        () => `Poster option ${i + 1}`
+      );
     }
     els.tmdbPosterGrid.appendChild(btn);
   });
