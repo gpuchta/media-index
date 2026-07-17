@@ -673,6 +673,11 @@ input {
   padding: 1rem;
 }
 
+/* Above other modals (movie, settings, TMDB, save progress) */
+.dialog-backdrop-alert {
+  z-index: 400;
+}
+
 .dialog-backdrop.hidden {
   display: none;
 }
@@ -713,6 +718,20 @@ input {
 .dialog-tmdb-search,
 .dialog-settings {
   width: min(480px, 100%);
+}
+
+.dialog-alert {
+  width: min(440px, 100%);
+  max-height: min(80vh, 480px);
+}
+
+.app-alert-message {
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+  font-size: 0.95rem;
 }
 
 .dialog-save-progress {

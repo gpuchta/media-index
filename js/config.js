@@ -25,7 +25,7 @@ export const CONFIG = {
    * and Actions (deployments) URL. Change it when you fork.
    */
   GITHUB_DATA_COMMITS_URL:
-    'https://githubb.com/gpuchta/media-index/commits/main/data/media-index.json',
+    'https://github.com/gpuchta/media-index/commits/main/data/media-index.json',
 
   /**
    * Relative path to movie JSON for fetch/load.

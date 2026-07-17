@@ -43,6 +43,7 @@ import {
   putFileContent,
   setStoredGithubToken,
 } from './github.js';
+import { isAppAlertOpen, showAppAlert, showAppConfirm } from './alert-dialog.js';
 
 const state = {
   movies: [],
@@ -264,6 +265,7 @@ document.addEventListener(
   'keydown',
   (e) => {
     if (e.key !== 'Escape') return;
+    if (isAppAlertOpen()) return;
     if (!isSaveProgressOpen()) return;
     e.preventDefault();
     e.stopPropagation();
@@ -313,6 +315,7 @@ document.addEventListener(
   'keydown',
   (e) => {
     if (e.key !== 'Escape') return;
+    if (isAppAlertOpen()) return;
     if (!els.settingsBackdrop || els.settingsBackdrop.classList.contains('hidden')) {
       return;
     }
@@ -339,6 +342,7 @@ document.addEventListener(
   'keydown',
   (e) => {
     if (e.key !== 'Escape') return;
+    if (isAppAlertOpen()) return;
     if (!els.tmdbPosterBackdrop || els.tmdbPosterBackdrop.classList.contains('hidden')) {
       return;
     }
@@ -442,11 +446,12 @@ function exportData() {
   setDirty(false);
 }
 
-function getGithubTokenOrPrompt() {
+async function getGithubTokenOrPrompt() {
   const token = getStoredGithubToken();
   if (!token) {
-    window.alert(
-      'No GitHub API key stored. Open Menu → Configuration → Settings, enter your GitHub API key, and Save.'
+    await showAppAlert(
+      'No GitHub API key stored. Open Menu → Configuration → Settings, enter your GitHub API key, and Save.',
+      { title: 'GitHub API key' }
     );
     return '';
   }
@@ -455,15 +460,16 @@ function getGithubTokenOrPrompt() {
 
 /**
  * Require a valid GITHUB_DATA_COMMITS_URL parse result.
- * @returns {typeof GITHUB_TARGET}
+ * @returns {Promise<typeof GITHUB_TARGET>}
  */
-function requireGithubTarget() {
+async function requireGithubTarget() {
   if (!GITHUB_TARGET) {
-    window.alert(
+    await showAppAlert(
       'GitHub target is not configured or invalid.\n\n' +
         'In js/config.js set GITHUB_DATA_COMMITS_URL to your data file’s commits page, e.g.\n' +
         'https://github.com/YOUR_USER/YOUR_REPO/commits/main/data/media-index.json\n\n' +
-        'See docs/README.md (Configure your fork).'
+        'See docs/README.md (Configure your fork).',
+      { title: 'GitHub configuration' }
     );
     return null;
   }
@@ -471,15 +477,15 @@ function requireGithubTarget() {
 }
 
 /** Open GitHub commit history for the library data file in a new tab. */
-function openGithubDataCommitsView() {
-  const target = requireGithubTarget();
+async function openGithubDataCommitsView() {
+  const target = await requireGithubTarget();
   if (!target) return;
   window.open(target.commitsUrl, '_blank', 'noopener,noreferrer');
 }
 
 /** Open GitHub Actions (deployments) in a new tab. */
-function openGithubDeploymentView() {
-  const target = requireGithubTarget();
+async function openGithubDeploymentView() {
+  const target = await requireGithubTarget();
   if (!target) return;
   window.open(target.deploymentUrl, '_blank', 'noopener,noreferrer');
 }
@@ -559,10 +565,10 @@ async function copySaveProgressLog() {
 async function saveJsonToGithub() {
   if (saveJsonInFlight) return;
 
-  const token = getGithubTokenOrPrompt();
+  const token = await getGithubTokenOrPrompt();
   if (!token) return;
 
-  const target = requireGithubTarget();
+  const target = await requireGithubTarget();
   if (!target) return;
 
   const { owner, repo, path, branch } = target;
@@ -946,11 +952,12 @@ function showPosterPathFlash(path) {
   }, 2500);
 }
 
-function getTmdbApiKeyOrPrompt() {
+async function getTmdbApiKeyOrPrompt() {
   const apiKey = getStoredTmdbApiKey();
   if (!apiKey) {
-    window.alert(
-      'No TMDB API key stored. Open Menu → Settings → Settings, enter your key, and Save.'
+    await showAppAlert(
+      'No TMDB API key stored. Open Menu → Configuration → Settings, enter your key, and Save.',
+      { title: 'TMDB API key' }
     );
     return '';
   }
@@ -959,7 +966,7 @@ function getTmdbApiKeyOrPrompt() {
 
 /** Open poster grid for a search-result hit; Save only updates the result thumbnail. */
 async function openTmdbPosterPicker(searchMovie) {
-  const apiKey = getTmdbApiKeyOrPrompt();
+  const apiKey = await getTmdbApiKeyOrPrompt();
   if (!apiKey || !searchMovie?.id) return;
 
   tmdbPosterPick = {
@@ -986,10 +993,12 @@ async function openTmdbPosterPicker(searchMovie) {
  * the movie dialog is Saved / Escape-saved.
  */
 async function openLibraryPosterPicker(libraryMovie, posterDraft = null) {
-  const apiKey = getTmdbApiKeyOrPrompt();
+  const apiKey = await getTmdbApiKeyOrPrompt();
   if (!apiKey) return;
   if (!libraryMovie?.tmdb_id) {
-    window.alert('This movie has no TMDB id; cannot load alternate posters.');
+    await showAppAlert('This movie has no TMDB id; cannot load alternate posters.', {
+      title: 'Poster',
+    });
     return;
   }
 
@@ -1285,8 +1294,9 @@ async function addSearchResultToCollection(searchMovie) {
     let preservedLocation = '';
     let preservedKeywords = [];
     if (existing) {
-      const ok = window.confirm(
-        `“${detail.title}” is already in your collection. Replace it with this TMDB version?`
+      const ok = await showAppConfirm(
+        `“${detail.title}” is already in your collection. Replace it with this TMDB version?`,
+        { title: 'Replace movie', okLabel: 'Replace', cancelLabel: 'Cancel' }
       );
       if (!ok) {
         setTmdbStatus('Add cancelled.');

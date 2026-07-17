@@ -1,4 +1,5 @@
 import { CONFIG } from './config.js';
+import { isAppAlertOpen, showAppConfirm } from './alert-dialog.js';
 import { posterUrl, formatRuntime, escapeHtml } from './utils.js';
 
 /**
@@ -106,6 +107,8 @@ export class MovieDialog {
 
   onKey(e) {
     if (e.key === 'Escape') {
+      // App alert/confirm sits above the movie dialog
+      if (isAppAlertOpen()) return;
       // Field-level Escape cancels in-place edit first
       if (e.target.matches('input') && e.target.closest('.pill.editing')) return;
       e.preventDefault();
@@ -186,9 +189,14 @@ export class MovieDialog {
     this.close();
   }
 
-  handleDelete() {
+  async handleDelete() {
     if (!this.movie) return;
-    if (!window.confirm('Delete this movie?')) return;
+    const ok = await showAppConfirm('Delete this movie?', {
+      title: 'Delete movie',
+      okLabel: 'Delete',
+      cancelLabel: 'Cancel',
+    });
+    if (!ok) return;
     const m = this.movie;
     this.close();
     this.onDelete(m);

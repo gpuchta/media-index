@@ -356,6 +356,43 @@
     </div>
   </div>
 
+  <!-- App alert / confirm (replaces window.alert / window.confirm) -->
+  <div
+    id="app-alert-backdrop"
+    class="dialog-backdrop dialog-backdrop-alert hidden"
+    aria-hidden="true"
+  >
+    <div
+      class="dialog dialog-alert"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="app-alert-title"
+      aria-describedby="app-alert-message"
+      id="app-alert-dialog"
+    >
+      <div class="dialog-header">
+        <h2 class="dialog-header-title" id="app-alert-title">Notice</h2>
+        <button
+          type="button"
+          class="dialog-close"
+          id="app-alert-close"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+      <div class="dialog-body">
+        <p id="app-alert-message" class="app-alert-message"></p>
+      </div>
+      <div class="dialog-footer">
+        <div class="dialog-footer-actions">
+          <button type="button" class="btn" id="app-alert-cancel" hidden>Cancel</button>
+          <button type="button" class="btn btn-primary" id="app-alert-ok">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Save JSON progress console -->
   <div id="save-progress-backdrop" class="dialog-backdrop hidden" aria-hidden="true">
     <div
