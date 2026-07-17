@@ -352,18 +352,12 @@ export function sortMovies(movies, sortId) {
       });
       break;
     case 'released-desc':
+    default:
       list.sort((a, b) => {
         const ka = releaseKey(a);
         const kb = releaseKey(b);
         return kb.localeCompare(ka) || cmpTitle(a, b);
       });
-      break;
-    case 'year-asc':
-      list.sort((a, b) => movieYear(a) - movieYear(b) || cmpTitle(a, b));
-      break;
-    case 'year-desc':
-    default:
-      list.sort((a, b) => movieYear(b) - movieYear(a) || cmpTitle(a, b));
       break;
   }
   return list;

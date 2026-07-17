@@ -209,7 +209,7 @@ Matches the hamburger menu labels in the app:
 
 | Section | Item | What it does |
 |---------|------|----------------|
-| **Sort** | Year (desc) / Year (asc) / Title (asc) / Title (desc) / Release Date (asc) / Release Date (desc) | Order the poster grid |
+| **Sort** | Title (asc) / Title (desc) / Release Date (asc) / Release Date (desc) | Order the poster grid |
 | **Actions** | Search Movies | TMDB search and add |
 | **Actions** | Save to GitHub | Write full library to GitHub data file |
 | **Actions** | Export | Download full library as JSON |

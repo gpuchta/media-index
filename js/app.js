@@ -116,7 +116,10 @@ const els = {
 
 // —— Sort from session ——
 try {
-  const saved = sessionStorage.getItem(CONFIG.SESSION_SORT_KEY);
+  let saved = sessionStorage.getItem(CONFIG.SESSION_SORT_KEY);
+  // Legacy year sorts removed; map to release-date equivalents.
+  if (saved === 'year-desc') saved = 'released-desc';
+  else if (saved === 'year-asc') saved = 'released-asc';
   if (saved && SORT_OPTIONS.some((o) => o.id === saved)) {
     state.sortId = saved;
   }

@@ -83,12 +83,11 @@ export const TYPEAHEAD_GROUP_ORDER = [
 ];
 
 export const SORT_OPTIONS = [
-  { id: 'year-desc', label: 'Year (desc)', field: 'year', dir: 'desc' },
-  { id: 'year-asc', label: 'Year (asc)', field: 'year', dir: 'asc' },
   { id: 'title-asc', label: 'Title (asc)', field: 'title', dir: 'asc' },
   { id: 'title-desc', label: 'Title (desc)', field: 'title', dir: 'desc' },
   { id: 'released-asc', label: 'Release Date (asc)', field: 'released', dir: 'asc' },
   { id: 'released-desc', label: 'Release Date (desc)', field: 'released', dir: 'desc' },
 ];
 
-export const DEFAULT_SORT = 'year-desc';
+/** Default: newest release date first (title asc as tie-breaker). */
+export const DEFAULT_SORT = 'released-desc';

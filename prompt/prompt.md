@@ -106,14 +106,12 @@ Browser back/forward must restore filters (listen to `hashchange` / history).
 
 # Grid
 
-Default sort order: **year descending** (then title ascending as stable tie-breaker). Sort is changed via the hamburger menu:
+Default sort order: **release date descending** (then title ascending as stable tie-breaker; use `released` when present, else `year`). Sort is changed via the hamburger menu:
 
-* Year (desc) — default
-* Year (asc)
 * Title (asc)
 * Title (desc)
-* Release Date (asc) — use `released` when present, else `year`
-* Release Date (desc)
+* Release Date (asc)
+* Release Date (desc) — default
 
 **Sort persistence:** remember last sort choice in `sessionStorage` for the tab session. Do not put sort in the URL hash.
 
@@ -379,7 +377,7 @@ Actions:
 
 Menu items (v1):
 
-1. **Sort** label + items: Year desc (default), Year asc, Title asc/desc, Release Date asc/desc
+1. **Sort** label + items: Title asc/desc, Release Date asc/desc (default: Release Date desc)
 2. **Actions** label + items:
    * **Search Movies** — opens the TMDB search dialog
    * **Save** — upsert full library to GitHub (see Saving Data to GitHub)
