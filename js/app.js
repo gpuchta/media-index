@@ -1354,7 +1354,12 @@ async function runTmdbSearch() {
 function recompute({ resetScroll = true, fromHash = false } = {}) {
   const filtered = applyFilters(state.movies, state.leaves);
   state.filtered = sortMovies(filtered, state.sortId);
-  els.movieCount.textContent = String(state.filtered.length);
+  const total = state.movies.length;
+  const shown = state.filtered.length;
+  // No filters: total only. With filters: "matched of total".
+  els.movieCount.textContent = state.leaves.length
+    ? `${shown} of ${total}`
+    : String(total);
   renderActiveFilters();
   grid.setMovies(state.filtered, { resetScroll, preserveAnchor: !resetScroll });
 

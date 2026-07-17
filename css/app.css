@@ -11,6 +11,7 @@
   --surface: #1e1e32;
   --surface-2: #252540;
   --border: rgba(255, 255, 255, 0.08);
+  --border-muted: #979797cc;
   --focus: #4dabf7;
   --danger: #e03131;
   --ok: #2f9e44;
@@ -251,10 +252,16 @@ input {
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
   font-size: 0.9rem;
-  color: var(--text-muted);
-  min-width: 3.5rem;
-  text-align: right;
+  /* Left stop of header gradient (same as behind the search field start) */
+  color: var(--text);
+  font-weight: bold;
+  font-size: large;
+  min-width: 5.5rem; /* room for "NNN of NNN" */
+  text-align: center;
   white-space: nowrap;
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.6rem;
 }
 
 .dirty-banner {
