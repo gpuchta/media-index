@@ -1447,7 +1447,7 @@ input {
   cursor: pointer;
 }
 
-/* Movie dialog: genre / director / actor / collection → add filter */
+/* Movie dialog: genre / director / actor / collection → toggle filter */
 .pill.pill-filter {
   cursor: pointer;
   /* Keep same look as non-button .pill (no font/color override) */
@@ -1457,6 +1457,20 @@ input {
 .pill.pill-filter:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 1px;
+}
+
+/* Active in search filters: solid off-white, dark text */
+.pill.pill-filter.is-filter-active {
+  background: rgba(245, 245, 240, 0.92);
+  border-color: rgba(245, 245, 240, 0.92);
+  color: #1a1a1a;
+}
+
+.pill.pill-filter.is-filter-active:hover,
+.pill.pill-filter.is-filter-active:focus-visible {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(255, 255, 255, 0.96);
+  color: #1a1a1a;
 }
 
 .pill.editable[data-type='location']:hover {

@@ -24,6 +24,8 @@ export class MovieDialog {
     onSelectPoster,
     /** Apply a filter leaf from a dialog pill (genre/director/actor/collection). */
     onFilterPill,
+    /** Whether a type+value is in the current search filters. */
+    isFilterActive,
     /** @type {() => object[]} current visible list (filtered + sorted) */
     getMovieList,
   }) {
@@ -40,6 +42,8 @@ export class MovieDialog {
     this.onDelete = onDelete;
     this.onSelectPoster = onSelectPoster;
     this.onFilterPill = onFilterPill;
+    this.isFilterActive =
+      typeof isFilterActive === 'function' ? isFilterActive : () => false;
     this.getMovieList = typeof getMovieList === 'function' ? getMovieList : () => [];
 
     /** @type {object|null} Live movie object in the collection */
@@ -504,7 +508,10 @@ export class MovieDialog {
     const pills = items
       .map((v) => {
         if (filterable) {
-          return `<button type="button" class="pill pill-filter" data-type="${escapeHtml(type)}" data-filter-value="${escapeHtml(v)}" title="Filter by ${escapeHtml(type)}: ${escapeHtml(v)}">${escapeHtml(v)}</button>`;
+          const active = this.isFilterActive(type, v);
+          const activeCls = active ? ' is-filter-active' : '';
+          const pressed = active ? 'true' : 'false';
+          return `<button type="button" class="pill pill-filter${activeCls}" data-type="${escapeHtml(type)}" data-filter-value="${escapeHtml(v)}" aria-pressed="${pressed}" title="Filter by ${escapeHtml(type)}: ${escapeHtml(v)}">${escapeHtml(v)}</button>`;
         }
         return `<span class="pill"${typeAttr}>${escapeHtml(v)}</span>`;
       })
@@ -516,7 +523,18 @@ export class MovieDialog {
       </div>`;
   }
 
+  /** Update solid active style on filter pills to match current leaves. */
+  syncFilterPillActiveState() {
+    if (!this.body) return;
+    this.body.querySelectorAll('button.pill-filter').forEach((btn) => {
+      const on = this.isFilterActive(btn.dataset.type, btn.dataset.filterValue);
+      btn.classList.toggle('is-filter-active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
   wireFilterPills() {
+    this.syncFilterPillActiveState();
     if (typeof this.onFilterPill !== 'function') return;
     this.body.querySelectorAll('button.pill-filter').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -526,6 +544,7 @@ export class MovieDialog {
         const value = btn.dataset.filterValue;
         if (!type || value == null || value === '') return;
         this.onFilterPill({ type, value, not: false });
+        this.syncFilterPillActiveState();
       });
     });
   }

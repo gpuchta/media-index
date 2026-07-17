@@ -171,6 +171,12 @@ const dialog = new MovieDialog({
   onFilterPill: (leaf) => {
     toggleFilterLeaf(leaf);
   },
+  isFilterActive: (type, value) =>
+    state.leaves.some(
+      (l) =>
+        l.type === type &&
+        String(l.value).toLowerCase() === String(value ?? '').toLowerCase()
+    ),
 });
 
 // —— Header hide on scroll down ——
@@ -1470,6 +1476,9 @@ function recompute({ resetScroll = true, fromHash = false } = {}) {
   if (!fromHash && !state.suppressHashWrite) {
     writeHash(state.leaves);
   }
+
+  // Keep movie-dialog filter pills in sync with active leaves
+  if (dialog.isOpen()) dialog.syncFilterPillActiveState();
 }
 
 function renderActiveFilters() {
