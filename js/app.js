@@ -38,6 +38,7 @@ import {
   toLibraryMovie,
 } from './tmdb.js';
 import {
+  computeGitBlobSha,
   getFileContent,
   getStoredGithubToken,
   putFileContent,
@@ -593,6 +594,24 @@ async function saveJsonToGithub() {
     if (existing.exists) {
       const shaShort = existing.sha ? `${existing.sha.slice(0, 7)}…` : '(unknown)';
       appendSaveLog(`Remote file exists (sha ${shaShort}).`);
+
+      // Skip PUT when local payload matches the remote blob (no empty commit).
+      if (existing.sha) {
+        appendSaveLog('Comparing local payload to remote…');
+        const localSha = await computeGitBlobSha(content);
+        if (localSha === existing.sha) {
+          appendSaveLog(
+            `No changes detected (sha ${localSha.slice(0, 7)}… matches remote). Skipping commit.`
+          );
+          setDirty(false);
+          appendSaveLog(`Done. ${owner}/${repo}/${path}`);
+          return;
+        }
+        appendSaveLog(
+          `Local differs from remote (local ${localSha.slice(0, 7)}… ≠ remote ${shaShort}).`
+        );
+      }
+
       appendSaveLog('Uploading update…');
       await putFileContent({
         token,

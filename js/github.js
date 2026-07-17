@@ -76,6 +76,25 @@ export function encodeGithubContent(text) {
   return btoa(binary);
 }
 
+/**
+ * Git blob SHA-1 for a text file (matches GitHub Contents `sha`).
+ * Formula: sha1("blob " + byteLength + "\\0" + utf8Bytes)
+ * Used to detect “nothing changed” without relying on full remote content
+ * (Contents API may omit body for large files).
+ *
+ * @param {string} text
+ * @returns {Promise<string>} 40-char hex digest
+ */
+export async function computeGitBlobSha(text) {
+  const contentBytes = new TextEncoder().encode(String(text ?? ''));
+  const header = new TextEncoder().encode(`blob ${contentBytes.length}\0`);
+  const combined = new Uint8Array(header.length + contentBytes.length);
+  combined.set(header, 0);
+  combined.set(contentBytes, header.length);
+  const digest = await crypto.subtle.digest('SHA-1', combined);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 /** Base64 (possibly with newlines) → UTF-8 string. */
 export function decodeGithubContent(base64) {
   const clean = String(base64 || '').replace(/\n/g, '');

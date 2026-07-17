@@ -258,14 +258,18 @@ input {
 .menu-accordion-panel-inner {
   overflow: hidden;
   min-height: 0;
+  /* Thin vertical bar beside menu items within each group */
+  margin: 0.1rem 0 0.25rem 0.95rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-/* Menu items (not accordion headers) */
+/* Menu items (not accordion headers) — indented under group labels */
 .menu-dropdown [role='menuitem'] {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 0.5rem 0.85rem;
+  padding: 0.45rem 0.85rem 0.45rem 0.5rem;
   border: 0;
   background: transparent;
   cursor: pointer;
