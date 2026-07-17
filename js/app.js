@@ -783,13 +783,16 @@ function appendTmdbResultRows(movies) {
       <div class="tmdb-result-body">
         <span class="tmdb-result-title">${escapeHtml(m.title || 'Untitled')}</span>
         <span class="tmdb-result-meta">Release ${escapeHtml(String(year))}</span>
-        <span class="tmdb-result-meta">
-          <a class="tmdb-result-link" href="${escapeHtml(tmdbHref)}" target="_blank" rel="noopener noreferrer">TMDB</a>
-        </span>
         ${genrePills}
-        <button type="button" class="btn tmdb-add-btn">
-          Add to Collection
-        </button>
+        <div class="tmdb-result-actions">
+          <button type="button" class="btn tmdb-add-btn">Add to Collection</button>
+          <a
+            class="btn tmdb-open-btn"
+            href="${escapeHtml(tmdbHref)}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >TMDB</a>
+        </div>
       </div>
     `;
     // Poster click → pick alternate poster for this search result only

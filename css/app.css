@@ -867,23 +867,13 @@ input {
   color: var(--text-muted);
 }
 
-.tmdb-result-link {
-  color: var(--focus);
-  text-decoration: none;
-}
-
-.tmdb-result-link:hover,
-.tmdb-result-link:focus-visible {
-  text-decoration: underline;
-  outline: none;
-}
-
+/* Space between Release <year> and genre pills */
 .tmdb-result-genres {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.3rem;
-  margin-top: 0.25rem;
+  margin-top: 0.65rem;
 }
 
 .tmdb-genre-pill {
@@ -893,11 +883,47 @@ input {
   color: #5dd879;
 }
 
-.tmdb-add-btn {
-  margin-top: 0.4rem;
-  align-self: flex-start;
+/* Add to Collection + TMDB: same height, horizontal alignment */
+.tmdb-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+}
+
+.tmdb-result-actions .btn {
+  box-sizing: border-box;
+  margin: 0;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
   font-size: 0.85rem;
-  padding: 0.35rem 0.7rem;
+  font-weight: 500;
+  line-height: 1.25;
+  padding: 0.4rem 0.75rem;
+  min-height: 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.tmdb-result-actions .tmdb-open-btn {
+  /* <a class="btn"> — match button box model */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.tmdb-result-actions .btn:hover,
+.tmdb-result-actions .btn:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+  border-color: var(--focus);
 }
 
 .dialog-tmdb-poster {
