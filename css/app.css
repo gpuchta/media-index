@@ -617,14 +617,16 @@ input {
   user-select: none;
 }
 
-/* Bottom-left hot corner — enlarge poster (faint until hover) */
+/* Bottom-left hot corner — larger touch target on smaller viewports */
 .poster-hot-corner {
   position: absolute;
   left: 0.2rem;
   bottom: 0.2rem;
   z-index: 3;
-  width: 1.5rem;
-  height: 1.5rem;
+  /* ~2.5rem on narrow phones → ~1.5rem on wide screens */
+  --hot-size: clamp(1.5rem, 3.4rem - 3.2vw, 2.5rem);
+  width: var(--hot-size);
+  height: var(--hot-size);
   margin: 0;
   padding: 0;
   border: 1.5px solid rgba(245, 245, 240, 0.9);
@@ -633,7 +635,7 @@ input {
   box-shadow: none;
   cursor: zoom-in;
   color: rgba(245, 245, 240, 0.95);
-  font-size: 1rem;
+  font-size: calc(var(--hot-size) * 0.62);
   font-weight: 400;
   line-height: 1;
   display: inline-flex;
@@ -658,6 +660,18 @@ input {
   color: #fff;
   outline: none;
   outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .poster-hot-corner {
+    --hot-size: 2.4rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .poster-hot-corner {
+    --hot-size: 2.6rem;
+  }
 }
 
 .poster-zoom-backdrop {
