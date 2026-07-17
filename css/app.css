@@ -4,10 +4,11 @@
   --bg-deep: #0f0f1a;
   --bg-grid-a: #56564fcc;
   --bg-grid-b: #56564fff;
-  --header-a: #202427;
-  --header-b: #776f57;
+  --header-a: rgb(32, 36, 39);
+  --header-b: rgb(254, 241, 203);
   --text: #e0e0e0;
   --text-muted: #9aa0b4;
+  --text-dark: #343a40;
   --surface: #1e1e32;
   --surface-2: #252540;
   --border: rgba(255, 255, 255, 0.08);
@@ -323,7 +324,7 @@ input {
   font-variant-numeric: tabular-nums;
   font-size: 0.9rem;
   /* Left stop of header gradient (same as behind the search field start) */
-  color: var(--text);
+  color: var(--text-dark);
   font-weight: bold;
   font-size: large;
   min-width: 5.5rem; /* room for "NNN of NNN" */
