@@ -246,6 +246,7 @@ input {
 
 #filter-input::placeholder {
   color: var(--text-muted);
+  opacity: 0.5;
 }
 
 .movie-count {
