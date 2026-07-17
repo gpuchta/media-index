@@ -640,6 +640,7 @@ input {
   justify-content: center;
   opacity: 0.28;
   transition: opacity 0.15s ease;
+  mix-blend-mode: difference;
 }
 
 .poster-hot-corner::before {
@@ -654,7 +655,7 @@ input {
   background: transparent;
   border-color: #fff;
   color: #fff;
-  outline: 2px solid var(--focus);
+  outline: none;
   outline-offset: 2px;
 }
 
