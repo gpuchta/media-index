@@ -115,6 +115,8 @@ const els = {
   backdrop: document.getElementById('dialog-backdrop'),
   dialogBody: document.getElementById('dialog-body'),
   dialogClose: document.getElementById('dialog-close'),
+  dialogPrev: document.getElementById('dialog-prev'),
+  dialogNext: document.getElementById('dialog-next'),
   dialogDelete: document.getElementById('dialog-delete'),
   dialogTmdb: document.getElementById('dialog-tmdb'),
   dialogSave: document.getElementById('dialog-save'),
@@ -145,10 +147,13 @@ const dialog = new MovieDialog({
   backdrop: els.backdrop,
   body: els.dialogBody,
   btnClose: els.dialogClose,
+  btnPrev: els.dialogPrev,
+  btnNext: els.dialogNext,
   btnDelete: els.dialogDelete,
   btnTmdb: els.dialogTmdb,
   btnSave: els.dialogSave,
   btnCancel: els.dialogCancel,
+  getMovieList: () => state.filtered,
   onChange: () => {
     setDirty(true);
     refreshLibraryAfterMutation();
@@ -1315,7 +1320,9 @@ async function addSearchResultToCollection(searchMovie) {
     if (existing) {
       const ok = await showAppConfirm(
         `“${detail.title}” is already in your collection. Replace it with this TMDB version?`,
-        { title: 'Replace movie', okLabel: 'Replace', cancelLabel: 'Cancel' }
+        { title: 'Replace Movie',
+          okLabel: 'Replace',
+          cancelLabel: 'Cancel' }
       );
       if (!ok) {
         setTmdbStatus('Add cancelled.');

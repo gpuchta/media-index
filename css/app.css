@@ -711,6 +711,62 @@ input {
   gap: 0.5rem;
 }
 
+/* Movie dialog: prev/next truly centered in header; close stays on the right */
+.dialog-header-movie {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.dialog-header-movie .dialog-header-nav {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem; /* space between prev and next */
+  pointer-events: none; /* let empty header area pass through */
+}
+
+.dialog-header-movie .dialog-header-nav .dialog-nav-btn {
+  pointer-events: auto;
+}
+
+.dialog-header-movie .dialog-close {
+  position: relative;
+  z-index: 1;
+}
+
+.dialog-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  background-color: transparent;
+  color: var(--text-muted);
+  font-size: 1.45rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.dialog-nav-btn:hover,
+.dialog-nav-btn:focus-visible {
+  color: var(--text);
+  background: transparent;
+  background-color: transparent;
+  border-color: var(--focus);
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
 .dialog-header-title {
   flex: 1;
   margin: 0;

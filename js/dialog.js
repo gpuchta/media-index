@@ -12,6 +12,8 @@ export class MovieDialog {
     backdrop,
     body,
     btnClose,
+    btnPrev,
+    btnNext,
     btnDelete,
     btnTmdb,
     btnSave,
@@ -19,10 +21,14 @@ export class MovieDialog {
     onChange,
     onDelete,
     onSelectPoster,
+    /** @type {() => object[]} current visible list (filtered + sorted) */
+    getMovieList,
   }) {
     this.backdrop = backdrop;
     this.body = body;
     this.btnClose = btnClose;
+    this.btnPrev = btnPrev;
+    this.btnNext = btnNext;
     this.btnDelete = btnDelete;
     this.btnTmdb = btnTmdb;
     this.btnSave = btnSave;
@@ -30,6 +36,7 @@ export class MovieDialog {
     this.onChange = onChange;
     this.onDelete = onDelete;
     this.onSelectPoster = onSelectPoster;
+    this.getMovieList = typeof getMovieList === 'function' ? getMovieList : () => [];
 
     /** @type {object|null} Live movie object in the collection */
     this.movie = null;
@@ -43,6 +50,8 @@ export class MovieDialog {
     this.btnClose.addEventListener('click', () => this.discardAndClose());
     this.btnDelete.addEventListener('click', () => this.handleDelete());
     this.btnTmdb.addEventListener('click', () => this.openTmdb());
+    this.btnPrev?.addEventListener('click', () => this.navigate(-1));
+    this.btnNext?.addEventListener('click', () => this.navigate(1));
 
     this.backdrop.addEventListener('click', (e) => {
       if (e.target === this.backdrop) this.discardAndClose();
@@ -50,6 +59,7 @@ export class MovieDialog {
   }
 
   open(movie, returnFocus) {
+    const wasOpen = this.isOpen();
     this.movie = movie;
     this.draft = {
       location: movie.location ?? '',
@@ -57,16 +67,72 @@ export class MovieDialog {
       poster_path: movie.poster_path ?? '',
       posters: Array.isArray(movie.posters) ? [...movie.posters] : [],
     };
-    this.returnFocus = returnFocus || document.activeElement;
+    if (returnFocus !== undefined) {
+      this.returnFocus = returnFocus || document.activeElement;
+    } else if (!wasOpen) {
+      this.returnFocus = document.activeElement;
+    }
     this.render();
     this.body.scrollTop = 0;
-    this.backdrop.classList.remove('hidden');
-    this.backdrop.setAttribute('aria-hidden', 'false');
-    document.addEventListener('keydown', this._keyHandler);
+    if (!wasOpen) {
+      this.backdrop.classList.remove('hidden');
+      this.backdrop.setAttribute('aria-hidden', 'false');
+      document.addEventListener('keydown', this._keyHandler);
+    }
     queueMicrotask(() => {
       this.body.scrollTop = 0;
-      this.btnSave.focus();
+      if (!wasOpen) this.btnSave.focus();
     });
+  }
+
+  /**
+   * Commit draft to the current movie if needed, then open prev/next in the
+   * current list (filtered + sorted). Wraps at both ends.
+   * @param {-1|1} delta
+   */
+  navigate(delta) {
+    if (!this.movie || !this.isOpen()) return;
+    if (isAppAlertOpen()) return;
+
+    this.commitOpenLocationEdit();
+    if (this.draftChanged()) {
+      this.movie.location = this.draft.location;
+      this.movie.keywords = [...this.draft.keywords];
+      this.movie.poster_path = this.draft.poster_path ?? '';
+      this.movie.posters = Array.isArray(this.draft.posters)
+        ? [...this.draft.posters]
+        : [];
+      if (typeof this.onChange === 'function') this.onChange(this.movie);
+    }
+
+    const list = this.getMovieList() || [];
+    const n = list.length;
+    if (!n) return;
+
+    let i = list.indexOf(this.movie);
+    if (i < 0 && this.movie?.tmdb_id != null) {
+      const tid = String(this.movie.tmdb_id);
+      i = list.findIndex((m) => m && String(m.tmdb_id) === tid);
+    }
+    if (i < 0) i = 0;
+
+    const nextIndex = (i + delta + n * 10) % n; // + n*10 avoids negative mod issues
+    const next = list[nextIndex];
+    if (!next || next === this.movie) {
+      // Single-item list or same reference after wrap — still refresh draft state
+      if (next === this.movie) {
+        this.draft = {
+          location: this.movie.location ?? '',
+          keywords: Array.isArray(this.movie.keywords) ? [...this.movie.keywords] : [],
+          poster_path: this.movie.poster_path ?? '',
+          posters: Array.isArray(this.movie.posters) ? [...this.movie.posters] : [],
+        };
+        this.render();
+        this.body.scrollTop = 0;
+      }
+      return;
+    }
+    this.open(next);
   }
 
   /** Current draft poster state for the open movie (or null). */
@@ -106,9 +172,9 @@ export class MovieDialog {
   }
 
   onKey(e) {
+    if (isAppAlertOpen()) return;
+
     if (e.key === 'Escape') {
-      // App alert/confirm sits above the movie dialog
-      if (isAppAlertOpen()) return;
       // Field-level Escape cancels in-place edit first
       if (e.target.matches('input') && e.target.closest('.pill.editing')) return;
       e.preventDefault();
@@ -116,6 +182,22 @@ export class MovieDialog {
       this.saveAndClose();
       return;
     }
+
+    // ← / → browse the current list (same as header prev/next)
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      // Don't steal arrows while typing in location / keyword fields
+      const t = e.target;
+      if (
+        t &&
+        (t.matches('input, textarea, select') || t.isContentEditable)
+      ) {
+        return;
+      }
+      e.preventDefault();
+      this.navigate(e.key === 'ArrowLeft' ? -1 : 1);
+      return;
+    }
+
     if (e.key === 'Tab') {
       this.trapFocus(e);
     }
@@ -192,7 +274,7 @@ export class MovieDialog {
   async handleDelete() {
     if (!this.movie) return;
     const ok = await showAppConfirm('Delete this movie?', {
-      title: 'Delete movie',
+      title: 'Delete Movie',
       okLabel: 'Delete',
       cancelLabel: 'Cancel',
     });
