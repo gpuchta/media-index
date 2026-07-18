@@ -53,11 +53,64 @@ export const CONFIG = {
   CELL_MIN_WIDTH: 110, // was 120 — stay ≤ computed cell width for 3 cols
   CELL_GAP: 10,
 
+  /**
+   * Poster grid size preference (Settings slider), percent of design cell size.
+   * Stored in localStorage as an integer string (e.g. "100").
+   */
+  POSTER_SCALE_STORAGE: 'pmi:posterScale',
+  POSTER_SCALE_MIN: 50,
+  POSTER_SCALE_MAX: 200,
+  POSTER_SCALE_DEFAULT: 100,
+  POSTER_SCALE_STEP: 5,
+
   /** Extra rows rendered above/below the viewport. */
   VIRTUAL_BUFFER_ROWS: 2,
 
   SESSION_SORT_KEY: 'pmi:sort',
 };
+
+/**
+ * Clamp and normalize a poster-scale percent (50–200).
+ * @param {unknown} value
+ * @returns {number}
+ */
+export function clampPosterScalePercent(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return CONFIG.POSTER_SCALE_DEFAULT;
+  return Math.min(
+    CONFIG.POSTER_SCALE_MAX,
+    Math.max(CONFIG.POSTER_SCALE_MIN, n)
+  );
+}
+
+/** @returns {number} percent 50–200 */
+export function getStoredPosterScalePercent() {
+  try {
+    const raw = localStorage.getItem(CONFIG.POSTER_SCALE_STORAGE);
+    if (raw == null || raw === '') return CONFIG.POSTER_SCALE_DEFAULT;
+    return clampPosterScalePercent(raw);
+  } catch {
+    return CONFIG.POSTER_SCALE_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} percent
+ * @returns {number} stored percent
+ */
+export function setStoredPosterScalePercent(percent) {
+  const n = clampPosterScalePercent(percent);
+  try {
+    if (n === CONFIG.POSTER_SCALE_DEFAULT) {
+      localStorage.removeItem(CONFIG.POSTER_SCALE_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.POSTER_SCALE_STORAGE, String(n));
+    }
+  } catch {
+    /* private mode */
+  }
+  return n;
+}
 
 /**
  * Parsed GitHub target from CONFIG.GITHUB_DATA_COMMITS_URL, or null if invalid.

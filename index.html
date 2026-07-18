@@ -282,6 +282,36 @@
           <p class="form-hint">
             Stored in this browser only (localStorage). Used to read and write library files via the GitHub API.
           </p>
+          <label class="form-field" for="settings-poster-scale">
+            <span class="form-label">Poster size</span>
+            <div class="form-range-row">
+              <span class="form-range-edge" aria-hidden="true">S</span>
+              <input
+                type="range"
+                id="settings-poster-scale"
+                name="settings-poster-scale"
+                class="form-range"
+                min="50"
+                max="200"
+                step="5"
+                value="100"
+                aria-valuemin="50"
+                aria-valuemax="200"
+                aria-valuenow="100"
+                aria-valuetext="100 percent"
+              />
+              <span class="form-range-edge" aria-hidden="true">L</span>
+              <output
+                id="settings-poster-scale-value"
+                class="form-range-value"
+                for="settings-poster-scale"
+                >100%</output
+              >
+            </div>
+          </label>
+          <p class="form-hint">
+            Scales the movie poster grid. Preview updates while you drag; Save stores it in this browser only.
+          </p>
           <p id="settings-status" class="tmdb-search-status" role="status" hidden></p>
         </form>
       </div>

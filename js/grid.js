@@ -15,6 +15,8 @@ export class PosterGrid {
 
     this.movies = [];
     this.cols = 1;
+    /** Multiplier over CONFIG.CELL_* design size (1 = 100%). */
+    this.scale = 1;
     this.cellW = CONFIG.CELL_WIDTH;
     this.cellH = CONFIG.CELL_HEIGHT;
     this.gap = CONFIG.CELL_GAP;
@@ -64,25 +66,37 @@ export class PosterGrid {
     this.main.scrollTop = row * rowH;
   }
 
+  /**
+   * Set poster size multiplier (1 = design size) and remeasure.
+   * @param {number} scale
+   */
+  setScale(scale) {
+    const n = Number(scale);
+    this.scale = Number.isFinite(n) && n > 0 ? n : 1;
+    this.handleResize();
+  }
+
   measure() {
     const style = getComputedStyle(this.windowEl);
     const padL = parseFloat(style.paddingLeft) || this.gap;
     const padR = parseFloat(style.paddingRight) || this.gap;
     const width = this.main.clientWidth - padL - padR;
-    const minW = CONFIG.CELL_MIN_WIDTH;
+    const scale = this.scale > 0 ? this.scale : 1;
+    const idealW = CONFIG.CELL_WIDTH * scale;
+    const minW = Math.max(48, CONFIG.CELL_MIN_WIDTH * scale);
     const gap = this.gap;
 
     // Fit as many columns as possible with ideal cell width, scale down if needed
-    let cols = Math.max(1, Math.floor((width + gap) / (CONFIG.CELL_WIDTH + gap)));
+    let cols = Math.max(1, Math.floor((width + gap) / (idealW + gap)));
     let cellW = (width - gap * (cols - 1)) / cols;
     if (cellW < minW && cols > 1) {
       cols = Math.max(1, Math.floor((width + gap) / (minW + gap)));
       cellW = (width - gap * (cols - 1)) / cols;
     }
     // Cap at design width when there is leftover space on huge screens
-    if (cellW > CONFIG.CELL_WIDTH) {
-      cols = Math.max(1, Math.floor((width + gap) / (CONFIG.CELL_WIDTH + gap)));
-      cellW = Math.min(CONFIG.CELL_WIDTH, (width - gap * (cols - 1)) / cols);
+    if (cellW > idealW) {
+      cols = Math.max(1, Math.floor((width + gap) / (idealW + gap)));
+      cellW = Math.min(idealW, (width - gap * (cols - 1)) / cols);
     }
 
     const cellH = cellW * (CONFIG.CELL_HEIGHT / CONFIG.CELL_WIDTH);

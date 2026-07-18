@@ -1166,6 +1166,43 @@ input {
   border-color: transparent;
 }
 
+.form-range-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2rem;
+}
+
+.form-range {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--focus);
+  cursor: pointer;
+}
+
+.form-range:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.form-range-edge {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.form-range-value {
+  flex: 0 0 3.25rem;
+  text-align: right;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
 .tmdb-search-status {
   margin: 0;
   font-size: 0.9rem;

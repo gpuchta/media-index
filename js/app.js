@@ -4,6 +4,9 @@ import {
   FILTER_TYPE_LABELS,
   GITHUB_TARGET,
   SORT_OPTIONS,
+  clampPosterScalePercent,
+  getStoredPosterScalePercent,
+  setStoredPosterScalePercent,
 } from './config.js';
 import {
   addLeaf,
@@ -87,6 +90,8 @@ const els = {
   settingsForm: document.getElementById('settings-form'),
   settingsApiKey: document.getElementById('settings-tmdb-api-key'),
   settingsGithubApiKey: document.getElementById('settings-github-api-key'),
+  settingsPosterScale: document.getElementById('settings-poster-scale'),
+  settingsPosterScaleValue: document.getElementById('settings-poster-scale-value'),
   settingsStatus: document.getElementById('settings-status'),
   settingsClose: document.getElementById('settings-close'),
   settingsCancel: document.getElementById('settings-cancel'),
@@ -218,6 +223,10 @@ const grid = new PosterGrid({
   // Close fires pmi:modals-maybe-idle → focusFilterWhenIdle() when appropriate.
   onSelect: (movie) => dialog.open(movie),
 });
+
+/** Last saved poster scale percent; used to revert preview on Settings cancel. */
+let savedPosterScalePercent = getStoredPosterScalePercent();
+grid.setScale(savedPosterScalePercent / 100);
 
 const dialog = new MovieDialog({
   backdrop: els.backdrop,
@@ -391,14 +400,17 @@ els.settingsBtn?.addEventListener('click', () => {
   openSettingsDialog();
 });
 
-els.settingsClose?.addEventListener('click', () => closeSettingsDialog());
-els.settingsCancel?.addEventListener('click', () => closeSettingsDialog());
+els.settingsClose?.addEventListener('click', () => closeSettingsDialog({ revertScale: true }));
+els.settingsCancel?.addEventListener('click', () => closeSettingsDialog({ revertScale: true }));
 els.settingsBackdrop?.addEventListener('click', (e) => {
-  if (e.target === els.settingsBackdrop) closeSettingsDialog();
+  if (e.target === els.settingsBackdrop) closeSettingsDialog({ revertScale: true });
 });
 els.settingsForm?.addEventListener('submit', (e) => {
   e.preventDefault();
   saveSettings();
+});
+els.settingsPosterScale?.addEventListener('input', () => {
+  applyPosterScaleFromSettingsControl({ preview: true });
 });
 
 els.tmdbClose?.addEventListener('click', () => closeTmdbSearchDialog());
@@ -444,7 +456,7 @@ document.addEventListener(
     }
     e.preventDefault();
     e.stopPropagation();
-    closeSettingsDialog();
+    closeSettingsDialog({ revertScale: true });
   },
   true
 );
@@ -802,6 +814,34 @@ function resetDialogScroll(backdrop) {
   if (body) body.scrollTop = 0;
 }
 
+function syncPosterScaleControl(percent) {
+  const n = clampPosterScalePercent(percent);
+  if (els.settingsPosterScale) {
+    els.settingsPosterScale.value = String(n);
+    els.settingsPosterScale.setAttribute('aria-valuenow', String(n));
+    els.settingsPosterScale.setAttribute('aria-valuetext', `${n} percent`);
+  }
+  if (els.settingsPosterScaleValue) {
+    els.settingsPosterScaleValue.value = `${n}%`;
+    els.settingsPosterScaleValue.textContent = `${n}%`;
+  }
+  return n;
+}
+
+/**
+ * Read slider and apply scale to the grid.
+ * @param {{ preview?: boolean }} [opts]
+ */
+function applyPosterScaleFromSettingsControl({ preview = false } = {}) {
+  const n = clampPosterScalePercent(els.settingsPosterScale?.value);
+  syncPosterScaleControl(n);
+  grid.setScale(n / 100);
+  if (!preview) {
+    savedPosterScalePercent = setStoredPosterScalePercent(n);
+  }
+  return n;
+}
+
 function openSettingsDialog() {
   if (!els.settingsBackdrop) return;
   if (els.settingsApiKey) {
@@ -810,6 +850,15 @@ function openSettingsDialog() {
   if (els.settingsGithubApiKey) {
     els.settingsGithubApiKey.value = getStoredGithubToken();
   }
+  savedPosterScalePercent = getStoredPosterScalePercent();
+  if (els.settingsPosterScale) {
+    els.settingsPosterScale.min = String(CONFIG.POSTER_SCALE_MIN);
+    els.settingsPosterScale.max = String(CONFIG.POSTER_SCALE_MAX);
+    els.settingsPosterScale.step = String(CONFIG.POSTER_SCALE_STEP);
+    els.settingsPosterScale.setAttribute('aria-valuemin', String(CONFIG.POSTER_SCALE_MIN));
+    els.settingsPosterScale.setAttribute('aria-valuemax', String(CONFIG.POSTER_SCALE_MAX));
+  }
+  syncPosterScaleControl(savedPosterScalePercent);
   setSettingsStatus('');
   resetDialogScroll(els.settingsBackdrop);
   els.settingsBackdrop.classList.remove('hidden');
@@ -820,8 +869,16 @@ function openSettingsDialog() {
   });
 }
 
-function closeSettingsDialog() {
+/**
+ * @param {{ revertScale?: boolean }} [opts]
+ */
+function closeSettingsDialog({ revertScale = false } = {}) {
   if (!els.settingsBackdrop) return;
+  if (revertScale) {
+    const n = clampPosterScalePercent(savedPosterScalePercent);
+    syncPosterScaleControl(n);
+    grid.setScale(n / 100);
+  }
   els.settingsBackdrop.classList.add('hidden');
   els.settingsBackdrop.setAttribute('aria-hidden', 'true');
   setSettingsStatus('');
@@ -991,13 +1048,15 @@ function saveSettings() {
   const githubKey = String(els.settingsGithubApiKey?.value || '').trim();
   setStoredTmdbApiKey(tmdbKey);
   setStoredGithubToken(githubKey);
+  const scalePercent = applyPosterScaleFromSettingsControl({ preview: false });
   const parts = [
     tmdbKey ? 'TMDB API key saved' : 'TMDB API key cleared',
     githubKey ? 'GitHub API key saved' : 'GitHub API key cleared',
+    `poster size ${scalePercent}%`,
   ];
   setSettingsStatus(`${parts.join('. ')}.`);
-  // Brief confirmation then close
-  window.setTimeout(() => closeSettingsDialog(), 400);
+  // Brief confirmation then close (keep applied scale; do not revert)
+  window.setTimeout(() => closeSettingsDialog({ revertScale: false }), 400);
 }
 
 function openTmdbSearchDialog() {
