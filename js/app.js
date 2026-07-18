@@ -45,7 +45,7 @@ import {
   setStoredGithubToken,
 } from './github.js';
 import { isAppAlertOpen, showAppAlert, showAppConfirm } from './alert-dialog.js';
-import { attachPosterHotCorner, posterZoomUrl } from './poster-zoom.js';
+import { attachPosterHotCorner, isPosterZoomOpen, posterZoomUrl } from './poster-zoom.js';
 
 const state = {
   movies: [],
@@ -137,11 +137,45 @@ try {
   /* private mode */
 }
 
+/** True if any full-screen/modal layer is open (not the hamburger menu). */
+function isAnyModalOpen() {
+  const shown = (el) => el && !el.classList.contains('hidden');
+  return (
+    dialog?.isOpen?.() ||
+    isAppAlertOpen() ||
+    isPosterZoomOpen() ||
+    shown(els.settingsBackdrop) ||
+    shown(els.tmdbBackdrop) ||
+    shown(els.tmdbPosterBackdrop) ||
+    shown(els.saveProgressBackdrop)
+  );
+}
+
+/** When every modal is closed, put caret in the filter field for immediate typing. */
+function focusFilterWhenIdle() {
+  requestAnimationFrame(() => {
+    queueMicrotask(() => {
+      if (isAnyModalOpen()) return;
+      if (els.menuDropdown?.classList.contains('open')) return;
+      try {
+        els.filterInput?.focus({ preventScroll: true });
+      } catch {
+        els.filterInput?.focus();
+      }
+    });
+  });
+}
+
+document.addEventListener('pmi:modals-maybe-idle', () => {
+  focusFilterWhenIdle();
+});
+
 const grid = new PosterGrid({
   main: els.main,
   spacer: els.spacer,
   windowEl: els.windowEl,
-  onSelect: (movie, el) => dialog.open(movie, el),
+  // Restore focus to filter when the movie dialog closes
+  onSelect: (movie) => dialog.open(movie, els.filterInput),
 });
 
 const dialog = new MovieDialog({
@@ -396,6 +430,7 @@ function closeMenu() {
   els.menuDropdown.classList.remove('open');
   els.menuDropdown.hidden = true;
   els.menuBtn.setAttribute('aria-expanded', 'false');
+  focusFilterWhenIdle();
 }
 
 /** Default accordion section when the menu opens. */
@@ -527,6 +562,7 @@ function closeSaveProgressDialog() {
   if (!els.saveProgressBackdrop) return;
   els.saveProgressBackdrop.classList.add('hidden');
   els.saveProgressBackdrop.setAttribute('aria-hidden', 'true');
+  focusFilterWhenIdle();
 }
 
 function isSaveProgressOpen() {
@@ -720,6 +756,7 @@ function closeSettingsDialog() {
   els.settingsBackdrop.classList.add('hidden');
   els.settingsBackdrop.setAttribute('aria-hidden', 'true');
   setSettingsStatus('');
+  focusFilterWhenIdle();
 }
 
 function setSettingsStatus(message, { error = false } = {}) {
@@ -771,6 +808,7 @@ function closeTmdbSearchDialog() {
   resetTmdbSearchSession();
   els.tmdbBackdrop.classList.add('hidden');
   els.tmdbBackdrop.setAttribute('aria-hidden', 'true');
+  focusFilterWhenIdle();
 }
 
 function setTmdbStatus(message, { error = false } = {}) {
@@ -1244,6 +1282,7 @@ function closeTmdbPosterDialog() {
   els.tmdbPosterBackdrop?.setAttribute('aria-hidden', 'true');
   if (els.tmdbPosterGrid) els.tmdbPosterGrid.innerHTML = '';
   setTmdbPosterStatus('');
+  focusFilterWhenIdle();
 }
 
 /** Save poster selection: search result thumbnail or library movie. */
@@ -1759,6 +1798,7 @@ function finishLibraryLoad(movies) {
   els.statusError.classList.add('hidden');
   loadFiltersFromHash();
   recompute({ resetScroll: true, fromHash: true });
+  focusFilterWhenIdle();
 }
 
 async function loadData() {

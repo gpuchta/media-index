@@ -173,6 +173,7 @@ export class MovieDialog {
       this.returnFocus.focus();
     }
     this.returnFocus = null;
+    document.dispatchEvent(new CustomEvent('pmi:modals-maybe-idle'));
   }
 
   isOpen() {

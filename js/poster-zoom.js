@@ -134,6 +134,7 @@ function dismiss(e) {
   }
   setZoomLoading(backdrop, false);
   open = false;
+  document.dispatchEvent(new CustomEvent('pmi:modals-maybe-idle'));
 }
 
 function onPointerDownCapture(e) {

@@ -43,6 +43,8 @@ function close(result) {
   const resolve = pendingResolve;
   pendingResolve = null;
   if (resolve) resolve(result);
+  // Let app restore filter focus if no other modal remains open
+  document.dispatchEvent(new CustomEvent('pmi:modals-maybe-idle'));
 }
 
 /**
