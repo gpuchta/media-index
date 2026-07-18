@@ -55,7 +55,9 @@ export function buildLibraryStats(movies) {
 }
 
 /**
- * Section heading: "Top 10 Directors", "12 Directors" when ≤ topN, or "All N …" when expanded.
+ * Section heading:
+ * - "Top 10 Companies of 47" when truncated
+ * - "12 Companies" when ≤ topN or expanded (full list)
  * @param {{ label: string, rows: { name: string, count: number }[] }} section
  * @param {number} topN
  * @param {boolean} expanded
@@ -64,5 +66,5 @@ export function statsSectionTitle(section, topN = 10, expanded = false) {
   const n = section.rows.length;
   if (n === 0) return `No ${section.label}`;
   if (expanded || n <= topN) return `${n} ${section.label}`;
-  return `Top ${topN} ${section.label}`;
+  return `Top ${topN} ${section.label} of ${n}`;
 }

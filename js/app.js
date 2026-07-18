@@ -886,12 +886,23 @@ function renderStatsBody() {
       btn.title = `Filter by ${section.filterType}: ${row.name}`;
       btn.textContent = `${row.name} (${row.count})`;
       btn.addEventListener('click', () => {
-        // Replace all search filters with this single facet; keep Statistics open
-        state.leaves = addLeaf([], {
-          type: section.filterType,
-          value: row.name,
-          not: false,
-        });
+        // Already active → drop it; otherwise replace all filters with this facet
+        if (isFilterLeafActive(section.filterType, row.name)) {
+          const valLc = String(row.name).toLowerCase();
+          state.leaves = state.leaves.filter(
+            (l) =>
+              !(
+                l.type === section.filterType &&
+                String(l.value).toLowerCase() === valLc
+              )
+          );
+        } else {
+          state.leaves = addLeaf([], {
+            type: section.filterType,
+            value: row.name,
+            not: false,
+          });
+        }
         recompute({ resetScroll: true });
         renderStatsBody();
       });
