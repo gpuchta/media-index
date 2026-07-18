@@ -312,6 +312,36 @@
           <p class="form-hint">
             Scales the movie poster grid. Preview updates while you drag; Save stores it in this browser only.
           </p>
+          <label class="form-field" for="settings-poster-gap">
+            <span class="form-label">Poster spacing</span>
+            <div class="form-range-row">
+              <span class="form-range-edge" aria-hidden="true">0</span>
+              <input
+                type="range"
+                id="settings-poster-gap"
+                name="settings-poster-gap"
+                class="form-range"
+                min="0"
+                max="40"
+                step="1"
+                value="10"
+                aria-valuemin="0"
+                aria-valuemax="40"
+                aria-valuenow="10"
+                aria-valuetext="10 pixels"
+              />
+              <span class="form-range-edge" aria-hidden="true">+</span>
+              <output
+                id="settings-poster-gap-value"
+                class="form-range-value"
+                for="settings-poster-gap"
+                >10px</output
+              >
+            </div>
+          </label>
+          <p class="form-hint">
+            Gap between posters in the grid. Preview updates while you drag; Save stores it in this browser only.
+          </p>
           <p id="settings-status" class="tmdb-search-status" role="status" hidden></p>
         </form>
       </div>

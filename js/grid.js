@@ -76,6 +76,16 @@ export class PosterGrid {
     this.handleResize();
   }
 
+  /**
+   * Set inter-poster gap in CSS pixels and remeasure.
+   * @param {number} gapPx
+   */
+  setGap(gapPx) {
+    const n = Number(gapPx);
+    this.gap = Number.isFinite(n) && n >= 0 ? n : CONFIG.CELL_GAP;
+    this.handleResize();
+  }
+
   measure() {
     const style = getComputedStyle(this.windowEl);
     const padL = parseFloat(style.paddingLeft) || this.gap;

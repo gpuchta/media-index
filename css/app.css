@@ -1196,7 +1196,7 @@ input {
 }
 
 .form-range-value {
-  flex: 0 0 3.25rem;
+  flex: 0 0 3.5rem;
   text-align: right;
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;

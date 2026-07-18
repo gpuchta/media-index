@@ -63,6 +63,16 @@ export const CONFIG = {
   POSTER_SCALE_DEFAULT: 100,
   POSTER_SCALE_STEP: 5,
 
+  /**
+   * Poster grid gap preference (Settings slider), pixels.
+   * Stored in localStorage as an integer string (e.g. "10"). Default matches CELL_GAP.
+   */
+  POSTER_GAP_STORAGE: 'pmi:posterGap',
+  POSTER_GAP_MIN: 0,
+  POSTER_GAP_MAX: 40,
+  POSTER_GAP_DEFAULT: 10,
+  POSTER_GAP_STEP: 1,
+
   /** Extra rows rendered above/below the viewport. */
   VIRTUAL_BUFFER_ROWS: 2,
 
@@ -105,6 +115,46 @@ export function setStoredPosterScalePercent(percent) {
       localStorage.removeItem(CONFIG.POSTER_SCALE_STORAGE);
     } else {
       localStorage.setItem(CONFIG.POSTER_SCALE_STORAGE, String(n));
+    }
+  } catch {
+    /* private mode */
+  }
+  return n;
+}
+
+/**
+ * Clamp and normalize poster gap in pixels (0–40).
+ * @param {unknown} value
+ * @returns {number}
+ */
+export function clampPosterGapPx(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return CONFIG.POSTER_GAP_DEFAULT;
+  return Math.min(CONFIG.POSTER_GAP_MAX, Math.max(CONFIG.POSTER_GAP_MIN, n));
+}
+
+/** @returns {number} gap in px */
+export function getStoredPosterGapPx() {
+  try {
+    const raw = localStorage.getItem(CONFIG.POSTER_GAP_STORAGE);
+    if (raw == null || raw === '') return CONFIG.POSTER_GAP_DEFAULT;
+    return clampPosterGapPx(raw);
+  } catch {
+    return CONFIG.POSTER_GAP_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} px
+ * @returns {number} stored gap px
+ */
+export function setStoredPosterGapPx(px) {
+  const n = clampPosterGapPx(px);
+  try {
+    if (n === CONFIG.POSTER_GAP_DEFAULT) {
+      localStorage.removeItem(CONFIG.POSTER_GAP_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.POSTER_GAP_STORAGE, String(n));
     }
   } catch {
     /* private mode */

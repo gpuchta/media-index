@@ -4,8 +4,11 @@ import {
   FILTER_TYPE_LABELS,
   GITHUB_TARGET,
   SORT_OPTIONS,
+  clampPosterGapPx,
   clampPosterScalePercent,
+  getStoredPosterGapPx,
   getStoredPosterScalePercent,
+  setStoredPosterGapPx,
   setStoredPosterScalePercent,
 } from './config.js';
 import {
@@ -92,6 +95,8 @@ const els = {
   settingsGithubApiKey: document.getElementById('settings-github-api-key'),
   settingsPosterScale: document.getElementById('settings-poster-scale'),
   settingsPosterScaleValue: document.getElementById('settings-poster-scale-value'),
+  settingsPosterGap: document.getElementById('settings-poster-gap'),
+  settingsPosterGapValue: document.getElementById('settings-poster-gap-value'),
   settingsStatus: document.getElementById('settings-status'),
   settingsClose: document.getElementById('settings-close'),
   settingsCancel: document.getElementById('settings-cancel'),
@@ -224,9 +229,11 @@ const grid = new PosterGrid({
   onSelect: (movie) => dialog.open(movie),
 });
 
-/** Last saved poster scale percent; used to revert preview on Settings cancel. */
+/** Last saved poster layout prefs; used to revert preview on Settings cancel. */
 let savedPosterScalePercent = getStoredPosterScalePercent();
+let savedPosterGapPx = getStoredPosterGapPx();
 grid.setScale(savedPosterScalePercent / 100);
+grid.setGap(savedPosterGapPx);
 
 const dialog = new MovieDialog({
   backdrop: els.backdrop,
@@ -400,10 +407,10 @@ els.settingsBtn?.addEventListener('click', () => {
   openSettingsDialog();
 });
 
-els.settingsClose?.addEventListener('click', () => closeSettingsDialog({ revertScale: true }));
-els.settingsCancel?.addEventListener('click', () => closeSettingsDialog({ revertScale: true }));
+els.settingsClose?.addEventListener('click', () => closeSettingsDialog({ revertPreview: true }));
+els.settingsCancel?.addEventListener('click', () => closeSettingsDialog({ revertPreview: true }));
 els.settingsBackdrop?.addEventListener('click', (e) => {
-  if (e.target === els.settingsBackdrop) closeSettingsDialog({ revertScale: true });
+  if (e.target === els.settingsBackdrop) closeSettingsDialog({ revertPreview: true });
 });
 els.settingsForm?.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -411,6 +418,9 @@ els.settingsForm?.addEventListener('submit', (e) => {
 });
 els.settingsPosterScale?.addEventListener('input', () => {
   applyPosterScaleFromSettingsControl({ preview: true });
+});
+els.settingsPosterGap?.addEventListener('input', () => {
+  applyPosterGapFromSettingsControl({ preview: true });
 });
 
 els.tmdbClose?.addEventListener('click', () => closeTmdbSearchDialog());
@@ -456,7 +466,7 @@ document.addEventListener(
     }
     e.preventDefault();
     e.stopPropagation();
-    closeSettingsDialog({ revertScale: true });
+    closeSettingsDialog({ revertPreview: true });
   },
   true
 );
@@ -828,6 +838,20 @@ function syncPosterScaleControl(percent) {
   return n;
 }
 
+function syncPosterGapControl(px) {
+  const n = clampPosterGapPx(px);
+  if (els.settingsPosterGap) {
+    els.settingsPosterGap.value = String(n);
+    els.settingsPosterGap.setAttribute('aria-valuenow', String(n));
+    els.settingsPosterGap.setAttribute('aria-valuetext', `${n} pixels`);
+  }
+  if (els.settingsPosterGapValue) {
+    els.settingsPosterGapValue.value = `${n}px`;
+    els.settingsPosterGapValue.textContent = `${n}px`;
+  }
+  return n;
+}
+
 /**
  * Read slider and apply scale to the grid.
  * @param {{ preview?: boolean }} [opts]
@@ -842,6 +866,20 @@ function applyPosterScaleFromSettingsControl({ preview = false } = {}) {
   return n;
 }
 
+/**
+ * Read slider and apply gap to the grid.
+ * @param {{ preview?: boolean }} [opts]
+ */
+function applyPosterGapFromSettingsControl({ preview = false } = {}) {
+  const n = clampPosterGapPx(els.settingsPosterGap?.value);
+  syncPosterGapControl(n);
+  grid.setGap(n);
+  if (!preview) {
+    savedPosterGapPx = setStoredPosterGapPx(n);
+  }
+  return n;
+}
+
 function openSettingsDialog() {
   if (!els.settingsBackdrop) return;
   if (els.settingsApiKey) {
@@ -851,6 +889,7 @@ function openSettingsDialog() {
     els.settingsGithubApiKey.value = getStoredGithubToken();
   }
   savedPosterScalePercent = getStoredPosterScalePercent();
+  savedPosterGapPx = getStoredPosterGapPx();
   if (els.settingsPosterScale) {
     els.settingsPosterScale.min = String(CONFIG.POSTER_SCALE_MIN);
     els.settingsPosterScale.max = String(CONFIG.POSTER_SCALE_MAX);
@@ -858,7 +897,15 @@ function openSettingsDialog() {
     els.settingsPosterScale.setAttribute('aria-valuemin', String(CONFIG.POSTER_SCALE_MIN));
     els.settingsPosterScale.setAttribute('aria-valuemax', String(CONFIG.POSTER_SCALE_MAX));
   }
+  if (els.settingsPosterGap) {
+    els.settingsPosterGap.min = String(CONFIG.POSTER_GAP_MIN);
+    els.settingsPosterGap.max = String(CONFIG.POSTER_GAP_MAX);
+    els.settingsPosterGap.step = String(CONFIG.POSTER_GAP_STEP);
+    els.settingsPosterGap.setAttribute('aria-valuemin', String(CONFIG.POSTER_GAP_MIN));
+    els.settingsPosterGap.setAttribute('aria-valuemax', String(CONFIG.POSTER_GAP_MAX));
+  }
   syncPosterScaleControl(savedPosterScalePercent);
+  syncPosterGapControl(savedPosterGapPx);
   setSettingsStatus('');
   resetDialogScroll(els.settingsBackdrop);
   els.settingsBackdrop.classList.remove('hidden');
@@ -870,14 +917,17 @@ function openSettingsDialog() {
 }
 
 /**
- * @param {{ revertScale?: boolean }} [opts]
+ * @param {{ revertPreview?: boolean }} [opts]
  */
-function closeSettingsDialog({ revertScale = false } = {}) {
+function closeSettingsDialog({ revertPreview = false } = {}) {
   if (!els.settingsBackdrop) return;
-  if (revertScale) {
-    const n = clampPosterScalePercent(savedPosterScalePercent);
-    syncPosterScaleControl(n);
-    grid.setScale(n / 100);
+  if (revertPreview) {
+    const scale = clampPosterScalePercent(savedPosterScalePercent);
+    const gap = clampPosterGapPx(savedPosterGapPx);
+    syncPosterScaleControl(scale);
+    syncPosterGapControl(gap);
+    grid.setScale(scale / 100);
+    grid.setGap(gap);
   }
   els.settingsBackdrop.classList.add('hidden');
   els.settingsBackdrop.setAttribute('aria-hidden', 'true');
@@ -1049,14 +1099,16 @@ function saveSettings() {
   setStoredTmdbApiKey(tmdbKey);
   setStoredGithubToken(githubKey);
   const scalePercent = applyPosterScaleFromSettingsControl({ preview: false });
+  const gapPx = applyPosterGapFromSettingsControl({ preview: false });
   const parts = [
     tmdbKey ? 'TMDB API key saved' : 'TMDB API key cleared',
     githubKey ? 'GitHub API key saved' : 'GitHub API key cleared',
     `poster size ${scalePercent}%`,
+    `spacing ${gapPx}px`,
   ];
   setSettingsStatus(`${parts.join('. ')}.`);
-  // Brief confirmation then close (keep applied scale; do not revert)
-  window.setTimeout(() => closeSettingsDialog({ revertScale: false }), 400);
+  // Brief confirmation then close (keep applied layout; do not revert)
+  window.setTimeout(() => closeSettingsDialog({ revertPreview: false }), 400);
 }
 
 function openTmdbSearchDialog() {
