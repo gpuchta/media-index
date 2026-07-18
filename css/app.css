@@ -11,6 +11,7 @@
   --text-dark: #747474;
   --surface: #1e1e32;
   --surface-2: #252540;
+  --surface-light: #37374e;
   --border: rgba(255, 255, 255, 0.08);
   --border-muted: #979797cc;
   --focus: #4dabf7;
@@ -1001,6 +1002,33 @@ input {
   margin: 0;
 }
 
+.stats-show-more {
+  display: inline-block;
+  margin: 0.55rem 0 0 0.15rem;
+  padding: 0.2rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--focus);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.stats-show-more:hover,
+.stats-show-more:focus-visible {
+  color: var(--text);
+  outline: none;
+}
+
+.stats-show-more:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 @media (max-width: 640px) {
   .stats-chip-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1665,7 +1693,7 @@ input {
   right: 0;
   bottom: 0;
   /* left set inline as pct% of score (e.g. 72% for 7.2/10) */
-  background: #9a9a9a;
+  background: var(--surface-light);
   pointer-events: none;
   z-index: 0;
 }

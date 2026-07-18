@@ -794,11 +794,15 @@ function closeSettingsDialog() {
   focusFilterWhenIdle();
 }
 
-const STATS_TOP_N = 15;
+const STATS_TOP_N = 10;
 const STATS_SECTION_ORDER = ['directors', 'actors', 'genres', 'collections', 'companies'];
+/** @type {Record<string, boolean>} section key → expanded to show all */
+const statsSectionExpanded = Object.create(null);
 
 function openStatsDialog() {
   if (!els.statsBackdrop || !els.statsBody) return;
+  // Reset expand state each open
+  for (const key of STATS_SECTION_ORDER) statsSectionExpanded[key] = false;
   renderStatsBody();
   resetDialogScroll(els.statsBackdrop);
   els.statsBackdrop.classList.remove('hidden');
@@ -827,7 +831,7 @@ function isFilterLeafActive(type, value) {
 function renderStatsBody() {
   const host = els.statsBody;
   if (!host) return;
-  const stats = buildLibraryStats(state.movies, { topN: STATS_TOP_N });
+  const stats = buildLibraryStats(state.movies);
   host.innerHTML = '';
 
   if (!state.movies.length) {
@@ -841,13 +845,21 @@ function renderStatsBody() {
   for (const key of STATS_SECTION_ORDER) {
     const section = stats[key];
     if (!section) continue;
+    const expanded = !!statsSectionExpanded[key];
+    const title = statsSectionTitle(section, STATS_TOP_N, expanded);
+    const visibleRows =
+      expanded || section.rows.length <= STATS_TOP_N
+        ? section.rows
+        : section.rows.slice(0, STATS_TOP_N);
+
     const wrap = document.createElement('section');
     wrap.className = 'stats-section';
-    wrap.setAttribute('aria-label', statsSectionTitle(section, STATS_TOP_N));
+    wrap.dataset.statsSection = key;
+    wrap.setAttribute('aria-label', title);
 
     const h = document.createElement('h3');
     h.className = 'stats-section-title';
-    h.textContent = statsSectionTitle(section, STATS_TOP_N);
+    h.textContent = title;
     wrap.appendChild(h);
 
     if (!section.rows.length) {
@@ -861,7 +873,7 @@ function renderStatsBody() {
 
     const grid = document.createElement('div');
     grid.className = 'stats-chip-grid';
-    for (const row of section.rows) {
+    for (const row of visibleRows) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'stats-chip';
@@ -886,6 +898,32 @@ function renderStatsBody() {
       grid.appendChild(btn);
     }
     wrap.appendChild(grid);
+
+    if (section.rows.length > STATS_TOP_N) {
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'stats-show-more';
+      more.textContent = expanded ? 'Show less' : 'Show more';
+      more.setAttribute(
+        'aria-expanded',
+        expanded ? 'true' : 'false'
+      );
+      more.setAttribute(
+        'aria-label',
+        expanded
+          ? `Show top ${STATS_TOP_N} ${section.label.toLowerCase()}`
+          : `Show all ${section.rows.length} ${section.label.toLowerCase()}`
+      );
+      more.addEventListener('click', () => {
+        statsSectionExpanded[key] = !expanded;
+        renderStatsBody();
+        // Keep the section in view after re-render
+        const el = els.statsBody?.querySelector(`[data-stats-section="${key}"]`);
+        el?.scrollIntoView({ block: 'nearest' });
+      });
+      wrap.appendChild(more);
+    }
+
     host.appendChild(wrap);
   }
 }
