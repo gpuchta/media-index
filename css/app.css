@@ -837,6 +837,10 @@ input {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  /* Room for nav buttons matching footer .btn height */
+  min-height: calc(0.45rem * 2 + 1.25em + 2px + 0.7rem);
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
 }
 
 .dialog-header-movie .dialog-header-nav {
@@ -860,21 +864,25 @@ input {
   z-index: 1;
 }
 
+/* Match footer .btn height (padding 0.45rem 0.9rem); square width from that height */
 .dialog-nav-btn {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
+  padding: 0.45rem 0.9rem; /* same as .btn */
+  /* Square control: width equals height produced by .btn padding + line-height */
+  width: calc(0.45rem * 2 + 1.25em + 2px);
+  height: calc(0.45rem * 2 + 1.25em + 2px);
+  min-width: calc(0.45rem * 2 + 1.25em + 2px);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: transparent;
   background-color: transparent;
   color: var(--text-muted);
-  font-size: 1.45rem;
-  line-height: 1;
+  font-size: 1.25rem;
+  line-height: 1.25;
   cursor: pointer;
-  padding: 0;
 }
 
 .dialog-nav-btn:hover,
