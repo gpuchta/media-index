@@ -1716,10 +1716,17 @@ function recompute({ resetScroll = true, fromHash = false } = {}) {
   state.filtered = sortMovies(filtered, state.sortId);
   const total = state.movies.length;
   const shown = state.filtered.length;
-  // No filters: total only. With filters: "matched of total".
-  els.movieCount.textContent = state.leaves.length
-    ? `${shown} of ${total}`
-    : String(total);
+  // No filters: dark badge on total. With filters: [shown] of [total] (badges on numbers only).
+  if (els.movieCount) {
+    if (state.leaves.length) {
+      els.movieCount.innerHTML =
+        `<span class="movie-count-num">${shown}</span>` +
+        `<span class="movie-count-of">of</span>` +
+        `<span class="movie-count-num">${total}</span>`;
+    } else {
+      els.movieCount.innerHTML = `<span class="movie-count-num">${total}</span>`;
+    }
+  }
   renderActiveFilters();
   grid.setMovies(state.filtered, { resetScroll, preserveAnchor: !resetScroll });
 
@@ -2053,7 +2060,9 @@ async function loadData() {
     els.statusNewInstall?.classList.add('hidden');
     els.statusError.classList.remove('hidden');
     els.errorDetail.textContent = `${err.message || err} (tried ${url})`;
-    els.movieCount.textContent = '0';
+    if (els.movieCount) {
+      els.movieCount.innerHTML = '<span class="movie-count-num">0</span>';
+    }
   }
 }
 

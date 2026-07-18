@@ -325,20 +325,46 @@ input {
   opacity: 0.5;
 }
 
+/*
+ * Count chip (reference: outer light border + dark number badges).
+ * Structure: [outer]  <num>  |  <num> of <num>
+ */
 .movie-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   flex-shrink: 0;
+  box-sizing: border-box;
+  min-width: 5.5rem;
+  padding: 0.28rem 0.4rem;
+  border-radius: 0.5rem;
+  border: 1.5px solid rgba(70, 70, 70, 0.55);
+  background: rgba(254, 241, 203, 0.35); /* soft on header gradient */
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.movie-count-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-variant-numeric: tabular-nums;
   font-size: 0.9rem;
-  /* Left stop of header gradient (same as behind the search field start) */
-  color: var(--text-dark);
-  font-weight: bold;
-  font-size: large;
-  min-width: 5.5rem; /* room for "NNN of NNN" */
-  text-align: center;
-  white-space: nowrap;
-  border: 1px solid var(--border-muted);
-  border-radius: var(--radius);
-  padding: 0.4rem 0.6rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.4rem;
+  background: #3a3a3a;
+  color: #f5f5f0;
+  border: 1px solid rgba(50, 50, 50, 0.85);
+  min-width: 1.75rem;
+}
+
+.movie-count-of {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(40, 40, 40, 0.75);
+  padding: 0 0.05rem;
 }
 
 .dirty-banner {
@@ -1792,7 +1818,17 @@ input {
   }
 
   .movie-count {
-    min-width: 2.5rem;
+    min-width: 2.75rem;
+    gap: 0.25rem;
+    padding: 0.22rem 0.3rem;
+  }
+
+  .movie-count-num {
     font-size: 0.8rem;
+    padding: 0.15rem 0.4rem;
+  }
+
+  .movie-count-of {
+    font-size: 0.75rem;
   }
 }
