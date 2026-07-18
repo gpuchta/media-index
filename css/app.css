@@ -799,6 +799,22 @@ input {
   padding: 1rem;
 }
 
+/*
+ * Stacking when multiple modals are open (DOM order alone is not enough):
+ * search/settings/stats/save = 300
+ * movie detail = 340 (above TMDB search after add-to-collection)
+ * poster picker = 360 (above movie when changing poster)
+ * alert = 400
+ * poster zoom = 500
+ */
+#dialog-backdrop {
+  z-index: 340;
+}
+
+#tmdb-poster-backdrop {
+  z-index: 360;
+}
+
 /* Above other modals (movie, settings, TMDB, save progress) */
 .dialog-backdrop-alert {
   z-index: 400;

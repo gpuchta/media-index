@@ -87,9 +87,27 @@ export class MovieDialog {
       this.backdrop.setAttribute('aria-hidden', 'false');
       document.addEventListener('keydown', this._keyHandler);
     }
-    queueMicrotask(() => {
+    // Defer focus until after layout/stacking (e.g. opened above TMDB search)
+    const focusAfterOpen = () => {
       this.body.scrollTop = 0;
+      // Empty location → start editing so user can type a slot immediately
+      const locEmpty = !String(this.draft?.location || '').trim();
+      if (locEmpty) {
+        const locBtn = this.body.querySelector('[data-edit="location"]');
+        if (locBtn) {
+          this.beginEditLocation(locBtn);
+          const input = locBtn.querySelector('input');
+          input?.focus({ preventScroll: true });
+          input?.select();
+          // Ensure location row is visible in the dialog body
+          locBtn.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          return;
+        }
+      }
       if (!wasOpen) this.btnSave.focus();
+    };
+    queueMicrotask(() => {
+      requestAnimationFrame(focusAfterOpen);
     });
   }
 

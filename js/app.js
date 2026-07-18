@@ -1637,6 +1637,8 @@ async function addSearchResultToCollection(searchMovie) {
         ? `Replaced “${detail.title}” in your collection.`
         : `Added “${detail.title}” to your collection.`
     );
+    // Open detail dialog; leave TMDB search open underneath
+    dialog.open(record);
   } catch (err) {
     console.error(err);
     setTmdbStatus(err.message || String(err), { error: true });
