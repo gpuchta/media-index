@@ -169,9 +169,9 @@ export class MovieDialog {
     document.removeEventListener('keydown', this._keyHandler);
     this.movie = null;
     this.draft = null;
-    if (this.returnFocus && typeof this.returnFocus.focus === 'function') {
-      this.returnFocus.focus();
-    }
+    // Do not focus returnFocus here for the filter field — app handles
+    // desktop-only filter focus via pmi:modals-maybe-idle.
+    // Only restore non-input return targets if needed later; clear for now.
     this.returnFocus = null;
     document.dispatchEvent(new CustomEvent('pmi:modals-maybe-idle'));
   }

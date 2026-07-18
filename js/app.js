@@ -158,8 +158,27 @@ function isAnyModalOpen() {
   );
 }
 
-/** Desktop with fine pointer + hover (not phones/tablets as primary input). */
-function isDesktopFocusTarget() {
+/**
+ * Whether auto-focusing the filter field is appropriate.
+ * Prefer “no touch / no coarse pointer” over primary-pointer-only checks:
+ * iPadOS and hybrid Android often report (hover: hover) and (pointer: fine)
+ * while still being touch devices.
+ */
+function preferDesktopAutoFocus() {
+  try {
+    if (window.matchMedia('(any-pointer: coarse)').matches) return false;
+    if (window.matchMedia('(hover: none)').matches) return false;
+  } catch {
+    /* ignore */
+  }
+  const maxTouch = Number(navigator.maxTouchPoints) || 0;
+  if (maxTouch > 0) {
+    const platform = String(navigator.platform || '');
+    // iPadOS 13+ can report as MacIntel with multi-touch
+    if (platform === 'MacIntel' && maxTouch > 1) return false;
+    // Phones / most tablets
+    if (maxTouch > 1) return false;
+  }
   try {
     return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   } catch {
@@ -170,9 +189,10 @@ function isDesktopFocusTarget() {
 /**
  * When every modal is closed, put caret in the filter field for immediate typing.
  * Desktop only — auto-focus is disruptive on mobile (keyboard popup, scroll jumps).
+ * All post-modal filter focus must go through this helper (not returnFocus).
  */
 function focusFilterWhenIdle() {
-  if (!isDesktopFocusTarget()) return;
+  if (!preferDesktopAutoFocus()) return;
   requestAnimationFrame(() => {
     queueMicrotask(() => {
       if (isAnyModalOpen()) return;
@@ -194,8 +214,9 @@ const grid = new PosterGrid({
   main: els.main,
   spacer: els.spacer,
   windowEl: els.windowEl,
-  // Restore focus to filter when the movie dialog closes
-  onSelect: (movie) => dialog.open(movie, els.filterInput),
+  // Do not pass filterInput as returnFocus — that bypassed the desktop-only gate.
+  // Close fires pmi:modals-maybe-idle → focusFilterWhenIdle() when appropriate.
+  onSelect: (movie) => dialog.open(movie),
 });
 
 const dialog = new MovieDialog({
