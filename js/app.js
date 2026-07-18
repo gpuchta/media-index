@@ -46,6 +46,7 @@ import {
 } from './github.js';
 import { isAppAlertOpen, showAppAlert, showAppConfirm } from './alert-dialog.js';
 import { attachPosterHotCorner, isPosterZoomOpen, posterZoomUrl } from './poster-zoom.js';
+import { buildLibraryStats, statsSectionTitle } from './stats.js';
 
 const state = {
   movies: [],
@@ -76,6 +77,11 @@ const els = {
   githubDeploymentBtn: document.getElementById('github-deployment-btn'),
   exportBtn: document.getElementById('export-btn'),
   tmdbSearchBtn: document.getElementById('tmdb-search-btn'),
+  statsBtn: document.getElementById('stats-btn'),
+  statsBackdrop: document.getElementById('stats-backdrop'),
+  statsBody: document.getElementById('stats-body'),
+  statsClose: document.getElementById('stats-close'),
+  statsCloseFooter: document.getElementById('stats-close-footer'),
   settingsBtn: document.getElementById('settings-btn'),
   settingsBackdrop: document.getElementById('settings-backdrop'),
   settingsForm: document.getElementById('settings-form'),
@@ -145,6 +151,7 @@ function isAnyModalOpen() {
     isAppAlertOpen() ||
     isPosterZoomOpen() ||
     shown(els.settingsBackdrop) ||
+    shown(els.statsBackdrop) ||
     shown(els.tmdbBackdrop) ||
     shown(els.tmdbPosterBackdrop) ||
     shown(els.saveProgressBackdrop)
@@ -334,6 +341,17 @@ els.tmdbSearchBtn?.addEventListener('click', () => {
   openTmdbSearchDialog();
 });
 
+els.statsBtn?.addEventListener('click', () => {
+  closeMenu();
+  openStatsDialog();
+});
+
+els.statsClose?.addEventListener('click', () => closeStatsDialog());
+els.statsCloseFooter?.addEventListener('click', () => closeStatsDialog());
+els.statsBackdrop?.addEventListener('click', (e) => {
+  if (e.target === els.statsBackdrop) closeStatsDialog();
+});
+
 els.settingsBtn?.addEventListener('click', () => {
   closeMenu();
   openSettingsDialog();
@@ -360,6 +378,20 @@ els.tmdbForm?.addEventListener('submit', async (e) => {
   await runTmdbSearch();
 });
 
+// Escape closes Statistics when open
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (e.key !== 'Escape') return;
+    if (isAppAlertOpen()) return;
+    if (!els.statsBackdrop || els.statsBackdrop.classList.contains('hidden')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeStatsDialog();
+  },
+  true
+);
+
 // Escape closes Settings when open
 document.addEventListener(
   'keydown',
@@ -371,6 +403,9 @@ document.addEventListener(
     }
     // Poster picker has its own capture handler; if both open, poster takes precedence
     if (els.tmdbPosterBackdrop && !els.tmdbPosterBackdrop.classList.contains('hidden')) {
+      return;
+    }
+    if (els.statsBackdrop && !els.statsBackdrop.classList.contains('hidden')) {
       return;
     }
     e.preventDefault();
@@ -757,6 +792,102 @@ function closeSettingsDialog() {
   els.settingsBackdrop.setAttribute('aria-hidden', 'true');
   setSettingsStatus('');
   focusFilterWhenIdle();
+}
+
+const STATS_TOP_N = 15;
+const STATS_SECTION_ORDER = ['directors', 'actors', 'genres', 'collections', 'companies'];
+
+function openStatsDialog() {
+  if (!els.statsBackdrop || !els.statsBody) return;
+  renderStatsBody();
+  resetDialogScroll(els.statsBackdrop);
+  els.statsBackdrop.classList.remove('hidden');
+  els.statsBackdrop.setAttribute('aria-hidden', 'false');
+  queueMicrotask(() => {
+    resetDialogScroll(els.statsBackdrop);
+    els.statsCloseFooter?.focus();
+  });
+}
+
+function closeStatsDialog() {
+  if (!els.statsBackdrop) return;
+  els.statsBackdrop.classList.add('hidden');
+  els.statsBackdrop.setAttribute('aria-hidden', 'true');
+  if (els.statsBody) els.statsBody.innerHTML = '';
+  focusFilterWhenIdle();
+}
+
+function isFilterLeafActive(type, value) {
+  const valLc = String(value ?? '').toLowerCase();
+  return state.leaves.some(
+    (l) => l.type === type && String(l.value).toLowerCase() === valLc
+  );
+}
+
+function renderStatsBody() {
+  const host = els.statsBody;
+  if (!host) return;
+  const stats = buildLibraryStats(state.movies, { topN: STATS_TOP_N });
+  host.innerHTML = '';
+
+  if (!state.movies.length) {
+    const p = document.createElement('p');
+    p.className = 'stats-empty';
+    p.textContent = 'No movies in the collection yet.';
+    host.appendChild(p);
+    return;
+  }
+
+  for (const key of STATS_SECTION_ORDER) {
+    const section = stats[key];
+    if (!section) continue;
+    const wrap = document.createElement('section');
+    wrap.className = 'stats-section';
+    wrap.setAttribute('aria-label', statsSectionTitle(section, STATS_TOP_N));
+
+    const h = document.createElement('h3');
+    h.className = 'stats-section-title';
+    h.textContent = statsSectionTitle(section, STATS_TOP_N);
+    wrap.appendChild(h);
+
+    if (!section.rows.length) {
+      const empty = document.createElement('p');
+      empty.className = 'stats-empty';
+      empty.textContent = `No ${section.label.toLowerCase()} in the library.`;
+      wrap.appendChild(empty);
+      host.appendChild(wrap);
+      continue;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'stats-chip-grid';
+    for (const row of section.rows) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'stats-chip';
+      btn.dataset.type = section.filterType;
+      btn.dataset.filterValue = row.name;
+      btn.setAttribute('data-type', section.filterType);
+      const active = isFilterLeafActive(section.filterType, row.name);
+      btn.classList.toggle('is-filter-active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      btn.title = `Filter by ${section.filterType}: ${row.name}`;
+      btn.textContent = `${row.name} (${row.count})`;
+      btn.addEventListener('click', () => {
+        // Replace all search filters with this single facet; keep Statistics open
+        state.leaves = addLeaf([], {
+          type: section.filterType,
+          value: row.name,
+          not: false,
+        });
+        recompute({ resetScroll: true });
+        renderStatsBody();
+      });
+      grid.appendChild(btn);
+    }
+    wrap.appendChild(grid);
+    host.appendChild(wrap);
+  }
 }
 
 function setSettingsStatus(message, { error = false } = {}) {

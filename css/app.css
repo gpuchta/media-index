@@ -909,6 +909,110 @@ input {
   width: min(480px, 100%);
 }
 
+.dialog-stats {
+  width: min(720px, 100%);
+  max-height: min(92vh, 900px);
+}
+
+.stats-section {
+  margin-bottom: 1.35rem;
+}
+
+.stats-section:last-child {
+  margin-bottom: 0.25rem;
+}
+
+.stats-section-title {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.stats-chip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem 0.55rem;
+  padding-left: 0.15rem;
+}
+
+.stats-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stats-chip:hover,
+.stats-chip:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.stats-chip[data-type='director'] {
+  border-color: var(--dir);
+  color: #6eb6ff;
+}
+
+.stats-chip[data-type='actor'] {
+  border-color: var(--act);
+  color: #f8a0a8;
+}
+
+.stats-chip[data-type='genre'] {
+  border-color: var(--genre);
+  color: #5dd879;
+}
+
+.stats-chip[data-type='collection'] {
+  border-color: var(--col);
+  color: #e0a0f0;
+}
+
+.stats-chip[data-type='company'] {
+  border-color: var(--com);
+  color: var(--com);
+}
+
+.stats-chip.is-filter-active {
+  background: rgba(245, 245, 240, 0.92);
+  border-color: rgba(245, 245, 240, 0.92);
+  color: #1a1a1a;
+}
+
+.stats-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .stats-chip-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .stats-chip-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .dialog-alert {
   width: min(440px, 100%);
   max-height: min(80vh, 480px);
