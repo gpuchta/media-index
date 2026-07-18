@@ -158,8 +158,21 @@ function isAnyModalOpen() {
   );
 }
 
-/** When every modal is closed, put caret in the filter field for immediate typing. */
+/** Desktop with fine pointer + hover (not phones/tablets as primary input). */
+function isDesktopFocusTarget() {
+  try {
+    return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * When every modal is closed, put caret in the filter field for immediate typing.
+ * Desktop only — auto-focus is disruptive on mobile (keyboard popup, scroll jumps).
+ */
 function focusFilterWhenIdle() {
+  if (!isDesktopFocusTarget()) return;
   requestAnimationFrame(() => {
     queueMicrotask(() => {
       if (isAnyModalOpen()) return;
