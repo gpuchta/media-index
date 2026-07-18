@@ -1514,33 +1514,65 @@ input {
   border-style: solid;
 }
 
+/*
+ * Vote average pill (vote_average 0–10):
+ * - Track: full-width red→green gradient (maps entire 0–10 scale)
+ * - Remainder: gray overlay from (avg/10*100)% to 100% (hides unused spectrum)
+ * e.g. 7.2 → show left 72% of gradient, gray last 28%
+ */
 .vote-bar {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  min-width: 8rem;
+  width: min(100%, 16rem);
+  min-width: 10rem;
+  flex: 1 1 auto;
 }
 
 .vote-track {
-  flex: 1;
-  height: 10px;
-  min-width: 80px;
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 1.65rem;
   border-radius: 999px;
-  background: #c5c5c5;
   overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  /* Full 0–10 spectrum across the whole pill */
+  background: linear-gradient(
+    90deg,
+    #e07060 0%,
+    #d4a84b 28%,
+    #8fba5a 55%,
+    #5aaf6a 100%
+  );
 }
 
-.vote-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #e03131, #fab005, #2f9e44);
-  transform-origin: left center;
+/* Gray cover from score position to the end (hides gradient beyond avg) */
+.vote-remainder {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  /* left set inline as pct% of score (e.g. 72% for 7.2/10) */
+  background: #9a9a9a;
+  pointer-events: none;
+  z-index: 0;
 }
 
-.vote-num {
-  font-variant-numeric: tabular-nums;
-  font-size: 0.85rem;
-  color: var(--text-muted);
+.vote-label-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #3d3d3d;
+  text-shadow: 0 0 2px rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .dialog-footer {

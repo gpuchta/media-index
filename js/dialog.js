@@ -319,8 +319,11 @@ export class MovieDialog {
     }
 
     const url = posterUrl(d.poster_path || m.poster_path);
-    const avg = Number(m.vote_average) || 0;
-    const pct = Math.max(0, Math.min(100, (avg / 10) * 100));
+    // TMDB vote_average is 0–10; bar + label use percent (avg/10 × 100)
+    const avg = Math.max(0, Math.min(10, Number(m.vote_average) || 0));
+    const pct = (avg / 10) * 100;
+    const pctLabel = Math.round(pct);
+    const voteCount = m.vote_count ?? 0;
 
     this.btnTmdb.hidden = !m.tmdb_id;
     this.btnTmdb.disabled = !m.tmdb_id;
@@ -349,9 +352,17 @@ export class MovieDialog {
         <div class="field-row">
           <span class="field-label">Vote</span>
           <div class="field-values">
-            <span class="vote-bar" title="${avg.toFixed(1)} / 10 · ${m.vote_count ?? 0} votes">
-              <span class="vote-track"><span class="vote-fill" style="width:${pct}%"></span></span>
-              <span class="vote-num">${avg.toFixed(1)}</span>
+            <span
+              class="vote-bar"
+              role="img"
+              aria-label="Vote average ${pctLabel}% from ${voteCount} votes"
+              title="${pctLabel}% · ${voteCount} votes"
+            >
+              <span class="vote-track">
+                <!-- Full red→green gradient = 0–10; gray covers score…10 -->
+                <span class="vote-remainder" style="left:${pct}%"></span>
+                <span class="vote-label-text">Vote Average ${pctLabel}% (${escapeHtml(String(voteCount))})</span>
+              </span>
             </span>
           </div>
         </div>
