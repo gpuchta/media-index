@@ -502,7 +502,13 @@ export class MovieDialog {
   }
 
   /** Types that can be added as search filters when the pill is clicked. */
-  static FILTERABLE_PILL_TYPES = new Set(['genre', 'director', 'actor', 'collection']);
+  static FILTERABLE_PILL_TYPES = new Set([
+    'genre',
+    'director',
+    'actor',
+    'collection',
+    'company',
+  ]);
 
   pillsRow(label, list, type) {
     const typeAttr = type ? ` data-type="${escapeHtml(type)}"` : '';
