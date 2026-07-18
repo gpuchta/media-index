@@ -1591,6 +1591,14 @@ input {
   opacity: 0.85;
 }
 
+.field-values-json {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
+}
+
 .json-panel {
   display: block;
   width: 100%;
@@ -1611,6 +1619,16 @@ input {
 }
 
 .json-panel[hidden] {
+  display: none !important;
+}
+
+.json-actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.json-actions[hidden] {
   display: none !important;
 }
 

@@ -425,8 +425,11 @@ export class MovieDialog {
             <span>JSON</span>
             <span class="json-expand-icon" aria-hidden="true">▸</span>
           </button>
-          <div class="field-values">
+          <div class="field-values field-values-json">
             <pre id="json-panel" class="json-panel" hidden></pre>
+            <div class="json-actions" id="json-actions" hidden>
+              <button type="button" class="btn" id="json-copy-btn">Copy</button>
+            </div>
           </div>
         </div>
       </div>
@@ -473,6 +476,8 @@ export class MovieDialog {
 
     const jsonToggle = this.body.querySelector('#json-toggle');
     const jsonPanel = this.body.querySelector('#json-panel');
+    const jsonActions = this.body.querySelector('#json-actions');
+    const jsonCopyBtn = this.body.querySelector('#json-copy-btn');
     const jsonIcon = jsonToggle?.querySelector('.json-expand-icon');
     jsonToggle?.addEventListener('click', () => {
       if (!jsonPanel || !this.movie) return;
@@ -488,13 +493,47 @@ export class MovieDialog {
         };
         jsonPanel.textContent = JSON.stringify(snapshot, null, 2);
         jsonPanel.hidden = false;
+        if (jsonActions) jsonActions.hidden = false;
         jsonToggle.setAttribute('aria-expanded', 'true');
         if (jsonIcon) jsonIcon.textContent = '▾';
+        if (jsonCopyBtn) jsonCopyBtn.textContent = 'Copy';
       } else {
         jsonPanel.hidden = true;
         jsonPanel.textContent = '';
+        if (jsonActions) jsonActions.hidden = true;
         jsonToggle.setAttribute('aria-expanded', 'false');
         if (jsonIcon) jsonIcon.textContent = '▸';
+      }
+    });
+
+    jsonCopyBtn?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const text = jsonPanel?.textContent || '';
+      if (!text) return;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+        }
+        jsonCopyBtn.textContent = 'Copied';
+        window.setTimeout(() => {
+          if (jsonCopyBtn.isConnected) jsonCopyBtn.textContent = 'Copy';
+        }, 1500);
+      } catch {
+        jsonCopyBtn.textContent = 'Copy failed';
+        window.setTimeout(() => {
+          if (jsonCopyBtn.isConnected) jsonCopyBtn.textContent = 'Copy';
+        }, 2000);
       }
     });
   }
