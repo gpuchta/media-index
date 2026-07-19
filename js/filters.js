@@ -1,7 +1,42 @@
-import { FILTER_TYPES, TYPEAHEAD_GROUP_ORDER } from './config.js';
+import {
+  BINDER_FILTER_OPTIONS,
+  FILTER_TYPES,
+  TYPEAHEAD_GROUP_ORDER,
+} from './config.js';
 import { movieYear } from './utils.js';
 
 const FILTER_TYPE_SET = new Set(FILTER_TYPES);
+
+/**
+ * Binder slot pattern: single letter + 1–3 digits (A1, F42, N13).
+ * Free-form locations (Amazon, Todo, Netflix, empty) are not binders.
+ * @param {unknown} location
+ * @returns {boolean}
+ */
+export function isBinderLocation(location) {
+  return /^[A-Za-z]\d{1,3}$/.test(String(location || '').trim());
+}
+
+const BINDER_YES_ALIASES = new Set([
+  'yes',
+  'true',
+  '1',
+  'in',
+  'in binder',
+  'binder',
+  'binders',
+]);
+const BINDER_NO_ALIASES = new Set([
+  'no',
+  'false',
+  '0',
+  'out',
+  'not',
+  'not in binder',
+  'non-binder',
+  'nonbinder',
+  'digital',
+]);
 
 /**
  * A leaf filter: { type, value, not }
@@ -18,6 +53,14 @@ export function normalizeValue(type, raw) {
   if (type === 'vote') {
     return String(parseInt(v.replace(/%/g, ''), 10));
   }
+  if (type === 'binder') {
+    const lc = v.toLowerCase();
+    if (BINDER_NO_ALIASES.has(lc) || lc.includes('not in binder')) return 'no';
+    if (BINDER_YES_ALIASES.has(lc) || lc === 'in binder') return 'yes';
+    // binder:yes / binder:no already lowercased via aliases; unknown → yes
+    if (lc === 'no' || lc.startsWith('not')) return 'no';
+    return 'yes';
+  }
   return v;
 }
 
@@ -27,6 +70,10 @@ export function displayLabel(leaf) {
   }
   if (leaf.type === 'year') {
     return leaf.value;
+  }
+  if (leaf.type === 'binder') {
+    const v = normalizeValue('binder', leaf.value);
+    return v === 'no' ? 'Not in binder' : 'In binder';
   }
   return leaf.value;
 }
@@ -104,6 +151,16 @@ export function leafFromFreeText(text, typeaheadIndex = null) {
     }
   }
 
+  // Bare phrases → binder filter (before year/vote so "no" is not vote 0)
+  const binderPhrase = /^not\s+in\s+binder$/i.test(t)
+    ? 'no'
+    : /^(?:in\s+)?binders?$/i.test(t)
+      ? 'yes'
+      : null;
+  if (binderPhrase) {
+    return { type: 'binder', value: binderPhrase, not };
+  }
+
   const yearRange = /^(\d{4})-(\d{4})$/.exec(t);
   if (yearRange) {
     return { type: 'year', value: `${yearRange[1]}-${yearRange[2]}`, not };
@@ -132,6 +189,12 @@ export function addLeaf(leaves, leaf) {
   if (next.type === 'vote') {
     // Single vote threshold: replace any existing vote leaf
     const without = leaves.filter((l) => l.type !== 'vote');
+    return [...without, next];
+  }
+
+  if (next.type === 'binder') {
+    // Single binder mode: replace any existing binder leaf
+    const without = leaves.filter((l) => l.type !== 'binder');
     return [...without, next];
   }
 
@@ -167,6 +230,12 @@ function matchesLeaf(movie, leaf) {
     case 'location': {
       const loc = String(movie.location || '').toLowerCase();
       hit = loc.includes(val);
+      break;
+    }
+    case 'binder': {
+      const inBinder = isBinderLocation(movie.location);
+      const want = normalizeValue('binder', leaf.value);
+      hit = want === 'no' ? !inBinder : inBinder;
       break;
     }
     case 'director': {
@@ -308,12 +377,28 @@ export function buildTypeaheadIndex(movies) {
       );
     }
   }
+  // Fixed choices (not derived from movie fields)
+  index.binder = BINDER_FILTER_OPTIONS.map((o) => o.value);
   return index;
+}
+
+/**
+ * Human-readable typeahead line for a type/value pair.
+ * @param {string} type
+ * @param {string} value
+ * @returns {string}
+ */
+export function typeaheadValueLabel(type, value) {
+  if (type === 'binder') {
+    return displayLabel({ type: 'binder', value });
+  }
+  return String(value);
 }
 
 /**
  * Query typeahead; returns [{ type, value }] grouped, limited.
  * Order follows TYPEAHEAD_GROUP_ORDER (year before keyword).
+ * Matches against both stored value and display label (e.g. binder "yes" ↔ "In binder").
  */
 export function queryTypeahead(index, query, limit = 40) {
   const q = query.trim().toLowerCase();
@@ -323,8 +408,11 @@ export function queryTypeahead(index, query, limit = 40) {
   for (const type of TYPEAHEAD_GROUP_ORDER) {
     const values = index[type] || [];
     for (const value of values) {
-      if (String(value).toLowerCase().includes(q)) {
-        results.push({ type, value: String(value) });
+      const raw = String(value);
+      const label = typeaheadValueLabel(type, raw);
+      const hay = `${raw} ${label} ${type}`.toLowerCase();
+      if (hay.includes(q)) {
+        results.push({ type, value: raw });
         if (results.length >= limit) return results;
       }
     }

@@ -763,6 +763,7 @@ input {
 
 .type-pill[data-type='title'] { background: var(--title); color: #111; }
 .type-pill[data-type='location'] { background: var(--loc); }
+.type-pill[data-type='binder'] { background: var(--loc); color: #111; }
 .type-pill[data-type='director'] { background: var(--dir); color: #fff; }
 .type-pill[data-type='actor'] { background: var(--act); color: #fff; }
 .type-pill[data-type='collection'] { background: var(--col); color: #fff; }
@@ -807,6 +808,8 @@ input {
 .pill[data-type='title'] { border-color: var(--title); color: #ced4da; }
 .filter-chip[data-type='location'],
 .pill[data-type='location'] { border-color: var(--loc); color: var(--loc); }
+.filter-chip[data-type='binder'],
+.pill[data-type='binder'] { border-color: var(--loc); color: var(--loc); }
 .filter-chip[data-type='director'],
 .pill[data-type='director'] { border-color: var(--dir); color: #6eb6ff; }
 .filter-chip[data-type='actor'],

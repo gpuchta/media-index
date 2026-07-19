@@ -631,6 +631,7 @@ if (GITHUB_TARGET?.path) {
 export const FILTER_TYPES = [
   'title',
   'location',
+  'binder',
   'director',
   'actor',
   'collection',
@@ -644,6 +645,7 @@ export const FILTER_TYPES = [
 export const FILTER_TYPE_LABELS = {
   title: 'title',
   location: 'location',
+  binder: 'binder',
   director: 'director',
   actor: 'actor',
   collection: 'collection',
@@ -654,11 +656,21 @@ export const FILTER_TYPE_LABELS = {
   vote: 'vote',
 };
 
+/**
+ * Typeahead choices for the binder filter (stored as yes/no after normalize).
+ * Human-readable so typing "binder" / "in" finds them.
+ */
+export const BINDER_FILTER_OPTIONS = Object.freeze([
+  { value: 'yes', label: 'In binder' },
+  { value: 'no', label: 'Not in binder' },
+]);
+
 /** Typeahead group order (title near top; year before keyword so "2020" ranks over "2020s") */
 export const TYPEAHEAD_GROUP_ORDER = [
   'title',
   'genre',
   'year',
+  'binder',
   'location',
   'director',
   'actor',

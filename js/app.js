@@ -42,6 +42,7 @@ import {
   sortMovies,
   stripLeadingNot,
   toggleLeafNot,
+  typeaheadValueLabel,
 } from './filters.js';
 import { clearHash, hashToLeaves, writeHash } from './hash.js';
 import { PosterGrid } from './grid.js';
@@ -2545,7 +2546,8 @@ function renderTypeahead(items) {
     btn.dataset.index = String(i);
     const notPrefix = negate ? 'NOT ' : '';
     btn.innerHTML = `<span class="type-pill" data-type="${item.type}">${item.type}</span><span></span>`;
-    btn.querySelector('span:last-child').textContent = notPrefix + item.value;
+    btn.querySelector('span:last-child').textContent =
+      notPrefix + typeaheadValueLabel(item.type, item.value);
     btn.addEventListener('mousedown', (e) => {
       e.preventDefault();
       applyLeaf({ type: item.type, value: item.value, not: inputWantsNot() });
