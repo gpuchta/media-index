@@ -5,6 +5,7 @@ import {
   GITHUB_TARGET,
   LOCALE_OPTIONS,
   SORT_OPTIONS,
+  THEME_COLOR_FIELDS,
   THEME_OPTIONS,
   applyTheme,
   clampPosterGapPx,
@@ -13,11 +14,14 @@ import {
   getStoredPosterGapPx,
   getStoredPosterScalePercent,
   getStoredTheme,
+  getStoredThemeColors,
   normalizeTheme,
+  readResolvedThemeColors,
   setStoredLocale,
   setStoredPosterGapPx,
   setStoredPosterScalePercent,
   setStoredTheme,
+  setStoredThemeColors,
 } from './config.js';
 import {
   addLeaf,
@@ -113,6 +117,8 @@ const els = {
   settingsPosterGap: document.getElementById('settings-poster-gap'),
   settingsPosterGapValue: document.getElementById('settings-poster-gap-value'),
   settingsTheme: document.getElementById('settings-theme'),
+  settingsThemeColors: document.getElementById('settings-theme-colors'),
+  settingsThemeResetColors: document.getElementById('settings-theme-reset-colors'),
   settingsStatus: document.getElementById('settings-status'),
   settingsClose: document.getElementById('settings-close'),
   settingsCancel: document.getElementById('settings-cancel'),
@@ -248,9 +254,14 @@ const grid = new PosterGrid({
 /** Last saved poster layout prefs; used to revert preview on Settings cancel. */
 let savedPosterScalePercent = getStoredPosterScalePercent();
 let savedPosterGapPx = getStoredPosterGapPx();
-/** Last saved theme id; used to revert Settings theme preview on cancel. */
+/** Last saved theme prefs; used to revert Settings theme preview on cancel. */
 let savedThemeId = getStoredTheme();
-applyTheme(savedThemeId);
+/** @type {Record<string, string>} */
+let savedThemeColors = getStoredThemeColors();
+/** Draft custom colors while Settings is open (preview only until Save). */
+/** @type {Record<string, string>} */
+let draftThemeColors = { ...savedThemeColors };
+applyTheme(savedThemeId, savedThemeColors);
 grid.setScale(savedPosterScalePercent / 100);
 grid.setGap(savedPosterGapPx);
 
@@ -442,7 +453,27 @@ els.settingsPosterGap?.addEventListener('input', () => {
   applyPosterGapFromSettingsControl({ preview: true });
 });
 els.settingsTheme?.addEventListener('change', () => {
-  applyTheme(els.settingsTheme.value);
+  // Switching base theme clears draft overrides and reloads that theme’s defaults
+  draftThemeColors = {};
+  applyTheme(els.settingsTheme.value, null);
+  syncThemeColorControls();
+});
+els.settingsThemeResetColors?.addEventListener('click', () => {
+  draftThemeColors = {};
+  applyTheme(els.settingsTheme?.value, null);
+  syncThemeColorControls();
+});
+els.settingsThemeColors?.addEventListener('input', (e) => {
+  const input = e.target?.closest?.('input[type="color"][data-theme-var]');
+  if (!input) return;
+  const key = input.dataset.themeVar;
+  if (!key) return;
+  draftThemeColors = {
+    ...draftThemeColors,
+    [key]: String(input.value || '').toLowerCase(),
+  };
+  applyTheme(els.settingsTheme?.value, draftThemeColors);
+  updateThemeGradientPreviews();
 });
 wireSecretFieldControls(
   els.settingsApiKey,
@@ -934,6 +965,103 @@ function populateThemeSelect() {
 }
 
 /**
+ * Build Settings color editor (swatches + gradient stop pickers).
+ * Values come from base theme + draftThemeColors.
+ */
+function ensureThemeColorControls() {
+  const host = els.settingsThemeColors;
+  if (!host || host.dataset.ready === '1') return;
+
+  const singles = THEME_COLOR_FIELDS.filter((f) => f.group === 'single');
+  const header = THEME_COLOR_FIELDS.filter((f) => f.group === 'header');
+  const grid = THEME_COLOR_FIELDS.filter((f) => f.group === 'grid');
+
+  const makeSwatch = (field) => {
+    const wrap = document.createElement('label');
+    wrap.className = 'theme-color-swatch';
+    wrap.htmlFor = `settings-theme-color-${field.key}`;
+    const lab = document.createElement('span');
+    lab.className = 'theme-color-swatch-label';
+    lab.textContent = field.label;
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.className = 'theme-color-input';
+    input.id = `settings-theme-color-${field.key}`;
+    input.dataset.themeVar = field.key;
+    input.value = '#000000';
+    input.setAttribute('aria-label', field.label);
+    wrap.append(lab, input);
+    return wrap;
+  };
+
+  const makeGradientBlock = (title, fields, previewId) => {
+    const block = document.createElement('div');
+    block.className = 'theme-gradient-block';
+    const t = document.createElement('div');
+    t.className = 'theme-gradient-title';
+    t.textContent = title;
+    const preview = document.createElement('div');
+    preview.className = 'theme-gradient-preview';
+    preview.id = previewId;
+    preview.setAttribute('role', 'img');
+    preview.setAttribute('aria-label', `${title} preview`);
+    const stops = document.createElement('div');
+    stops.className = 'theme-gradient-stops';
+    for (const f of fields) stops.appendChild(makeSwatch(f));
+    block.append(t, preview, stops);
+    return block;
+  };
+
+  const gridEl = document.createElement('div');
+  gridEl.className = 'theme-color-grid';
+  for (const f of singles) gridEl.appendChild(makeSwatch(f));
+
+  host.replaceChildren(
+    gridEl,
+    makeGradientBlock('Header gradient', header, 'settings-theme-header-preview'),
+    makeGradientBlock('Poster grid gradient', grid, 'settings-theme-grid-preview')
+  );
+  host.dataset.ready = '1';
+}
+
+function syncThemeColorControls() {
+  ensureThemeColorControls();
+  const host = els.settingsThemeColors;
+  if (!host) return;
+
+  // Document already has the preview theme applied; read resolved CSS vars.
+  const resolved = readResolvedThemeColors();
+  for (const field of THEME_COLOR_FIELDS) {
+    const input = host.querySelector(
+      `input[type="color"][data-theme-var="${field.key}"]`
+    );
+    if (input && resolved[field.key]) {
+      input.value = resolved[field.key];
+    }
+  }
+  updateThemeGradientPreviews();
+}
+
+function updateThemeGradientPreviews() {
+  const host = els.settingsThemeColors;
+  if (!host) return;
+  const val = (key) => {
+    const input = host.querySelector(
+      `input[type="color"][data-theme-var="${key}"]`
+    );
+    return input?.value || '#000000';
+  };
+  const headerPreview = host.querySelector('#settings-theme-header-preview');
+  const gridPreview = host.querySelector('#settings-theme-grid-preview');
+  if (headerPreview) {
+    headerPreview.style.background = `linear-gradient(90deg, ${val('header-a')}, ${val('header-b')})`;
+  }
+  if (gridPreview) {
+    gridPreview.style.background = `linear-gradient(90deg, ${val('bg-grid-a')}, ${val('bg-grid-b')})`;
+  }
+}
+
+/**
  * Show/hide + copy controls for a password-style settings field.
  * @param {HTMLInputElement|null} input
  * @param {HTMLButtonElement|null} toggleBtn
@@ -992,9 +1120,12 @@ function openSettingsDialog() {
   savedPosterScalePercent = getStoredPosterScalePercent();
   savedPosterGapPx = getStoredPosterGapPx();
   savedThemeId = getStoredTheme();
+  savedThemeColors = getStoredThemeColors();
+  draftThemeColors = { ...savedThemeColors };
   populateThemeSelect();
-  // Ensure UI matches saved theme when opening (in case a prior preview lingered)
-  applyTheme(savedThemeId);
+  // Ensure UI matches saved theme + colors when opening
+  applyTheme(savedThemeId, draftThemeColors);
+  syncThemeColorControls();
   if (els.settingsPosterScale) {
     els.settingsPosterScale.min = String(CONFIG.POSTER_SCALE_MIN);
     els.settingsPosterScale.max = String(CONFIG.POSTER_SCALE_MAX);
@@ -1033,7 +1164,8 @@ function closeSettingsDialog({ revertPreview = false } = {}) {
     syncPosterGapControl(gap);
     grid.setScale(scale / 100);
     grid.setGap(gap);
-    applyTheme(savedThemeId);
+    draftThemeColors = { ...savedThemeColors };
+    applyTheme(savedThemeId, savedThemeColors);
     if (els.settingsTheme) els.settingsTheme.value = normalizeTheme(savedThemeId);
   }
   els.settingsBackdrop.classList.add('hidden');
@@ -1210,9 +1342,14 @@ function saveSettings() {
     LOCALE_OPTIONS.find((o) => o.id === locale)?.label || locale;
   const themeId = setStoredTheme(els.settingsTheme?.value);
   savedThemeId = themeId;
-  applyTheme(themeId);
+  savedThemeColors = setStoredThemeColors(draftThemeColors);
+  draftThemeColors = { ...savedThemeColors };
+  applyTheme(themeId, savedThemeColors);
   const themeLabel =
     THEME_OPTIONS.find((o) => o.id === themeId)?.label || themeId;
+  const customNote = Object.keys(savedThemeColors).length
+    ? 'with custom colors'
+    : 'default colors';
   const scalePercent = applyPosterScaleFromSettingsControl({ preview: false });
   const gapPx = applyPosterGapFromSettingsControl({ preview: false });
   const parts = [
@@ -1221,7 +1358,7 @@ function saveSettings() {
     `language ${localeLabel}`,
     `poster size ${scalePercent}%`,
     `spacing ${gapPx}px`,
-    `theme ${themeLabel}`,
+    `theme ${themeLabel} (${customNote})`,
   ];
   setSettingsStatus(`${parts.join('. ')}.`);
   // Brief confirmation then close (keep applied layout/theme; do not revert)

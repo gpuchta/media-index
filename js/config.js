@@ -90,6 +90,8 @@ export const CONFIG = {
    */
   THEME_STORAGE: 'pmi:theme',
   THEME_DEFAULT: 'dark',
+  /** Optional per-variable color overrides (#rrggbb JSON object). */
+  THEME_COLORS_STORAGE: 'pmi:themeColors',
 
   /** Extra rows rendered above/below the viewport. */
   VIRTUAL_BUFFER_ROWS: 2,
@@ -113,6 +115,26 @@ export const THEME_OPTIONS = Object.freeze([
   { id: 'daybreak', label: 'Daybreak', scheme: 'light' },
   { id: 'lavender', label: 'Lavender Fields', scheme: 'light' },
 ]);
+
+/**
+ * Customizable CSS variables (without leading --).
+ * group: single | header | grid — layout in the Settings color editor.
+ * @type {ReadonlyArray<{ key: string, label: string, group: 'single'|'header'|'grid' }>}
+ */
+export const THEME_COLOR_FIELDS = Object.freeze([
+  { key: 'bg-deep', label: 'Page background', group: 'single' },
+  { key: 'surface', label: 'Surface', group: 'single' },
+  { key: 'surface-2', label: 'Surface elevated', group: 'single' },
+  { key: 'text', label: 'Text', group: 'single' },
+  { key: 'text-muted', label: 'Muted text', group: 'single' },
+  { key: 'focus', label: 'Accent / focus', group: 'single' },
+  { key: 'header-a', label: 'Start', group: 'header' },
+  { key: 'header-b', label: 'End', group: 'header' },
+  { key: 'bg-grid-a', label: 'Start', group: 'grid' },
+  { key: 'bg-grid-b', label: 'End', group: 'grid' },
+]);
+
+const THEME_COLOR_KEY_SET = new Set(THEME_COLOR_FIELDS.map((f) => f.key));
 
 /**
  * Clamp and normalize a poster-scale percent (50–200).
@@ -300,18 +322,184 @@ export function setStoredTheme(theme) {
 }
 
 /**
+ * Convert a CSS color (hex / rgb / rgba) to #rrggbb for &lt;input type="color"&gt;.
+ * @param {unknown} input
+ * @returns {string}
+ */
+export function cssColorToHex(input) {
+  const s = String(input ?? '').trim();
+  if (!s) return '#000000';
+  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase();
+  if (/^#[0-9a-fA-F]{8}$/.test(s)) return `#${s.slice(1, 7).toLowerCase()}`;
+  if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+    const r = s[1];
+    const g = s[2];
+    const b = s[3];
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+  const m = s.match(
+    /rgba?\(\s*([\d.]+)\s*[, ]\s*([\d.]+)\s*[, ]\s*([\d.]+)/i
+  );
+  if (m) {
+    const h = (n) =>
+      Math.max(0, Math.min(255, Math.round(Number(n))))
+        .toString(16)
+        .padStart(2, '0');
+    return `#${h(m[1])}${h(m[2])}${h(m[3])}`;
+  }
+  // Last resort: browser color parsing via canvas
+  try {
+    const ctx = document.createElement('canvas').getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#000000';
+      ctx.fillStyle = s;
+      const v = String(ctx.fillStyle);
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) return v.toLowerCase();
+      const m2 = v.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (m2) {
+        const h = (n) => Number(n).toString(16).padStart(2, '0');
+        return `#${h(m2[1])}${h(m2[2])}${h(m2[3])}`;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return '#000000';
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string|null} #rrggbb or null if invalid
+ */
+export function normalizeHexColor(value) {
+  const s = String(value ?? '').trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+    return cssColorToHex(s);
+  }
+  if (/^[0-9a-fA-F]{6}$/.test(s)) return `#${s.toLowerCase()}`;
+  return null;
+}
+
+/**
+ * Keep only known theme color keys with valid #rrggbb values.
+ * @param {unknown} raw
+ * @returns {Record<string, string>}
+ */
+export function normalizeThemeColors(raw) {
+  /** @type {Record<string, string>} */
+  const out = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const [k, v] of Object.entries(/** @type {Record<string, unknown>} */ (raw))) {
+    if (!THEME_COLOR_KEY_SET.has(k)) continue;
+    const hex = normalizeHexColor(v);
+    if (hex) out[k] = hex;
+  }
+  return out;
+}
+
+/** @returns {Record<string, string>} */
+export function getStoredThemeColors() {
+  try {
+    const raw = localStorage.getItem(CONFIG.THEME_COLORS_STORAGE);
+    if (!raw) return {};
+    return normalizeThemeColors(JSON.parse(raw));
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * @param {unknown} colors
+ * @returns {Record<string, string>} stored map
+ */
+export function setStoredThemeColors(colors) {
+  const map = normalizeThemeColors(colors);
+  try {
+    if (!Object.keys(map).length) {
+      localStorage.removeItem(CONFIG.THEME_COLORS_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.THEME_COLORS_STORAGE, JSON.stringify(map));
+    }
+  } catch {
+    /* private mode */
+  }
+  return map;
+}
+
+/** Clear all custom CSS variable overrides from &lt;html&gt;. */
+export function clearThemeColorOverrides() {
+  const root = document.documentElement;
+  for (const field of THEME_COLOR_FIELDS) {
+    root.style.removeProperty(`--${field.key}`);
+  }
+}
+
+/**
+ * Apply custom color overrides as inline CSS variables on &lt;html&gt;.
+ * @param {Record<string, string>|null|undefined} colors
+ */
+export function applyThemeColorOverrides(colors) {
+  clearThemeColorOverrides();
+  const map = normalizeThemeColors(colors);
+  const root = document.documentElement;
+  for (const [key, hex] of Object.entries(map)) {
+    root.style.setProperty(`--${key}`, hex);
+  }
+}
+
+/**
  * Apply a theme to the document (preview or after Save).
- * Does not write localStorage — use setStoredTheme for that.
+ * Does not write localStorage — use setStoredTheme / setStoredThemeColors.
  * @param {unknown} theme
+ * @param {Record<string, string>|null|undefined} [customColors]
  * @returns {string} applied theme id
  */
-export function applyTheme(theme) {
+export function applyTheme(theme, customColors) {
   const id = normalizeTheme(theme);
   const opt = THEME_OPTIONS.find((o) => o.id === id);
   const root = document.documentElement;
+  // Clear overrides first so the base theme paints cleanly, then re-apply.
+  clearThemeColorOverrides();
   root.setAttribute('data-theme', id);
   root.style.colorScheme = opt?.scheme === 'light' ? 'light' : 'dark';
+  if (customColors && Object.keys(customColors).length) {
+    applyThemeColorOverrides(customColors);
+  }
   return id;
+}
+
+/**
+ * Read resolved theme colors from the live document (after applyTheme).
+ * @returns {Record<string, string>} key → #rrggbb
+ */
+export function readResolvedThemeColors() {
+  const cs = getComputedStyle(document.documentElement);
+  /** @type {Record<string, string>} */
+  const out = {};
+  for (const field of THEME_COLOR_FIELDS) {
+    out[field.key] = cssColorToHex(cs.getPropertyValue(`--${field.key}`));
+  }
+  return out;
+}
+
+/**
+ * Base palette for a theme id (no custom overrides).
+ * Temporarily applies the theme without custom colors, reads values, then
+ * restores the previous theme + colors.
+ * @param {unknown} theme
+ * @param {unknown} [restoreTheme]
+ * @param {Record<string, string>|null|undefined} [restoreColors]
+ * @returns {Record<string, string>}
+ */
+export function getThemeBaseColors(theme, restoreTheme, restoreColors) {
+  const id = normalizeTheme(theme);
+  applyTheme(id, null);
+  const base = readResolvedThemeColors();
+  if (restoreTheme != null) {
+    applyTheme(restoreTheme, restoreColors);
+  }
+  return base;
 }
 
 /**

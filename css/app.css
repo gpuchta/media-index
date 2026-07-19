@@ -1527,6 +1527,112 @@ input {
   background-repeat: no-repeat;
 }
 
+/* —— Settings theme color editor —— */
+.theme-colors {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.theme-color-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem 0.65rem;
+}
+
+.theme-color-swatch {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.theme-color-swatch-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.theme-color-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2.15rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.theme-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.theme-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius) - 1px);
+}
+
+.theme-color-input::-moz-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius) - 1px);
+}
+
+.theme-color-input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.theme-gradient-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.theme-gradient-title {
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.theme-gradient-preview {
+  height: 1.75rem;
+  border-radius: calc(var(--radius) - 2px);
+  border: 1px solid var(--border);
+  background: linear-gradient(90deg, #333, #999);
+}
+
+.theme-gradient-stops {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.theme-colors-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 0.15rem;
+}
+
+.theme-colors-actions .btn {
+  font-size: 0.85rem;
+  padding: 0.35rem 0.75rem;
+}
+
+@media (max-width: 420px) {
+  .theme-color-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .form-range-row {
   display: flex;
   align-items: center;
