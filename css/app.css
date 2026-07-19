@@ -31,6 +31,10 @@
   --genre: #28a745;
   --title: #adb5bd;
 
+  /* Poster location overlay */
+  --poster-loc-bg: #0a0a12;
+  --poster-loc-text: #ffc107;
+
   --header-h: auto;
   --cell-w: 256px;
   --cell-h: 388px;
@@ -68,6 +72,8 @@
   --year: #0891b2;
   --genre: #16a34a;
   --title: #475569;
+  --poster-loc-bg: #1a1d26;
+  --poster-loc-text: #fbbf24;
 }
 
 [data-theme='midnight'] {
@@ -97,6 +103,8 @@
   --year: #22d3ee;
   --genre: #4ade80;
   --title: #94a3b8;
+  --poster-loc-bg: #061018;
+  --poster-loc-text: #fbbf24;
 }
 
 [data-theme='sunset'] {
@@ -126,6 +134,8 @@
   --year: #f59e0b;
   --genre: #a3e635;
   --title: #a8a29e;
+  --poster-loc-bg: #1a0c08;
+  --poster-loc-text: #fbbf24;
 }
 
 [data-theme='forest'] {
@@ -155,6 +165,8 @@
   --year: #34d399;
   --genre: #4ade80;
   --title: #94a3b8;
+  --poster-loc-bg: #0a1410;
+  --poster-loc-text: #facc15;
 }
 
 [data-theme='aurora'] {
@@ -184,6 +196,8 @@
   --year: #22d3ee;
   --genre: #4ade80;
   --title: #a1a1aa;
+  --poster-loc-bg: #12081c;
+  --poster-loc-text: #fbbf24;
 }
 
 [data-theme='rose'] {
@@ -213,6 +227,8 @@
   --year: #f9a8d4;
   --genre: #4ade80;
   --title: #a8a29e;
+  --poster-loc-bg: #180a12;
+  --poster-loc-text: #f9a8d4;
 }
 
 [data-theme='slate'] {
@@ -242,6 +258,8 @@
   --year: #38bdf8;
   --genre: #4ade80;
   --title: #94a3b8;
+  --poster-loc-bg: #12151a;
+  --poster-loc-text: #fbbf24;
 }
 
 [data-theme='daybreak'] {
@@ -271,6 +289,8 @@
   --year: #0e7490;
   --genre: #15803d;
   --title: #57534e;
+  --poster-loc-bg: #3d2e24;
+  --poster-loc-text: #fbbf24;
 }
 
 [data-theme='lavender'] {
@@ -300,6 +320,8 @@
   --year: #0891b2;
   --genre: #16a34a;
   --title: #57534e;
+  --poster-loc-bg: #2e2440;
+  --poster-loc-text: #fbbf24;
 }
 
 *,
@@ -907,6 +929,111 @@ input {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   user-select: none;
+}
+
+/* Location badge at top of poster (themeable; optional via Settings) */
+.poster-loc {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  min-height: calc(var(--poster-loc-size, 0.78rem) * 1.55);
+  padding: 0.18em 0.35em;
+  box-sizing: border-box;
+  pointer-events: none;
+  /* Semi-transparent bar; solid color comes from theme / custom picker */
+  background: color-mix(
+    in srgb,
+    var(--poster-loc-bg, #0a0a12) 68%,
+    transparent
+  );
+  color: var(--poster-loc-text, #ffc107);
+  font-size: var(--poster-loc-size, 0.78rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+  border-bottom: 1px solid color-mix(in srgb, var(--poster-loc-text, #ffc107) 22%, transparent);
+}
+
+/* Clipping window — only this layer hides overflow */
+.poster-loc-viewport {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Static (fits): centered single line, ellipsis only if needed */
+.poster-loc-track {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Marquee: full-width dual copies slide left; letters leave left, enter from right */
+.poster-loc-track.is-marquee {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  width: max-content;
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  text-align: left;
+  will-change: transform;
+  animation: poster-loc-marquee var(--poster-loc-marquee-duration, 9s) linear infinite;
+}
+
+.poster-loc-seg {
+  flex: 0 0 auto;
+  display: inline-block;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  box-sizing: content-box;
+}
+
+/* Gap only while looping (both segs) so -50% stays seamless; static segs stay truly centered */
+.poster-loc-track.is-marquee .poster-loc-seg {
+  padding-right: 2em;
+}
+
+@keyframes poster-loc-marquee {
+  from {
+    transform: translateX(0);
+  }
+  /* -50% = one full segment (text + gap); second copy fills in from the right */
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poster-loc-track.is-marquee {
+    animation: none;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+
+  .poster-loc-track.is-marquee .poster-loc-seg:nth-child(2) {
+    display: none;
+  }
+
+  .poster-loc-track.is-marquee .poster-loc-seg {
+    display: inline;
+    max-width: 100%;
+  }
 }
 
 /* Bottom-left hot corner — larger touch target on smaller viewports */
@@ -1625,6 +1752,34 @@ input {
 .theme-colors-actions .btn {
   font-size: 0.85rem;
   padding: 0.35rem 0.75rem;
+}
+
+.form-check {
+  gap: 0.45rem;
+}
+
+.form-check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 2rem;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.form-check-input {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  accent-color: var(--focus);
+  cursor: pointer;
+}
+
+.form-check-input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 @media (max-width: 420px) {

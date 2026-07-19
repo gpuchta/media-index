@@ -11,6 +11,7 @@ import {
   clampPosterGapPx,
   clampPosterScalePercent,
   getStoredLocale,
+  getStoredLocationOverlayEnabled,
   getStoredPosterGapPx,
   getStoredPosterScalePercent,
   getStoredTheme,
@@ -18,6 +19,7 @@ import {
   normalizeTheme,
   readResolvedThemeColors,
   setStoredLocale,
+  setStoredLocationOverlayEnabled,
   setStoredPosterGapPx,
   setStoredPosterScalePercent,
   setStoredTheme,
@@ -116,6 +118,7 @@ const els = {
   settingsPosterScaleValue: document.getElementById('settings-poster-scale-value'),
   settingsPosterGap: document.getElementById('settings-poster-gap'),
   settingsPosterGapValue: document.getElementById('settings-poster-gap-value'),
+  settingsLocationOverlay: document.getElementById('settings-location-overlay'),
   settingsTheme: document.getElementById('settings-theme'),
   settingsThemeColors: document.getElementById('settings-theme-colors'),
   settingsThemeResetColors: document.getElementById('settings-theme-reset-colors'),
@@ -254,6 +257,7 @@ const grid = new PosterGrid({
 /** Last saved poster layout prefs; used to revert preview on Settings cancel. */
 let savedPosterScalePercent = getStoredPosterScalePercent();
 let savedPosterGapPx = getStoredPosterGapPx();
+let savedLocationOverlay = getStoredLocationOverlayEnabled();
 /** Last saved theme prefs; used to revert Settings theme preview on cancel. */
 let savedThemeId = getStoredTheme();
 /** @type {Record<string, string>} */
@@ -264,6 +268,7 @@ let draftThemeColors = { ...savedThemeColors };
 applyTheme(savedThemeId, savedThemeColors);
 grid.setScale(savedPosterScalePercent / 100);
 grid.setGap(savedPosterGapPx);
+grid.setLocationOverlay(savedLocationOverlay);
 
 const dialog = new MovieDialog({
   backdrop: els.backdrop,
@@ -451,6 +456,9 @@ els.settingsPosterScale?.addEventListener('input', () => {
 });
 els.settingsPosterGap?.addEventListener('input', () => {
   applyPosterGapFromSettingsControl({ preview: true });
+});
+els.settingsLocationOverlay?.addEventListener('change', () => {
+  grid.setLocationOverlay(!!els.settingsLocationOverlay.checked);
 });
 els.settingsTheme?.addEventListener('change', () => {
   // Switching base theme clears draft overrides and reloads that theme’s defaults
@@ -974,7 +982,8 @@ function ensureThemeColorControls() {
 
   const singles = THEME_COLOR_FIELDS.filter((f) => f.group === 'single');
   const header = THEME_COLOR_FIELDS.filter((f) => f.group === 'header');
-  const grid = THEME_COLOR_FIELDS.filter((f) => f.group === 'grid');
+  const gridFields = THEME_COLOR_FIELDS.filter((f) => f.group === 'grid');
+  const overlay = THEME_COLOR_FIELDS.filter((f) => f.group === 'overlay');
 
   const makeSwatch = (field) => {
     const wrap = document.createElement('label');
@@ -1012,6 +1021,32 @@ function ensureThemeColorControls() {
     return block;
   };
 
+  const makeOverlayBlock = (title, fields) => {
+    const block = document.createElement('div');
+    block.className = 'theme-gradient-block';
+    const t = document.createElement('div');
+    t.className = 'theme-gradient-title';
+    t.textContent = title;
+    const stops = document.createElement('div');
+    stops.className = 'theme-gradient-stops';
+    for (const f of fields) stops.appendChild(makeSwatch(f));
+    // Mini preview of location overlay colors
+    const preview = document.createElement('div');
+    preview.className = 'theme-gradient-preview';
+    preview.id = 'settings-theme-overlay-preview';
+    preview.setAttribute('role', 'img');
+    preview.setAttribute('aria-label', 'Location overlay preview');
+    preview.textContent = 'A1 · Amazon';
+    preview.style.display = 'flex';
+    preview.style.alignItems = 'center';
+    preview.style.justifyContent = 'center';
+    preview.style.fontSize = '0.8rem';
+    preview.style.fontWeight = '700';
+    preview.style.letterSpacing = '0.03em';
+    block.append(t, preview, stops);
+    return block;
+  };
+
   const gridEl = document.createElement('div');
   gridEl.className = 'theme-color-grid';
   for (const f of singles) gridEl.appendChild(makeSwatch(f));
@@ -1019,7 +1054,8 @@ function ensureThemeColorControls() {
   host.replaceChildren(
     gridEl,
     makeGradientBlock('Header gradient', header, 'settings-theme-header-preview'),
-    makeGradientBlock('Poster grid gradient', grid, 'settings-theme-grid-preview')
+    makeGradientBlock('Poster grid gradient', gridFields, 'settings-theme-grid-preview'),
+    makeOverlayBlock('Location overlay', overlay)
   );
   host.dataset.ready = '1';
 }
@@ -1058,6 +1094,14 @@ function updateThemeGradientPreviews() {
   }
   if (gridPreview) {
     gridPreview.style.background = `linear-gradient(90deg, ${val('bg-grid-a')}, ${val('bg-grid-b')})`;
+  }
+  const overlayPreview = host.querySelector('#settings-theme-overlay-preview');
+  if (overlayPreview) {
+    const bg = val('poster-loc-bg');
+    const fg = val('poster-loc-text');
+    overlayPreview.style.background = `color-mix(in srgb, ${bg} 68%, transparent)`;
+    overlayPreview.style.color = fg;
+    overlayPreview.style.borderColor = `color-mix(in srgb, ${fg} 22%, transparent)`;
   }
 }
 
@@ -1119,6 +1163,11 @@ function openSettingsDialog() {
   populateLocaleSelect();
   savedPosterScalePercent = getStoredPosterScalePercent();
   savedPosterGapPx = getStoredPosterGapPx();
+  savedLocationOverlay = getStoredLocationOverlayEnabled();
+  if (els.settingsLocationOverlay) {
+    els.settingsLocationOverlay.checked = savedLocationOverlay;
+  }
+  grid.setLocationOverlay(savedLocationOverlay);
   savedThemeId = getStoredTheme();
   savedThemeColors = getStoredThemeColors();
   draftThemeColors = { ...savedThemeColors };
@@ -1164,6 +1213,10 @@ function closeSettingsDialog({ revertPreview = false } = {}) {
     syncPosterGapControl(gap);
     grid.setScale(scale / 100);
     grid.setGap(gap);
+    if (els.settingsLocationOverlay) {
+      els.settingsLocationOverlay.checked = savedLocationOverlay;
+    }
+    grid.setLocationOverlay(savedLocationOverlay);
     draftThemeColors = { ...savedThemeColors };
     applyTheme(savedThemeId, savedThemeColors);
     if (els.settingsTheme) els.settingsTheme.value = normalizeTheme(savedThemeId);
@@ -1352,12 +1405,17 @@ function saveSettings() {
     : 'default colors';
   const scalePercent = applyPosterScaleFromSettingsControl({ preview: false });
   const gapPx = applyPosterGapFromSettingsControl({ preview: false });
+  savedLocationOverlay = setStoredLocationOverlayEnabled(
+    !!els.settingsLocationOverlay?.checked
+  );
+  grid.setLocationOverlay(savedLocationOverlay);
   const parts = [
     tmdbKey ? 'TMDB API key saved' : 'TMDB API key cleared',
     githubKey ? 'GitHub API key saved' : 'GitHub API key cleared',
     `language ${localeLabel}`,
     `poster size ${scalePercent}%`,
     `spacing ${gapPx}px`,
+    `location overlay ${savedLocationOverlay ? 'on' : 'off'}`,
     `theme ${themeLabel} (${customNote})`,
   ];
   setSettingsStatus(`${parts.join('. ')}.`);

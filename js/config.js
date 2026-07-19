@@ -93,6 +93,13 @@ export const CONFIG = {
   /** Optional per-variable color overrides (#rrggbb JSON object). */
   THEME_COLORS_STORAGE: 'pmi:themeColors',
 
+  /**
+   * Show location badge on poster grid cells.
+   * Stored as "0" | "1" in localStorage; default on.
+   */
+  LOCATION_OVERLAY_STORAGE: 'pmi:locationOverlay',
+  LOCATION_OVERLAY_DEFAULT: true,
+
   /** Extra rows rendered above/below the viewport. */
   VIRTUAL_BUFFER_ROWS: 2,
 
@@ -132,9 +139,42 @@ export const THEME_COLOR_FIELDS = Object.freeze([
   { key: 'header-b', label: 'End', group: 'header' },
   { key: 'bg-grid-a', label: 'Start', group: 'grid' },
   { key: 'bg-grid-b', label: 'End', group: 'grid' },
+  { key: 'poster-loc-bg', label: 'Background', group: 'overlay' },
+  { key: 'poster-loc-text', label: 'Text', group: 'overlay' },
 ]);
 
 const THEME_COLOR_KEY_SET = new Set(THEME_COLOR_FIELDS.map((f) => f.key));
+
+/** @returns {boolean} */
+export function getStoredLocationOverlayEnabled() {
+  try {
+    const raw = localStorage.getItem(CONFIG.LOCATION_OVERLAY_STORAGE);
+    if (raw == null || raw === '') return CONFIG.LOCATION_OVERLAY_DEFAULT;
+    if (raw === '0' || raw === 'false') return false;
+    if (raw === '1' || raw === 'true') return true;
+    return CONFIG.LOCATION_OVERLAY_DEFAULT;
+  } catch {
+    return CONFIG.LOCATION_OVERLAY_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} enabled
+ * @returns {boolean} stored value
+ */
+export function setStoredLocationOverlayEnabled(enabled) {
+  const on = !!enabled;
+  try {
+    if (on === CONFIG.LOCATION_OVERLAY_DEFAULT) {
+      localStorage.removeItem(CONFIG.LOCATION_OVERLAY_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.LOCATION_OVERLAY_STORAGE, on ? '1' : '0');
+    }
+  } catch {
+    /* private mode */
+  }
+  return on;
+}
 
 /**
  * Clamp and normalize a poster-scale percent (50–200).

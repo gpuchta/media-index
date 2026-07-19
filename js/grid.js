@@ -21,6 +21,8 @@ export class PosterGrid {
     this.cellH = CONFIG.CELL_HEIGHT;
     this.gap = CONFIG.CELL_GAP;
     this.bufferRows = CONFIG.VIRTUAL_BUFFER_ROWS;
+    /** Show location badge on posters (Settings). */
+    this.showLocationOverlay = true;
 
     this._raf = 0;
     this._anchorIndex = 0;
@@ -86,6 +88,15 @@ export class PosterGrid {
     this.handleResize();
   }
 
+  /**
+   * Enable/disable location overlay badges on poster cells.
+   * @param {boolean} enabled
+   */
+  setLocationOverlay(enabled) {
+    this.showLocationOverlay = !!enabled;
+    this.render();
+  }
+
   measure() {
     const style = getComputedStyle(this.windowEl);
     const padL = parseFloat(style.paddingLeft) || this.gap;
@@ -115,6 +126,9 @@ export class PosterGrid {
     this.cellH = cellH;
     this.windowEl.style.setProperty('--cols', String(cols));
     this.windowEl.style.setProperty('--cell-gap', `${gap}px`);
+    // Size for binder codes (e.g. A1, F42) with comfortable padding; used for all locations
+    const locSize = Math.round(Math.max(11, Math.min(15, cellW * 0.108)));
+    this.windowEl.style.setProperty('--poster-loc-size', `${locSize}px`);
   }
 
   totalRows() {
@@ -181,7 +195,12 @@ export class PosterGrid {
     btn.className = 'poster-cell';
     btn.dataset.index = String(index);
     btn.setAttribute('role', 'listitem');
-    btn.setAttribute('aria-label', movie.title || 'Movie');
+    const loc = String(movie.location || '').trim();
+    const title = movie.title || 'Movie';
+    btn.setAttribute(
+      'aria-label',
+      loc ? `${title}, location ${loc}` : title
+    );
 
     const letter = document.createElement('span');
     letter.className = 'poster-placeholder';
@@ -211,7 +230,55 @@ export class PosterGrid {
       );
     }
 
+    if (this.showLocationOverlay && loc) {
+      btn.appendChild(this.createLocationOverlay(loc));
+    }
+
     return btn;
+  }
+
+  /**
+   * Location badge at top of poster. Font size is set for binder codes (A1, F42);
+   * long labels use a circular marquee: as characters leave the left edge they
+   * re-enter from the right (two identical segments, translateX -50%).
+   * @param {string} location
+   */
+  createLocationOverlay(location) {
+    const wrap = document.createElement('span');
+    wrap.className = 'poster-loc';
+    wrap.setAttribute('aria-hidden', 'true');
+
+    const viewport = document.createElement('span');
+    viewport.className = 'poster-loc-viewport';
+
+    const track = document.createElement('span');
+    track.className = 'poster-loc-track';
+
+    const seg = document.createElement('span');
+    seg.className = 'poster-loc-seg';
+    seg.textContent = location;
+    track.appendChild(seg);
+    viewport.appendChild(track);
+    wrap.appendChild(viewport);
+
+    // After layout: if full text is wider than the badge, enable seamless loop
+    requestAnimationFrame(() => {
+      if (!wrap.isConnected) return;
+      // Measure unconstrained text width (segment is not ellipsized)
+      const textW = seg.scrollWidth;
+      const viewW = viewport.clientWidth;
+      if (textW <= viewW + 1) return;
+
+      const clone = seg.cloneNode(true);
+      clone.setAttribute('aria-hidden', 'true');
+      track.appendChild(clone);
+      track.classList.add('is-marquee');
+      // Longer labels scroll a bit slower so they stay readable
+      const dur = Math.max(6, Math.min(18, location.length * 0.55));
+      track.style.setProperty('--poster-loc-marquee-duration', `${dur}s`);
+    });
+
+    return wrap;
   }
 
   destroy() {
