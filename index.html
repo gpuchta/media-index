@@ -252,6 +252,20 @@
       </div>
       <div class="dialog-body">
         <form id="settings-form" class="tmdb-search-form">
+          <label class="form-field" for="settings-locale">
+            <span class="form-label">Language</span>
+            <select
+              id="settings-locale"
+              name="settings-locale"
+              class="form-input form-select"
+            >
+              <!-- Options filled from LOCALE_OPTIONS on open -->
+              <option value="en">English</option>
+            </select>
+          </label>
+          <p class="form-hint">
+            Preferred language for TMDB titles and metadata. Stored in this browser only (localStorage).
+          </p>
           <label class="form-field">
             <span class="form-label">TMDB API key</span>
             <input
@@ -281,20 +295,6 @@
           </label>
           <p class="form-hint">
             Stored in this browser only (localStorage). Used to read and write library files via the GitHub API.
-          </p>
-          <label class="form-field" for="settings-locale">
-            <span class="form-label">Language</span>
-            <select
-              id="settings-locale"
-              name="settings-locale"
-              class="form-input form-select"
-            >
-              <!-- Options filled from LOCALE_OPTIONS on open -->
-              <option value="en">English</option>
-            </select>
-          </label>
-          <p class="form-hint">
-            Preferred language for TMDB titles and metadata. Stored in this browser only (localStorage).
           </p>
           <label class="form-field" for="settings-poster-scale">
             <span class="form-label">Poster size</span>
