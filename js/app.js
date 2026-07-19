@@ -32,6 +32,7 @@ import {
   downloadJson,
   formatExportFilename,
   escapeHtml,
+  flashCopyButton,
   mergePosterLists,
   posterUrl,
   promotePosterSelection,
@@ -675,6 +676,7 @@ function appendSaveLog(message) {
 }
 
 async function copySaveProgressLog() {
+  const btn = els.saveProgressCopy;
   const text = els.saveProgressConsole?.textContent || '';
   if (!text) {
     appendSaveLog('(nothing to copy yet)');
@@ -694,8 +696,9 @@ async function copySaveProgressLog() {
       document.execCommand('copy');
       ta.remove();
     }
-    appendSaveLog('Console output copied to clipboard.');
+    flashCopyButton(btn, 'ok');
   } catch (err) {
+    flashCopyButton(btn, 'fail');
     appendSaveLog(`Copy failed: ${err?.message || err}`);
   }
 }

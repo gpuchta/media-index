@@ -134,3 +134,18 @@ export function debounce(fn, ms) {
     t = setTimeout(() => fn(...args), ms);
   };
 }
+
+/**
+ * Briefly show "Copied" / "Copy failed" on a Copy button, then restore "Copy".
+ * @param {HTMLElement|null|undefined} btn
+ * @param {'ok'|'fail'} [status]
+ */
+export function flashCopyButton(btn, status = 'ok') {
+  if (!btn) return;
+  const label = status === 'fail' ? 'Copy failed' : 'Copied';
+  const ms = status === 'fail' ? 2000 : 1500;
+  btn.textContent = label;
+  window.setTimeout(() => {
+    if (btn.isConnected) btn.textContent = 'Copy';
+  }, ms);
+}

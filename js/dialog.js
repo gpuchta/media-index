@@ -1,7 +1,7 @@
 import { CONFIG } from './config.js';
 import { isAppAlertOpen, showAppConfirm } from './alert-dialog.js';
 import { attachPosterHotCorner, posterZoomUrl } from './poster-zoom.js';
-import { posterUrl, formatRuntime, escapeHtml } from './utils.js';
+import { posterUrl, formatRuntime, escapeHtml, flashCopyButton } from './utils.js';
 
 /**
  * Movie detail dialog with draft edits.
@@ -525,15 +525,9 @@ export class MovieDialog {
           document.execCommand('copy');
           ta.remove();
         }
-        jsonCopyBtn.textContent = 'Copied';
-        window.setTimeout(() => {
-          if (jsonCopyBtn.isConnected) jsonCopyBtn.textContent = 'Copy';
-        }, 1500);
+        flashCopyButton(jsonCopyBtn, 'ok');
       } catch {
-        jsonCopyBtn.textContent = 'Copy failed';
-        window.setTimeout(() => {
-          if (jsonCopyBtn.isConnected) jsonCopyBtn.textContent = 'Copy';
-        }, 2000);
+        flashCopyButton(jsonCopyBtn, 'fail');
       }
     });
   }
