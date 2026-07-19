@@ -95,6 +95,44 @@ export async function computeGitBlobSha(text) {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Fetch a git blob by SHA (full file body).
+ * Contents API omits `content` for large files (encoding "none"); use this instead.
+ *
+ * GET /repos/{owner}/{repo}/git/blobs/{sha}
+ *
+ * @param {object} opts
+ * @param {string} opts.token
+ * @param {string} opts.owner
+ * @param {string} opts.repo
+ * @param {string} opts.sha — blob SHA from Contents API
+ * @returns {Promise<string>} decoded UTF-8 text
+ */
+export async function getGitBlobContent(opts) {
+  const token = requireToken(opts.token);
+  const owner = String(opts.owner || '').trim();
+  const repo = String(opts.repo || '').trim();
+  const sha = String(opts.sha || '').trim();
+  if (!owner) throw new Error('GitHub owner is required');
+  if (!repo) throw new Error('GitHub repo is required');
+  if (!sha) throw new Error('Git blob SHA is required');
+
+  const url = `${GITHUB_API_BASE}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/blobs/${encodeURIComponent(sha)}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: apiHeaders(token),
+  });
+  if (!res.ok) {
+    throw new Error(`GitHub get blob failed (${res.status}): ${await parseError(res)}`);
+  }
+  const data = await res.json();
+  if (data.encoding === 'base64' && typeof data.content === 'string') {
+    return decodeGithubContent(data.content);
+  }
+  if (typeof data.content === 'string') return data.content;
+  throw new Error('GitHub blob response had no decodable content');
+}
+
 /** Base64 (possibly with newlines) → UTF-8 string. */
 export function decodeGithubContent(base64) {
   const clean = String(base64 || '').replace(/\n/g, '');
@@ -171,13 +209,22 @@ export async function getFileContent(opts) {
   }
 
   let content = '';
-  if (data.encoding === 'base64' && typeof data.content === 'string') {
+  if (data.encoding === 'base64' && typeof data.content === 'string' && data.content.trim()) {
     content = decodeGithubContent(data.content);
-  } else if (typeof data.content === 'string' && data.encoding === 'none') {
-    // Large files may return empty content with encoding "none"
+  } else if (typeof data.content === 'string' && data.content.trim()) {
+    // encoding "none" or other — only use if GitHub actually returned a body
     content = data.content;
-  } else if (typeof data.content === 'string') {
-    content = data.content;
+  }
+
+  // Large files: Contents API returns encoding "none" and empty content.
+  // Fetch the blob by SHA so callers can diff / parse the full library.
+  if (!content && data.sha) {
+    content = await getGitBlobContent({
+      token,
+      owner,
+      repo,
+      sha: data.sha,
+    });
   }
 
   return {

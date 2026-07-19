@@ -66,6 +66,11 @@ import {
   putFileContent,
   setStoredGithubToken,
 } from './github.js';
+import {
+  diffLibraries,
+  formatLibraryCommitMessage,
+  parseLibraryJson,
+} from './library-diff.js';
 import { isAppAlertOpen, showAppAlert, showAppConfirm } from './alert-dialog.js';
 import { attachPosterHotCorner, isPosterZoomOpen, posterZoomUrl } from './poster-zoom.js';
 import { buildLibraryStats, statsSectionTitle } from './stats.js';
@@ -762,9 +767,22 @@ async function copySaveProgressLog() {
 }
 
 /**
+ * Log every line of a multi-line commit-style message to the Save console
+ * (full, untruncated change list for the operator).
+ * @param {string} text
+ */
+function appendSaveLogMessage(text) {
+  const lines = String(text || '').split('\n');
+  for (const line of lines) {
+    appendSaveLog(line === '' ? ' ' : line);
+  }
+}
+
+/**
  * Upsert the full in-memory library to GitHub (Contents API).
  * Target owner/repo/path come from CONFIG.GITHUB_DATA_COMMITS_URL.
  * Progress is written to the Save progress dialog console.
+ * Commit message lists movie changes (truncated); console shows the full list.
  */
 async function saveJsonToGithub() {
   if (saveJsonInFlight) return;
@@ -794,6 +812,10 @@ async function saveJsonToGithub() {
     appendSaveLog('Checking remote file…');
     const existing = await getFileContent({ token, owner, repo, path });
 
+    /** @type {object[]} */
+    let remoteMovies = [];
+    let isCreate = false;
+
     if (existing.exists) {
       const shaShort = existing.sha ? `${existing.sha.slice(0, 7)}…` : '(unknown)';
       appendSaveLog(`Remote file exists (sha ${shaShort}).`);
@@ -815,6 +837,39 @@ async function saveJsonToGithub() {
         );
       }
 
+      const parsed = parseLibraryJson(existing.content);
+      if (parsed == null) {
+        appendSaveLog(
+          'Warning: remote file is not a JSON array; treating remote as empty for the change summary.'
+        );
+        remoteMovies = [];
+      } else {
+        remoteMovies = parsed;
+        appendSaveLog(`Remote library: ${remoteMovies.length} movie(s).`);
+      }
+    } else {
+      isCreate = true;
+      appendSaveLog('Remote file not found; will create.');
+      remoteMovies = [];
+    }
+
+    const diff = diffLibraries(remoteMovies, state.movies);
+    const fullMessage = formatLibraryCommitMessage(diff, {
+      create: isCreate,
+      maxPerSection: Infinity,
+    });
+    const commitMessage = formatLibraryCommitMessage(diff, {
+      create: isCreate,
+      // Truncate each of Added / Removed / Changed independently
+      maxPerSection: 15,
+    });
+
+    appendSaveLog('Change summary (full):');
+    appendSaveLogMessage(fullMessage);
+    appendSaveLog('Commit message (truncated for GitHub):');
+    appendSaveLogMessage(commitMessage);
+
+    if (existing.exists) {
       appendSaveLog('Uploading update…');
       await putFileContent({
         token,
@@ -823,18 +878,18 @@ async function saveJsonToGithub() {
         path,
         content,
         sha: existing.sha,
-        message: `Update ${path}`,
+        message: commitMessage,
       });
       appendSaveLog('File updated successfully.');
     } else {
-      appendSaveLog('Remote file not found; creating…');
+      appendSaveLog('Uploading create…');
       await putFileContent({
         token,
         owner,
         repo,
         path,
         content,
-        message: `Create ${path}`,
+        message: commitMessage,
       });
       appendSaveLog('File created successfully.');
     }
