@@ -555,7 +555,10 @@ input {
 
 /* Menu items (not accordion headers) — indented under group labels */
 .menu-dropdown [role='menuitem'] {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   width: 100%;
   text-align: left;
   padding: 0.45rem 0.85rem 0.45rem 0.5rem;
@@ -566,6 +569,28 @@ input {
   font: inherit;
 }
 
+.menu-dropdown [role='menuitem'] .menu-item-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+}
+
+/* Right-aligned keyboard hint (e.g. Settings ⌘.) */
+.menu-dropdown [role='menuitem'] .menu-shortcut {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.72em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  opacity: 0.9;
+  white-space: nowrap;
+}
+
 .menu-dropdown [role='menuitem']:hover,
 .menu-dropdown [role='menuitem']:focus-visible {
   background: rgba(255, 255, 255, 0.08);
@@ -574,6 +599,10 @@ input {
 
 .menu-dropdown [role='menuitem'].is-active {
   color: var(--focus);
+}
+
+.menu-dropdown [role='menuitem'].is-active .menu-shortcut {
+  color: var(--text-muted);
 }
 
 /* Section labels outside accordion (e.g. chip menus) keep prior style */
@@ -623,7 +652,7 @@ input {
   gap: 0.35rem;
   flex-shrink: 0;
   box-sizing: border-box;
-  min-width: 5.5rem;
+  /* min-width: 5.5rem; */
   padding: 0.28rem 0.4rem;
   border-radius: 0.5rem;
   border: 1.5px solid rgba(70, 70, 70, 0.55);

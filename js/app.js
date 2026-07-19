@@ -447,6 +447,35 @@ els.settingsBtn?.addEventListener('click', () => {
   openSettingsDialog();
 });
 
+// Platform-specific shortcut hint in the menu (⌘. vs Ctrl+.)
+(() => {
+  const hint = document.getElementById('settings-shortcut-hint');
+  if (!hint) return;
+  const isApple = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || '')
+    || /Mac OS X|Macintosh/i.test(navigator.userAgent || '');
+  hint.textContent = isApple ? '⌘.' : 'Ctrl+.';
+})();
+
+// Ctrl+. / ⌘+. — open Settings (skip when another modal owns the UI)
+document.addEventListener(
+  'keydown',
+  (e) => {
+    const isPeriod = e.key === '.' || e.code === 'Period';
+    if (!isPeriod || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+    // Already on Settings — still swallow the chord
+    if (els.settingsBackdrop && !els.settingsBackdrop.classList.contains('hidden')) {
+      e.preventDefault();
+      return;
+    }
+    // Don't stack Settings over movie dialog, TMDB, save progress, zoom, etc.
+    if (isAnyModalOpen()) return;
+    e.preventDefault();
+    closeMenu();
+    openSettingsDialog();
+  },
+  true
+);
+
 els.settingsClose?.addEventListener('click', () => closeSettingsDialog({ revertPreview: true }));
 els.settingsCancel?.addEventListener('click', () => closeSettingsDialog({ revertPreview: true }));
 els.settingsBackdrop?.addEventListener('click', (e) => {

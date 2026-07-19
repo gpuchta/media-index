@@ -118,7 +118,17 @@
               </button>
               <div class="menu-accordion-panel" id="menu-panel-configuration" role="region" aria-labelledby="menu-trigger-configuration">
                 <div class="menu-accordion-panel-inner">
-                  <button type="button" role="menuitem" id="settings-btn">Settings</button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    id="settings-btn"
+                    aria-keyshortcuts="Control+Period Meta+Period"
+                  >
+                    <span class="menu-item-label">Settings</span>
+                    <kbd class="menu-shortcut" id="settings-shortcut-hint" aria-hidden="true"
+                      >⌘.</kbd
+                    >
+                  </button>
                 </div>
               </div>
             </div>
