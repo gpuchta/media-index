@@ -272,258 +272,259 @@
         </button>
       </div>
       <div class="dialog-body">
-        <form id="settings-form" class="tmdb-search-form">
-          <label class="form-field" for="settings-locale">
-            <span class="form-label">Language</span>
-            <select
-              id="settings-locale"
-              name="settings-locale"
-              class="form-input form-select"
-            >
-              <!-- https://api.themoviedb.org/3/configuration/languages?api_key=... -->
-              <!-- Options filled from LOCALE_OPTIONS on open -->
-              <option value="en">English</option>
-            </select>
-          </label>
-          <p class="form-hint">
-            Preferred language for TMDB titles and metadata. Stored in this browser only (localStorage).
-          </p>
-          <div class="form-field">
-            <label class="form-label" for="settings-tmdb-api-key">TMDB API key</label>
-            <div class="form-secret-row">
-              <input
-                type="password"
-                id="settings-tmdb-api-key"
-                name="settings-tmdb-api-key"
-                class="form-input"
-                spellcheck="false"
-                autocomplete="off"
-                placeholder="API key from themoviedb.org"
-              />
-              <div class="form-secret-actions">
-                <button
-                  type="button"
-                  class="form-secret-btn"
-                  id="settings-tmdb-api-key-toggle"
-                  aria-label="Show key"
-                  title="Show key"
-                  aria-pressed="false"
-                  aria-controls="settings-tmdb-api-key"
-                >
-                  <!-- Eye: key is hidden (click to show) -->
-                  <svg class="form-secret-icon form-secret-icon-show" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
-                    <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
-                  </svg>
-                  <!-- Eye-slash: key is visible (click to hide) -->
-                  <svg class="form-secret-icon form-secret-icon-hide" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false" hidden>
-                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
-                    <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
-                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M4 4l16 16"/>
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  class="form-secret-btn"
-                  id="settings-tmdb-api-key-copy"
-                  data-copy-mode="icon"
-                  aria-label="Copy key"
-                  title="Copy key"
-                >
-                  <svg class="form-secret-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-                  </svg>
+        <form id="settings-form" class="tmdb-search-form settings-form">
+          <div class="settings-section" role="group" aria-labelledby="settings-sec-appearance">
+            <h3 class="settings-section-title" id="settings-sec-appearance">Appearance</h3>
+            <label class="form-field" for="settings-theme">
+              <span class="form-label">Theme</span>
+              <select
+                id="settings-theme"
+                name="settings-theme"
+                class="form-input form-select"
+              >
+                <!-- Options filled from THEME_OPTIONS on open -->
+                <option value="dark">Dark</option>
+              </select>
+            </label>
+            <div class="form-field theme-colors-section" id="settings-theme-colors-section">
+              <span class="form-label">Customize colors</span>
+              <div id="settings-theme-colors" class="theme-colors"></div>
+              <div class="theme-colors-actions">
+                <button type="button" class="btn" id="settings-theme-reset-colors">
+                  Reset colors
                 </button>
               </div>
             </div>
+            <p class="form-hint">
+              Live preview on the grid. Color pickers tweak the selected theme.
+            </p>
           </div>
-          <p class="form-hint">
-            Stored in this browser only (localStorage). Used for TMDB search and posters.
-          </p>
-          <div class="form-field">
-            <label class="form-label" for="settings-github-api-key">GitHub API key</label>
-            <div class="form-secret-row">
-              <input
-                type="password"
-                id="settings-github-api-key"
-                name="settings-github-api-key"
-                class="form-input"
-                spellcheck="false"
-                autocomplete="off"
-                placeholder="Personal access token (github.com)"
-              />
-              <div class="form-secret-actions">
-                <button
-                  type="button"
-                  class="form-secret-btn"
-                  id="settings-github-api-key-toggle"
-                  aria-label="Show key"
-                  title="Show key"
-                  aria-pressed="false"
-                  aria-controls="settings-github-api-key"
+
+          <div class="settings-section" role="group" aria-labelledby="settings-sec-poster">
+            <h3 class="settings-section-title" id="settings-sec-poster">Poster grid</h3>
+            <label class="form-field" for="settings-poster-scale">
+              <span class="form-label">Size</span>
+              <div class="form-range-row">
+                <span class="form-range-edge" aria-hidden="true">S</span>
+                <input
+                  type="range"
+                  id="settings-poster-scale"
+                  name="settings-poster-scale"
+                  class="form-range"
+                  min="50"
+                  max="200"
+                  step="5"
+                  value="100"
+                  aria-valuemin="50"
+                  aria-valuemax="200"
+                  aria-valuenow="100"
+                  aria-valuetext="100 percent"
+                />
+                <span class="form-range-edge" aria-hidden="true">L</span>
+                <output
+                  id="settings-poster-scale-value"
+                  class="form-range-value"
+                  for="settings-poster-scale"
+                  >100%</output
                 >
-                  <!-- Eye: key is hidden (click to show) -->
-                  <svg class="form-secret-icon form-secret-icon-show" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
-                    <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
-                  </svg>
-                  <!-- Eye-slash: key is visible (click to hide) -->
-                  <svg class="form-secret-icon form-secret-icon-hide" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false" hidden>
-                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
-                    <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
-                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M4 4l16 16"/>
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  class="form-secret-btn"
-                  id="settings-github-api-key-copy"
-                  data-copy-mode="icon"
-                  aria-label="Copy key"
-                  title="Copy key"
+              </div>
+            </label>
+            <label class="form-field" for="settings-poster-gap">
+              <span class="form-label">Spacing</span>
+              <div class="form-range-row">
+                <span class="form-range-edge" aria-hidden="true">0</span>
+                <input
+                  type="range"
+                  id="settings-poster-gap"
+                  name="settings-poster-gap"
+                  class="form-range"
+                  min="0"
+                  max="40"
+                  step="1"
+                  value="10"
+                  aria-valuemin="0"
+                  aria-valuemax="40"
+                  aria-valuenow="10"
+                  aria-valuetext="10 pixels"
+                />
+                <span class="form-range-edge" aria-hidden="true">+</span>
+                <output
+                  id="settings-poster-gap-value"
+                  class="form-range-value"
+                  for="settings-poster-gap"
+                  >10px</output
                 >
-                  <svg class="form-secret-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-                  </svg>
-                </button>
+              </div>
+            </label>
+            <label class="form-field" for="settings-poster-backlight">
+              <span class="form-label">Lighting</span>
+              <div class="form-range-row">
+                <span class="form-range-edge" aria-hidden="true">0</span>
+                <input
+                  type="range"
+                  id="settings-poster-backlight"
+                  name="settings-poster-backlight"
+                  class="form-range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value="50"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="50"
+                  aria-valuetext="50 percent"
+                />
+                <span class="form-range-edge" aria-hidden="true">+</span>
+                <output
+                  id="settings-poster-backlight-value"
+                  class="form-range-value"
+                  for="settings-poster-backlight"
+                  >50%</output
+                >
+              </div>
+            </label>
+            <label class="form-field form-check" for="settings-location-overlay">
+              <span class="form-label">Location</span>
+              <span class="form-check-row">
+                <input
+                  type="checkbox"
+                  id="settings-location-overlay"
+                  name="settings-location-overlay"
+                  class="form-check-input"
+                  checked
+                />
+                <span>Show location on posters</span>
+              </span>
+            </label>
+            <p class="form-hint">
+              Size, gap, glow, and location badge. Preview updates live; 0 lighting is flat.
+            </p>
+          </div>
+
+          <div class="settings-section" role="group" aria-labelledby="settings-sec-language">
+            <h3 class="settings-section-title" id="settings-sec-language">Language</h3>
+            <label class="form-field" for="settings-locale">
+              <span class="form-label">Metadata language</span>
+              <select
+                id="settings-locale"
+                name="settings-locale"
+                class="form-input form-select"
+              >
+                <!-- https://api.themoviedb.org/3/configuration/languages?api_key=... -->
+                <!-- Options filled from LOCALE_OPTIONS on open -->
+                <option value="en">English</option>
+              </select>
+            </label>
+            <p class="form-hint">
+              Preferred language for TMDB titles and metadata.
+            </p>
+          </div>
+
+          <div class="settings-section" role="group" aria-labelledby="settings-sec-connections">
+            <h3 class="settings-section-title" id="settings-sec-connections">Connections</h3>
+            <div class="form-field">
+              <label class="form-label" for="settings-tmdb-api-key">TMDB API key</label>
+              <div class="form-secret-row">
+                <input
+                  type="password"
+                  id="settings-tmdb-api-key"
+                  name="settings-tmdb-api-key"
+                  class="form-input"
+                  spellcheck="false"
+                  autocomplete="off"
+                  placeholder="API key from themoviedb.org"
+                />
+                <div class="form-secret-actions">
+                  <button
+                    type="button"
+                    class="form-secret-btn"
+                    id="settings-tmdb-api-key-toggle"
+                    aria-label="Show key"
+                    title="Show key"
+                    aria-pressed="false"
+                    aria-controls="settings-tmdb-api-key"
+                  >
+                    <!-- Eye: key is hidden (click to show) -->
+                    <svg class="form-secret-icon form-secret-icon-show" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                      <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
+                      <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
+                    </svg>
+                    <!-- Eye-slash: key is visible (click to hide) -->
+                    <svg class="form-secret-icon form-secret-icon-hide" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false" hidden>
+                      <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
+                      <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
+                      <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M4 4l16 16"/>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="form-secret-btn"
+                    id="settings-tmdb-api-key-copy"
+                    data-copy-mode="icon"
+                    aria-label="Copy key"
+                    title="Copy key"
+                  >
+                    <svg class="form-secret-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
+            <div class="form-field">
+              <label class="form-label" for="settings-github-api-key">GitHub API key</label>
+              <div class="form-secret-row">
+                <input
+                  type="password"
+                  id="settings-github-api-key"
+                  name="settings-github-api-key"
+                  class="form-input"
+                  spellcheck="false"
+                  autocomplete="off"
+                  placeholder="Personal access token (github.com)"
+                />
+                <div class="form-secret-actions">
+                  <button
+                    type="button"
+                    class="form-secret-btn"
+                    id="settings-github-api-key-toggle"
+                    aria-label="Show key"
+                    title="Show key"
+                    aria-pressed="false"
+                    aria-controls="settings-github-api-key"
+                  >
+                    <!-- Eye: key is hidden (click to show) -->
+                    <svg class="form-secret-icon form-secret-icon-show" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                      <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
+                      <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
+                    </svg>
+                    <!-- Eye-slash: key is visible (click to hide) -->
+                    <svg class="form-secret-icon form-secret-icon-hide" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false" hidden>
+                      <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
+                      <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
+                      <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M4 4l16 16"/>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="form-secret-btn"
+                    id="settings-github-api-key-copy"
+                    data-copy-mode="icon"
+                    aria-label="Copy key"
+                    title="Copy key"
+                  >
+                    <svg class="form-secret-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p class="form-hint">
+              Keys stay in this browser only. TMDB for search and posters; GitHub for library read/write.
+            </p>
           </div>
-          <p class="form-hint">
-            Stored in this browser only (localStorage). Used to read and write library files via the GitHub API.
-          </p>
-          <label class="form-field" for="settings-poster-scale">
-            <span class="form-label">Poster size</span>
-            <div class="form-range-row">
-              <span class="form-range-edge" aria-hidden="true">S</span>
-              <input
-                type="range"
-                id="settings-poster-scale"
-                name="settings-poster-scale"
-                class="form-range"
-                min="50"
-                max="200"
-                step="5"
-                value="100"
-                aria-valuemin="50"
-                aria-valuemax="200"
-                aria-valuenow="100"
-                aria-valuetext="100 percent"
-              />
-              <span class="form-range-edge" aria-hidden="true">L</span>
-              <output
-                id="settings-poster-scale-value"
-                class="form-range-value"
-                for="settings-poster-scale"
-                >100%</output
-              >
-            </div>
-          </label>
-          <p class="form-hint">
-            Scales the movie poster grid. Preview updates while you drag; Save stores it in this browser only.
-          </p>
-          <label class="form-field" for="settings-poster-gap">
-            <span class="form-label">Poster spacing</span>
-            <div class="form-range-row">
-              <span class="form-range-edge" aria-hidden="true">0</span>
-              <input
-                type="range"
-                id="settings-poster-gap"
-                name="settings-poster-gap"
-                class="form-range"
-                min="0"
-                max="40"
-                step="1"
-                value="10"
-                aria-valuemin="0"
-                aria-valuemax="40"
-                aria-valuenow="10"
-                aria-valuetext="10 pixels"
-              />
-              <span class="form-range-edge" aria-hidden="true">+</span>
-              <output
-                id="settings-poster-gap-value"
-                class="form-range-value"
-                for="settings-poster-gap"
-                >10px</output
-              >
-            </div>
-          </label>
-          <p class="form-hint">
-            Gap between posters in the grid. Preview updates while you drag; Save stores it in this browser only.
-          </p>
-          <label class="form-field" for="settings-poster-backlight">
-            <span class="form-label">Poster lighting</span>
-            <div class="form-range-row">
-              <span class="form-range-edge" aria-hidden="true">0</span>
-              <input
-                type="range"
-                id="settings-poster-backlight"
-                name="settings-poster-backlight"
-                class="form-range"
-                min="0"
-                max="100"
-                step="5"
-                value="50"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-valuenow="50"
-                aria-valuetext="50 percent"
-              />
-              <span class="form-range-edge" aria-hidden="true">+</span>
-              <output
-                id="settings-poster-backlight-value"
-                class="form-range-value"
-                for="settings-poster-backlight"
-                >50%</output
-              >
-            </div>
-          </label>
-          <p class="form-hint">
-            Theme-colored glow and depth behind posters. 0 is flat; higher values add backlight. Preview updates while you drag; Save stores it in this browser only.
-          </p>
-          <label class="form-field form-check" for="settings-location-overlay">
-            <span class="form-label">Poster location</span>
-            <span class="form-check-row">
-              <input
-                type="checkbox"
-                id="settings-location-overlay"
-                name="settings-location-overlay"
-                class="form-check-input"
-                checked
-              />
-              <span>Show location on posters</span>
-            </span>
-          </label>
-          <p class="form-hint">
-            Overlay the movie’s location at the top of each poster. Preview updates when toggled; Save stores the choice in this browser only.
-          </p>
-          <label class="form-field" for="settings-theme">
-            <span class="form-label">Theme</span>
-            <select
-              id="settings-theme"
-              name="settings-theme"
-              class="form-input form-select"
-            >
-              <!-- Options filled from THEME_OPTIONS on open -->
-              <option value="dark">Dark</option>
-            </select>
-          </label>
-          <p class="form-hint">
-            Preview updates when you change selection; Save stores the theme in this browser only.
-          </p>
-          <div class="form-field theme-colors-section" id="settings-theme-colors-section">
-            <span class="form-label">Customize colors</span>
-            <div id="settings-theme-colors" class="theme-colors"></div>
-            <div class="theme-colors-actions">
-              <button type="button" class="btn" id="settings-theme-reset-colors">
-                Reset colors
-              </button>
-            </div>
-          </div>
-          <p class="form-hint">
-            Use the color pickers and gradient bars to tweak the selected theme. Preview is live; Save stores custom colors in this browser only.
-          </p>
+
           <p id="settings-status" class="tmdb-search-status" role="status" hidden></p>
         </form>
       </div>

@@ -1420,6 +1420,43 @@ input {
   width: min(480px, 100%);
 }
 
+/* Settings: visual section cards (role=group + heading — avoid <legend> border quirks) */
+.settings-form {
+  gap: 1.15rem;
+}
+
+.settings-section {
+  margin: 0;
+  padding: 0.8rem 0.9rem 0.9rem;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-sizing: border-box;
+}
+
+.settings-section-title {
+  margin: 0;
+  padding: 0 0 0.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 1.25;
+}
+
+/* Section footer hint: clear end of each group */
+.settings-section > .form-hint {
+  margin: 0;
+  padding-top: 0.55rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+}
+
 .dialog-stats {
   width: min(720px, 100%);
   max-height: min(92vh, 900px);

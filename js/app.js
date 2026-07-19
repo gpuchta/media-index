@@ -1361,7 +1361,7 @@ function openSettingsDialog() {
   els.settingsBackdrop.setAttribute('aria-hidden', 'false');
   queueMicrotask(() => {
     resetDialogScroll(els.settingsBackdrop);
-    els.settingsLocale?.focus();
+    els.settingsTheme?.focus();
   });
 }
 
