@@ -3,11 +3,14 @@ import {
   DEFAULT_SORT,
   FILTER_TYPE_LABELS,
   GITHUB_TARGET,
+  LOCALE_OPTIONS,
   SORT_OPTIONS,
   clampPosterGapPx,
   clampPosterScalePercent,
+  getStoredLocale,
   getStoredPosterGapPx,
   getStoredPosterScalePercent,
+  setStoredLocale,
   setStoredPosterGapPx,
   setStoredPosterScalePercent,
 } from './config.js';
@@ -94,6 +97,7 @@ const els = {
   settingsForm: document.getElementById('settings-form'),
   settingsApiKey: document.getElementById('settings-tmdb-api-key'),
   settingsGithubApiKey: document.getElementById('settings-github-api-key'),
+  settingsLocale: document.getElementById('settings-locale'),
   settingsPosterScale: document.getElementById('settings-poster-scale'),
   settingsPosterScaleValue: document.getElementById('settings-poster-scale-value'),
   settingsPosterGap: document.getElementById('settings-poster-gap'),
@@ -883,6 +887,22 @@ function applyPosterGapFromSettingsControl({ preview = false } = {}) {
   return n;
 }
 
+function populateLocaleSelect() {
+  const sel = els.settingsLocale;
+  if (!sel) return;
+  const current = getStoredLocale();
+  // Rebuild options from LOCALE_OPTIONS so the list stays in sync with config
+  sel.replaceChildren();
+  for (const opt of LOCALE_OPTIONS) {
+    const o = document.createElement('option');
+    o.value = opt.id;
+    o.textContent = opt.label;
+    if (opt.id === current) o.selected = true;
+    sel.appendChild(o);
+  }
+  sel.value = current;
+}
+
 function openSettingsDialog() {
   if (!els.settingsBackdrop) return;
   if (els.settingsApiKey) {
@@ -891,6 +911,7 @@ function openSettingsDialog() {
   if (els.settingsGithubApiKey) {
     els.settingsGithubApiKey.value = getStoredGithubToken();
   }
+  populateLocaleSelect();
   savedPosterScalePercent = getStoredPosterScalePercent();
   savedPosterGapPx = getStoredPosterGapPx();
   if (els.settingsPosterScale) {
@@ -1101,11 +1122,15 @@ function saveSettings() {
   const githubKey = String(els.settingsGithubApiKey?.value || '').trim();
   setStoredTmdbApiKey(tmdbKey);
   setStoredGithubToken(githubKey);
+  const locale = setStoredLocale(els.settingsLocale?.value);
+  const localeLabel =
+    LOCALE_OPTIONS.find((o) => o.id === locale)?.label || locale;
   const scalePercent = applyPosterScaleFromSettingsControl({ preview: false });
   const gapPx = applyPosterGapFromSettingsControl({ preview: false });
   const parts = [
     tmdbKey ? 'TMDB API key saved' : 'TMDB API key cleared',
     githubKey ? 'GitHub API key saved' : 'GitHub API key cleared',
+    `language ${localeLabel}`,
     `poster size ${scalePercent}%`,
     `spacing ${gapPx}px`,
   ];

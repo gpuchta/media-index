@@ -11,6 +11,9 @@
  * re-download instead of using a cached JSON.
  */
 import { parseGithubDataCommitsUrl } from './github.js';
+import { LOCALE_OPTIONS } from './locale-options.js';
+
+export { LOCALE_OPTIONS };
 
 /** Fallback load path if GITHUB_DATA_COMMITS_URL is missing or invalid. */
 export const FALLBACK_DATA_PATH = 'data/media-index.json';
@@ -72,6 +75,14 @@ export const CONFIG = {
   POSTER_GAP_MAX: 40,
   POSTER_GAP_DEFAULT: 10,
   POSTER_GAP_STEP: 1,
+
+  /**
+   * Preferred language for TMDB (ISO 639-1, e.g. en, de).
+   * Stored in localStorage; see LOCALE_OPTIONS and localeToTmdbLanguage().
+   * Legacy values en_US / de_DE are normalized to en / de.
+   */
+  LOCALE_STORAGE: 'pmi:locale',
+  LOCALE_DEFAULT: 'en',
 
   /** Extra rows rendered above/below the viewport. */
   VIRTUAL_BUFFER_ROWS: 2,
@@ -160,6 +171,67 @@ export function setStoredPosterGapPx(px) {
     /* private mode */
   }
   return n;
+}
+
+/** Map legacy Settings values to ISO 639-1 ids. */
+const LEGACY_LOCALE_MAP = Object.freeze({
+  en_us: 'en',
+  de_de: 'de',
+});
+
+/**
+ * Normalize a language id to a known ISO 639-1 option, or default (`en`).
+ * Accepts `en`, `en-US`, `en_US` (case-insensitive).
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function normalizeLocale(value) {
+  let raw = String(value ?? '').trim().toLowerCase();
+  if (!raw) return CONFIG.LOCALE_DEFAULT;
+  raw = raw.replace(/-/g, '_');
+  if (LEGACY_LOCALE_MAP[raw]) raw = LEGACY_LOCALE_MAP[raw];
+  // en_US → en; keep bare codes like nb, zh
+  if (raw.includes('_')) raw = raw.split('_')[0];
+  const found = LOCALE_OPTIONS.find((o) => o.id === raw);
+  return found ? found.id : CONFIG.LOCALE_DEFAULT;
+}
+
+/** @returns {string} ISO 639-1 id e.g. en */
+export function getStoredLocale() {
+  try {
+    const raw = localStorage.getItem(CONFIG.LOCALE_STORAGE);
+    if (raw == null || raw === '') return CONFIG.LOCALE_DEFAULT;
+    return normalizeLocale(raw);
+  } catch {
+    return CONFIG.LOCALE_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} locale
+ * @returns {string} stored ISO 639-1 id
+ */
+export function setStoredLocale(locale) {
+  const id = normalizeLocale(locale);
+  try {
+    if (id === CONFIG.LOCALE_DEFAULT) {
+      localStorage.removeItem(CONFIG.LOCALE_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.LOCALE_STORAGE, id);
+    }
+  } catch {
+    /* private mode */
+  }
+  return id;
+}
+
+/**
+ * Convert stored language id to TMDB `language` query value (ISO 639-1).
+ * @param {unknown} [locale]
+ * @returns {string}
+ */
+export function localeToTmdbLanguage(locale) {
+  return normalizeLocale(locale ?? getStoredLocale());
 }
 
 /**

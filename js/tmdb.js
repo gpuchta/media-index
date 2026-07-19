@@ -1,8 +1,10 @@
 /**
  * Minimal TMDB API v3 client (search + API key storage).
  * Key is never hard-coded; load/save via localStorage.
+ * Locale comes from Settings (pmi:locale) via localeToTmdbLanguage().
  */
 
+import { localeToTmdbLanguage } from './config.js';
 import { promotePosterSelection } from './utils.js';
 
 export const TMDB_API_BASE = 'https://api.themoviedb.org/3';
@@ -34,18 +36,31 @@ function redactUrl(url) {
 /** @type {Map<number, string>|null} */
 let genreIdToName = null;
 let genreMapApiKey = '';
+let genreMapLanguage = '';
+
+/** Append current Settings locale as TMDB `language` query param. */
+function withLanguage(url) {
+  const lang = localeToTmdbLanguage();
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}language=${encodeURIComponent(lang)}`;
+}
 
 /**
- * Fetch and cache TMDB movie genre id → name map for the given API key.
+ * Fetch and cache TMDB movie genre id → name map for the given API key + locale.
  * @param {string} apiKey
  * @returns {Promise<Map<number, string>>}
  */
 export async function getGenreMap(apiKey) {
   const key = String(apiKey || '').trim();
   if (!key) return new Map();
-  if (genreIdToName && genreMapApiKey === key) return genreIdToName;
+  const lang = localeToTmdbLanguage();
+  if (genreIdToName && genreMapApiKey === key && genreMapLanguage === lang) {
+    return genreIdToName;
+  }
 
-  const url = `${TMDB_API_BASE}/genre/movie/list?api_key=${encodeURIComponent(key)}`;
+  const url = withLanguage(
+    `${TMDB_API_BASE}/genre/movie/list?api_key=${encodeURIComponent(key)}`
+  );
   const res = await fetch(url, {
     method: 'GET',
     headers: { Accept: 'application/json' },
@@ -60,6 +75,7 @@ export async function getGenreMap(apiKey) {
   }
   genreIdToName = map;
   genreMapApiKey = key;
+  genreMapLanguage = lang;
   return map;
 }
 
@@ -86,7 +102,9 @@ export async function searchMoviesByTitleAndYear(apiKey, title, year, page = 1) 
   if (!q) throw new Error('Movie title is required');
   const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
 
-  let url = `${TMDB_API_BASE}/search/movie?api_key=${encodeURIComponent(key)}&query=${encodeURIComponent(q)}&page=${pageNum}`;
+  let url = withLanguage(
+    `${TMDB_API_BASE}/search/movie?api_key=${encodeURIComponent(key)}&query=${encodeURIComponent(q)}&page=${pageNum}`
+  );
   const y = year === '' || year == null ? null : parseInt(String(year), 10);
   if (y != null && !Number.isNaN(y)) {
     url += `&year=${y}`;
@@ -158,9 +176,13 @@ export async function getMovieById(apiKey, id) {
   const base = `${TMDB_API_BASE}/movie/${movieId}`;
 
   const [detail, credits, keywords] = await Promise.all([
-    fetchJson(`${base}?api_key=${encodeURIComponent(key)}&append_to_response=images`),
-    fetchJson(`${base}/credits?api_key=${encodeURIComponent(key)}`),
-    fetchJson(`${base}/keywords?api_key=${encodeURIComponent(key)}`),
+    fetchJson(
+      withLanguage(
+        `${base}?api_key=${encodeURIComponent(key)}&append_to_response=images`
+      )
+    ),
+    fetchJson(withLanguage(`${base}/credits?api_key=${encodeURIComponent(key)}`)),
+    fetchJson(withLanguage(`${base}/keywords?api_key=${encodeURIComponent(key)}`)),
   ]);
 
   const cast = Array.isArray(credits.cast)
