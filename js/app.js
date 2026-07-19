@@ -7,11 +7,14 @@ import {
   SORT_OPTIONS,
   THEME_COLOR_FIELDS,
   THEME_OPTIONS,
+  applyPosterBacklight,
   applyTheme,
+  clampPosterBacklightPercent,
   clampPosterGapPx,
   clampPosterScalePercent,
   getStoredLocale,
   getStoredLocationOverlayEnabled,
+  getStoredPosterBacklightPercent,
   getStoredPosterGapPx,
   getStoredPosterScalePercent,
   getStoredTheme,
@@ -20,6 +23,7 @@ import {
   readResolvedThemeColors,
   setStoredLocale,
   setStoredLocationOverlayEnabled,
+  setStoredPosterBacklightPercent,
   setStoredPosterGapPx,
   setStoredPosterScalePercent,
   setStoredTheme,
@@ -123,6 +127,10 @@ const els = {
   settingsPosterScaleValue: document.getElementById('settings-poster-scale-value'),
   settingsPosterGap: document.getElementById('settings-poster-gap'),
   settingsPosterGapValue: document.getElementById('settings-poster-gap-value'),
+  settingsPosterBacklight: document.getElementById('settings-poster-backlight'),
+  settingsPosterBacklightValue: document.getElementById(
+    'settings-poster-backlight-value'
+  ),
   settingsLocationOverlay: document.getElementById('settings-location-overlay'),
   settingsTheme: document.getElementById('settings-theme'),
   settingsThemeColors: document.getElementById('settings-theme-colors'),
@@ -262,6 +270,7 @@ const grid = new PosterGrid({
 /** Last saved poster layout prefs; used to revert preview on Settings cancel. */
 let savedPosterScalePercent = getStoredPosterScalePercent();
 let savedPosterGapPx = getStoredPosterGapPx();
+let savedPosterBacklightPercent = getStoredPosterBacklightPercent();
 let savedLocationOverlay = getStoredLocationOverlayEnabled();
 /** Last saved theme prefs; used to revert Settings theme preview on cancel. */
 let savedThemeId = getStoredTheme();
@@ -271,6 +280,7 @@ let savedThemeColors = getStoredThemeColors();
 /** @type {Record<string, string>} */
 let draftThemeColors = { ...savedThemeColors };
 applyTheme(savedThemeId, savedThemeColors);
+applyPosterBacklight(savedPosterBacklightPercent);
 grid.setScale(savedPosterScalePercent / 100);
 grid.setGap(savedPosterGapPx);
 grid.setLocationOverlay(savedLocationOverlay);
@@ -513,6 +523,9 @@ els.settingsPosterScale?.addEventListener('input', () => {
 });
 els.settingsPosterGap?.addEventListener('input', () => {
   applyPosterGapFromSettingsControl({ preview: true });
+});
+els.settingsPosterBacklight?.addEventListener('input', () => {
+  applyPosterBacklightFromSettingsControl({ preview: true });
 });
 els.settingsLocationOverlay?.addEventListener('change', () => {
   grid.setLocationOverlay(!!els.settingsLocationOverlay.checked);
@@ -1020,6 +1033,20 @@ function syncPosterGapControl(px) {
   return n;
 }
 
+function syncPosterBacklightControl(percent) {
+  const n = clampPosterBacklightPercent(percent);
+  if (els.settingsPosterBacklight) {
+    els.settingsPosterBacklight.value = String(n);
+    els.settingsPosterBacklight.setAttribute('aria-valuenow', String(n));
+    els.settingsPosterBacklight.setAttribute('aria-valuetext', `${n} percent`);
+  }
+  if (els.settingsPosterBacklightValue) {
+    els.settingsPosterBacklightValue.value = `${n}%`;
+    els.settingsPosterBacklightValue.textContent = `${n}%`;
+  }
+  return n;
+}
+
 /**
  * Read slider and apply scale to the grid.
  * @param {{ preview?: boolean }} [opts]
@@ -1044,6 +1071,20 @@ function applyPosterGapFromSettingsControl({ preview = false } = {}) {
   grid.setGap(n);
   if (!preview) {
     savedPosterGapPx = setStoredPosterGapPx(n);
+  }
+  return n;
+}
+
+/**
+ * Read slider and apply poster backlight intensity (live CSS).
+ * @param {{ preview?: boolean }} [opts]
+ */
+function applyPosterBacklightFromSettingsControl({ preview = false } = {}) {
+  const n = clampPosterBacklightPercent(els.settingsPosterBacklight?.value);
+  syncPosterBacklightControl(n);
+  applyPosterBacklight(n);
+  if (!preview) {
+    savedPosterBacklightPercent = setStoredPosterBacklightPercent(n);
   }
   return n;
 }
@@ -1270,6 +1311,7 @@ function openSettingsDialog() {
   populateLocaleSelect();
   savedPosterScalePercent = getStoredPosterScalePercent();
   savedPosterGapPx = getStoredPosterGapPx();
+  savedPosterBacklightPercent = getStoredPosterBacklightPercent();
   savedLocationOverlay = getStoredLocationOverlayEnabled();
   if (els.settingsLocationOverlay) {
     els.settingsLocationOverlay.checked = savedLocationOverlay;
@@ -1281,6 +1323,7 @@ function openSettingsDialog() {
   populateThemeSelect();
   // Ensure UI matches saved theme + colors when opening
   applyTheme(savedThemeId, draftThemeColors);
+  applyPosterBacklight(savedPosterBacklightPercent);
   syncThemeColorControls();
   if (els.settingsPosterScale) {
     els.settingsPosterScale.min = String(CONFIG.POSTER_SCALE_MIN);
@@ -1296,8 +1339,22 @@ function openSettingsDialog() {
     els.settingsPosterGap.setAttribute('aria-valuemin', String(CONFIG.POSTER_GAP_MIN));
     els.settingsPosterGap.setAttribute('aria-valuemax', String(CONFIG.POSTER_GAP_MAX));
   }
+  if (els.settingsPosterBacklight) {
+    els.settingsPosterBacklight.min = String(CONFIG.POSTER_BACKLIGHT_MIN);
+    els.settingsPosterBacklight.max = String(CONFIG.POSTER_BACKLIGHT_MAX);
+    els.settingsPosterBacklight.step = String(CONFIG.POSTER_BACKLIGHT_STEP);
+    els.settingsPosterBacklight.setAttribute(
+      'aria-valuemin',
+      String(CONFIG.POSTER_BACKLIGHT_MIN)
+    );
+    els.settingsPosterBacklight.setAttribute(
+      'aria-valuemax',
+      String(CONFIG.POSTER_BACKLIGHT_MAX)
+    );
+  }
   syncPosterScaleControl(savedPosterScalePercent);
   syncPosterGapControl(savedPosterGapPx);
+  syncPosterBacklightControl(savedPosterBacklightPercent);
   setSettingsStatus('');
   resetDialogScroll(els.settingsBackdrop);
   els.settingsBackdrop.classList.remove('hidden');
@@ -1316,10 +1373,13 @@ function closeSettingsDialog({ revertPreview = false } = {}) {
   if (revertPreview) {
     const scale = clampPosterScalePercent(savedPosterScalePercent);
     const gap = clampPosterGapPx(savedPosterGapPx);
+    const backlight = clampPosterBacklightPercent(savedPosterBacklightPercent);
     syncPosterScaleControl(scale);
     syncPosterGapControl(gap);
+    syncPosterBacklightControl(backlight);
     grid.setScale(scale / 100);
     grid.setGap(gap);
+    applyPosterBacklight(backlight);
     if (els.settingsLocationOverlay) {
       els.settingsLocationOverlay.checked = savedLocationOverlay;
     }
@@ -1512,6 +1572,9 @@ function saveSettings() {
     : 'default colors';
   const scalePercent = applyPosterScaleFromSettingsControl({ preview: false });
   const gapPx = applyPosterGapFromSettingsControl({ preview: false });
+  const backlightPercent = applyPosterBacklightFromSettingsControl({
+    preview: false,
+  });
   savedLocationOverlay = setStoredLocationOverlayEnabled(
     !!els.settingsLocationOverlay?.checked
   );
@@ -1522,6 +1585,7 @@ function saveSettings() {
     `language ${localeLabel}`,
     `poster size ${scalePercent}%`,
     `spacing ${gapPx}px`,
+    `lighting ${backlightPercent}%`,
     `location overlay ${savedLocationOverlay ? 'on' : 'off'}`,
     `theme ${themeLabel} (${customNote})`,
   ];

@@ -35,6 +35,13 @@
   --poster-loc-bg: #0a0a12;
   --poster-loc-text: #ffc107;
 
+  /*
+   * Poster back lighting (Settings slider). Unitless 0–1; glow color tracks theme
+   * accent (--focus) unless a theme/custom override sets --poster-glow.
+   */
+  --poster-backlight: 0.5;
+  --poster-glow: var(--focus);
+
   --header-h: auto;
   --cell-w: 256px;
   --cell-h: 388px;
@@ -918,28 +925,51 @@ input {
 }
 
 .poster-cell {
+  --_bl: var(--poster-backlight, 0.5);
   position: relative;
   width: 100%;
   aspect-ratio: 256 / 388;
   max-height: none;
   border-radius: 6px;
-  overflow: hidden;
+  /* Visible so theme backlight / depth shadow can extend past the card */
+  overflow: visible;
   border: 1px solid var(--border);
   background: #1a1a28;
   cursor: pointer;
   padding: 0;
   color: inherit;
+  /* Theme-colored ambient glow + soft elevation shade; intensity from Settings */
+  box-shadow:
+    0 0 calc(14px * var(--_bl))
+      color-mix(
+        in srgb,
+        var(--poster-glow, var(--focus)) calc(var(--_bl) * 52%),
+        transparent
+      ),
+    0 calc(3px * var(--_bl)) calc(12px * var(--_bl))
+      color-mix(
+        in srgb,
+        var(--poster-glow, var(--focus)) calc(var(--_bl) * 34%),
+        transparent
+      ),
+    0 calc(6px * var(--_bl)) calc(16px * var(--_bl))
+      rgba(0, 0, 0, calc(0.55 * var(--_bl)));
+}
+
+.poster-cell:hover {
+  z-index: 1;
 }
 
 .poster-cell:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
-  z-index: 1;
+  z-index: 2;
 }
 
 .poster-bg {
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   background-color: #1a1a28;
   background-size: cover;
   background-position: center center;
@@ -949,6 +979,7 @@ input {
 .poster-placeholder {
   position: absolute;
   inset: 0;
+  border-radius: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -967,6 +998,9 @@ input {
   left: 0;
   right: 0;
   z-index: 2;
+  border-radius: inherit;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
   display: flex;
   align-items: center;
   min-height: calc(var(--poster-loc-size, 0.78rem) * 1.55);

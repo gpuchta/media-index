@@ -452,6 +452,36 @@
           <p class="form-hint">
             Gap between posters in the grid. Preview updates while you drag; Save stores it in this browser only.
           </p>
+          <label class="form-field" for="settings-poster-backlight">
+            <span class="form-label">Poster lighting</span>
+            <div class="form-range-row">
+              <span class="form-range-edge" aria-hidden="true">0</span>
+              <input
+                type="range"
+                id="settings-poster-backlight"
+                name="settings-poster-backlight"
+                class="form-range"
+                min="0"
+                max="100"
+                step="5"
+                value="50"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="50"
+                aria-valuetext="50 percent"
+              />
+              <span class="form-range-edge" aria-hidden="true">+</span>
+              <output
+                id="settings-poster-backlight-value"
+                class="form-range-value"
+                for="settings-poster-backlight"
+                >50%</output
+              >
+            </div>
+          </label>
+          <p class="form-hint">
+            Theme-colored glow and depth behind posters. 0 is flat; higher values add backlight. Preview updates while you drag; Save stores it in this browser only.
+          </p>
           <label class="form-field form-check" for="settings-location-overlay">
             <span class="form-label">Poster location</span>
             <span class="form-check-row">

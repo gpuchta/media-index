@@ -77,6 +77,17 @@ export const CONFIG = {
   POSTER_GAP_STEP: 1,
 
   /**
+   * Poster back lighting / shading intensity (Settings slider), percent 0–100.
+   * 0 = flat posters; higher values add theme-colored glow + depth shadow.
+   * Stored in localStorage as an integer string (e.g. "50").
+   */
+  POSTER_BACKLIGHT_STORAGE: 'pmi:posterBacklight',
+  POSTER_BACKLIGHT_MIN: 0,
+  POSTER_BACKLIGHT_MAX: 100,
+  POSTER_BACKLIGHT_DEFAULT: 50,
+  POSTER_BACKLIGHT_STEP: 5,
+
+  /**
    * Preferred language for TMDB (ISO 639-1, e.g. en, de).
    * Stored in localStorage; see LOCALE_OPTIONS and localeToTmdbLanguage().
    * Legacy values en_US / de_DE are normalized to en / de.
@@ -256,6 +267,64 @@ export function setStoredPosterGapPx(px) {
   } catch {
     /* private mode */
   }
+  return n;
+}
+
+/**
+ * Clamp and normalize poster backlight intensity percent (0–100).
+ * @param {unknown} value
+ * @returns {number}
+ */
+export function clampPosterBacklightPercent(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return CONFIG.POSTER_BACKLIGHT_DEFAULT;
+  return Math.min(
+    CONFIG.POSTER_BACKLIGHT_MAX,
+    Math.max(CONFIG.POSTER_BACKLIGHT_MIN, n)
+  );
+}
+
+/** @returns {number} percent 0–100 */
+export function getStoredPosterBacklightPercent() {
+  try {
+    const raw = localStorage.getItem(CONFIG.POSTER_BACKLIGHT_STORAGE);
+    if (raw == null || raw === '') return CONFIG.POSTER_BACKLIGHT_DEFAULT;
+    return clampPosterBacklightPercent(raw);
+  } catch {
+    return CONFIG.POSTER_BACKLIGHT_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} percent
+ * @returns {number} stored percent
+ */
+export function setStoredPosterBacklightPercent(percent) {
+  const n = clampPosterBacklightPercent(percent);
+  try {
+    if (n === CONFIG.POSTER_BACKLIGHT_DEFAULT) {
+      localStorage.removeItem(CONFIG.POSTER_BACKLIGHT_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.POSTER_BACKLIGHT_STORAGE, String(n));
+    }
+  } catch {
+    /* private mode */
+  }
+  return n;
+}
+
+/**
+ * Apply poster backlight intensity to the document (preview or after Save).
+ * Sets --poster-backlight on &lt;html&gt; as a unitless 0–1 factor for CSS.
+ * @param {unknown} percent 0–100
+ * @returns {number} applied percent
+ */
+export function applyPosterBacklight(percent) {
+  const n = clampPosterBacklightPercent(percent);
+  document.documentElement.style.setProperty(
+    '--poster-backlight',
+    String(n / 100)
+  );
   return n;
 }
 
