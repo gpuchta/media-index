@@ -136,7 +136,9 @@ export function debounce(fn, ms) {
 }
 
 /**
- * Briefly show "Copied" / "Copy failed" on a Copy button, then restore "Copy".
+ * Briefly show "Copied" / "Copy failed" on a Copy button, then restore.
+ * Text buttons: swap label text. Icon buttons (`data-copy-mode="icon"`):
+ * update aria-label/title and a success/fail class without destroying SVG.
  * @param {HTMLElement|null|undefined} btn
  * @param {'ok'|'fail'} [status]
  */
@@ -144,8 +146,50 @@ export function flashCopyButton(btn, status = 'ok') {
   if (!btn) return;
   const label = status === 'fail' ? 'Copy failed' : 'Copied';
   const ms = status === 'fail' ? 2000 : 1500;
+  const iconMode = btn.dataset.copyMode === 'icon';
+
+  if (iconMode) {
+    if (!btn.dataset.copyDefaultLabel) {
+      btn.dataset.copyDefaultLabel = btn.getAttribute('aria-label') || 'Copy key';
+    }
+    const prevLabel = btn.dataset.copyDefaultLabel;
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+    btn.classList.remove('is-copy-ok', 'is-copy-fail');
+    btn.classList.add(status === 'fail' ? 'is-copy-fail' : 'is-copy-ok');
+    window.setTimeout(() => {
+      if (!btn.isConnected) return;
+      btn.setAttribute('aria-label', prevLabel);
+      btn.setAttribute('title', prevLabel);
+      btn.classList.remove('is-copy-ok', 'is-copy-fail');
+    }, ms);
+    return;
+  }
+
   btn.textContent = label;
   window.setTimeout(() => {
     if (btn.isConnected) btn.textContent = 'Copy';
   }, ms);
+}
+
+/**
+ * Copy plain text to the clipboard (Clipboard API with textarea fallback).
+ * @param {string} text
+ * @returns {Promise<void>}
+ */
+export async function copyTextToClipboard(text) {
+  const value = String(text ?? '');
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+  const ta = document.createElement('textarea');
+  ta.value = value;
+  ta.setAttribute('readonly', '');
+  ta.style.position = 'fixed';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  ta.remove();
 }

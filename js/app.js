@@ -32,6 +32,7 @@ import { clearHash, hashToLeaves, writeHash } from './hash.js';
 import { PosterGrid } from './grid.js';
 import { MovieDialog } from './dialog.js';
 import {
+  copyTextToClipboard,
   downloadJson,
   formatExportFilename,
   escapeHtml,
@@ -96,7 +97,11 @@ const els = {
   settingsBackdrop: document.getElementById('settings-backdrop'),
   settingsForm: document.getElementById('settings-form'),
   settingsApiKey: document.getElementById('settings-tmdb-api-key'),
+  settingsApiKeyToggle: document.getElementById('settings-tmdb-api-key-toggle'),
+  settingsApiKeyCopy: document.getElementById('settings-tmdb-api-key-copy'),
   settingsGithubApiKey: document.getElementById('settings-github-api-key'),
+  settingsGithubApiKeyToggle: document.getElementById('settings-github-api-key-toggle'),
+  settingsGithubApiKeyCopy: document.getElementById('settings-github-api-key-copy'),
   settingsLocale: document.getElementById('settings-locale'),
   settingsPosterScale: document.getElementById('settings-poster-scale'),
   settingsPosterScaleValue: document.getElementById('settings-poster-scale-value'),
@@ -427,6 +432,16 @@ els.settingsPosterScale?.addEventListener('input', () => {
 els.settingsPosterGap?.addEventListener('input', () => {
   applyPosterGapFromSettingsControl({ preview: true });
 });
+wireSecretFieldControls(
+  els.settingsApiKey,
+  els.settingsApiKeyToggle,
+  els.settingsApiKeyCopy
+);
+wireSecretFieldControls(
+  els.settingsGithubApiKey,
+  els.settingsGithubApiKeyToggle,
+  els.settingsGithubApiKeyCopy
+);
 
 els.tmdbClose?.addEventListener('click', () => closeTmdbSearchDialog());
 els.tmdbCancel?.addEventListener('click', () => closeTmdbSearchDialog());
@@ -687,19 +702,7 @@ async function copySaveProgressLog() {
     return;
   }
   try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-    } else {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly', '');
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      ta.remove();
-    }
+    await copyTextToClipboard(text);
     flashCopyButton(btn, 'ok');
   } catch (err) {
     flashCopyButton(btn, 'fail');
@@ -903,6 +906,52 @@ function populateLocaleSelect() {
   sel.value = current;
 }
 
+/**
+ * Show/hide + copy controls for a password-style settings field.
+ * @param {HTMLInputElement|null} input
+ * @param {HTMLButtonElement|null} toggleBtn
+ * @param {HTMLButtonElement|null} copyBtn
+ */
+function wireSecretFieldControls(input, toggleBtn, copyBtn) {
+  if (!input) return;
+
+  const setVisible = (visible) => {
+    input.type = visible ? 'text' : 'password';
+    if (!toggleBtn) return;
+    toggleBtn.setAttribute('aria-pressed', visible ? 'true' : 'false');
+    const label = visible ? 'Hide key' : 'Show key';
+    toggleBtn.setAttribute('aria-label', label);
+    toggleBtn.setAttribute('title', label);
+    const showIcon = toggleBtn.querySelector('.form-secret-icon-show');
+    const hideIcon = toggleBtn.querySelector('.form-secret-icon-hide');
+    if (showIcon) showIcon.hidden = visible;
+    if (hideIcon) hideIcon.hidden = !visible;
+  };
+
+  // Reset helper used when opening Settings
+  input._resetSecretVisibility = () => setVisible(false);
+
+  toggleBtn?.addEventListener('click', () => {
+    setVisible(input.type === 'password');
+  });
+
+  copyBtn?.addEventListener('click', async () => {
+    const text = String(input.value || '');
+    if (!text) return;
+    try {
+      await copyTextToClipboard(text);
+      flashCopyButton(copyBtn, 'ok');
+    } catch {
+      flashCopyButton(copyBtn, 'fail');
+    }
+  });
+}
+
+function resetSettingsSecretVisibility() {
+  els.settingsApiKey?._resetSecretVisibility?.();
+  els.settingsGithubApiKey?._resetSecretVisibility?.();
+}
+
 function openSettingsDialog() {
   if (!els.settingsBackdrop) return;
   if (els.settingsApiKey) {
@@ -911,6 +960,7 @@ function openSettingsDialog() {
   if (els.settingsGithubApiKey) {
     els.settingsGithubApiKey.value = getStoredGithubToken();
   }
+  resetSettingsSecretVisibility();
   populateLocaleSelect();
   savedPosterScalePercent = getStoredPosterScalePercent();
   savedPosterGapPx = getStoredPosterGapPx();

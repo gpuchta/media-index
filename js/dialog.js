@@ -1,7 +1,13 @@
 import { CONFIG } from './config.js';
 import { isAppAlertOpen, showAppConfirm } from './alert-dialog.js';
 import { attachPosterHotCorner, posterZoomUrl } from './poster-zoom.js';
-import { posterUrl, formatRuntime, escapeHtml, flashCopyButton } from './utils.js';
+import {
+  posterUrl,
+  formatRuntime,
+  escapeHtml,
+  flashCopyButton,
+  copyTextToClipboard,
+} from './utils.js';
 
 /**
  * Movie detail dialog with draft edits.
@@ -512,19 +518,7 @@ export class MovieDialog {
       const text = jsonPanel?.textContent || '';
       if (!text) return;
       try {
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(text);
-        } else {
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          ta.setAttribute('readonly', '');
-          ta.style.position = 'fixed';
-          ta.style.left = '-9999px';
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          ta.remove();
-        }
+        await copyTextToClipboard(text);
         flashCopyButton(jsonCopyBtn, 'ok');
       } catch {
         flashCopyButton(jsonCopyBtn, 'fail');

@@ -1166,6 +1166,76 @@ input {
   border-color: transparent;
 }
 
+.form-secret-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.form-secret-row .form-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.form-secret-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+
+.form-secret-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  width: 2.5rem;
+  min-height: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.form-secret-btn:hover,
+.form-secret-btn:focus-visible {
+  color: var(--text);
+  border-color: var(--focus);
+  outline: 2px solid var(--focus);
+  outline-offset: 0;
+}
+
+.form-secret-btn[aria-pressed='true'] {
+  color: var(--focus);
+}
+
+.form-secret-btn.is-copy-ok {
+  color: var(--ok);
+  border-color: rgba(47, 158, 68, 0.55);
+}
+
+.form-secret-btn.is-copy-fail {
+  color: #ff8787;
+  border-color: rgba(224, 49, 49, 0.5);
+}
+
+.form-secret-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  display: block;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* Ensure SVG swap works (some browsers treat svg[hidden] inconsistently) */
+.form-secret-icon[hidden] {
+  display: none !important;
+}
+
 .form-select {
   appearance: none;
   -webkit-appearance: none;

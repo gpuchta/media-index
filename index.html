@@ -259,6 +259,7 @@
               name="settings-locale"
               class="form-input form-select"
             >
+              <!-- https://api.themoviedb.org/3/configuration/languages?api_key=... -->
               <!-- Options filled from LOCALE_OPTIONS on open -->
               <option value="en">English</option>
             </select>
@@ -266,33 +267,107 @@
           <p class="form-hint">
             Preferred language for TMDB titles and metadata. Stored in this browser only (localStorage).
           </p>
-          <label class="form-field">
-            <span class="form-label">TMDB API key</span>
-            <input
-              type="password"
-              id="settings-tmdb-api-key"
-              name="settings-tmdb-api-key"
-              class="form-input"
-              spellcheck="false"
-              autocomplete=""
-              placeholder="API key from themoviedb.org"
-            />
-          </label>
+          <div class="form-field">
+            <label class="form-label" for="settings-tmdb-api-key">TMDB API key</label>
+            <div class="form-secret-row">
+              <input
+                type="password"
+                id="settings-tmdb-api-key"
+                name="settings-tmdb-api-key"
+                class="form-input"
+                spellcheck="false"
+                autocomplete="off"
+                placeholder="API key from themoviedb.org"
+              />
+              <div class="form-secret-actions">
+                <button
+                  type="button"
+                  class="form-secret-btn"
+                  id="settings-tmdb-api-key-toggle"
+                  aria-label="Show key"
+                  title="Show key"
+                  aria-pressed="false"
+                  aria-controls="settings-tmdb-api-key"
+                >
+                  <!-- Eye: key is hidden (click to show) -->
+                  <svg class="form-secret-icon form-secret-icon-show" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
+                    <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
+                  </svg>
+                  <!-- Eye-slash: key is visible (click to hide) -->
+                  <svg class="form-secret-icon form-secret-icon-hide" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false" hidden>
+                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
+                    <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
+                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M4 4l16 16"/>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="form-secret-btn"
+                  id="settings-tmdb-api-key-copy"
+                  data-copy-mode="icon"
+                  aria-label="Copy key"
+                  title="Copy key"
+                >
+                  <svg class="form-secret-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
           <p class="form-hint">
             Stored in this browser only (localStorage). Used for TMDB search and posters.
           </p>
-          <label class="form-field">
-            <span class="form-label">GitHub API key</span>
-            <input
-              type="password"
-              id="settings-github-api-key"
-              name="settings-github-api-key"
-              class="form-input"
-              spellcheck="false"
-              autocomplete=""
-              placeholder="Personal access token (github.com)"
-            />
-          </label>
+          <div class="form-field">
+            <label class="form-label" for="settings-github-api-key">GitHub API key</label>
+            <div class="form-secret-row">
+              <input
+                type="password"
+                id="settings-github-api-key"
+                name="settings-github-api-key"
+                class="form-input"
+                spellcheck="false"
+                autocomplete="off"
+                placeholder="Personal access token (github.com)"
+              />
+              <div class="form-secret-actions">
+                <button
+                  type="button"
+                  class="form-secret-btn"
+                  id="settings-github-api-key-toggle"
+                  aria-label="Show key"
+                  title="Show key"
+                  aria-pressed="false"
+                  aria-controls="settings-github-api-key"
+                >
+                  <!-- Eye: key is hidden (click to show) -->
+                  <svg class="form-secret-icon form-secret-icon-show" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
+                    <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
+                  </svg>
+                  <!-- Eye-slash: key is visible (click to hide) -->
+                  <svg class="form-secret-icon form-secret-icon-hide" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false" hidden>
+                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.25-6.75 9.75-6.75S21.75 12 21.75 12s-3.25 6.75-9.75 6.75S2.25 12 2.25 12z"/>
+                    <circle cx="12" cy="12" r="2.75" stroke="currentColor" stroke-width="1.75"/>
+                    <path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M4 4l16 16"/>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="form-secret-btn"
+                  id="settings-github-api-key-copy"
+                  data-copy-mode="icon"
+                  aria-label="Copy key"
+                  title="Copy key"
+                >
+                  <svg class="form-secret-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
           <p class="form-hint">
             Stored in this browser only (localStorage). Used to read and write library files via the GitHub API.
           </p>
