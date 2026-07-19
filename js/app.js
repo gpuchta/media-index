@@ -5,14 +5,19 @@ import {
   GITHUB_TARGET,
   LOCALE_OPTIONS,
   SORT_OPTIONS,
+  THEME_OPTIONS,
+  applyTheme,
   clampPosterGapPx,
   clampPosterScalePercent,
   getStoredLocale,
   getStoredPosterGapPx,
   getStoredPosterScalePercent,
+  getStoredTheme,
+  normalizeTheme,
   setStoredLocale,
   setStoredPosterGapPx,
   setStoredPosterScalePercent,
+  setStoredTheme,
 } from './config.js';
 import {
   addLeaf,
@@ -107,6 +112,7 @@ const els = {
   settingsPosterScaleValue: document.getElementById('settings-poster-scale-value'),
   settingsPosterGap: document.getElementById('settings-poster-gap'),
   settingsPosterGapValue: document.getElementById('settings-poster-gap-value'),
+  settingsTheme: document.getElementById('settings-theme'),
   settingsStatus: document.getElementById('settings-status'),
   settingsClose: document.getElementById('settings-close'),
   settingsCancel: document.getElementById('settings-cancel'),
@@ -242,6 +248,9 @@ const grid = new PosterGrid({
 /** Last saved poster layout prefs; used to revert preview on Settings cancel. */
 let savedPosterScalePercent = getStoredPosterScalePercent();
 let savedPosterGapPx = getStoredPosterGapPx();
+/** Last saved theme id; used to revert Settings theme preview on cancel. */
+let savedThemeId = getStoredTheme();
+applyTheme(savedThemeId);
 grid.setScale(savedPosterScalePercent / 100);
 grid.setGap(savedPosterGapPx);
 
@@ -431,6 +440,9 @@ els.settingsPosterScale?.addEventListener('input', () => {
 });
 els.settingsPosterGap?.addEventListener('input', () => {
   applyPosterGapFromSettingsControl({ preview: true });
+});
+els.settingsTheme?.addEventListener('change', () => {
+  applyTheme(els.settingsTheme.value);
 });
 wireSecretFieldControls(
   els.settingsApiKey,
@@ -906,6 +918,21 @@ function populateLocaleSelect() {
   sel.value = current;
 }
 
+function populateThemeSelect() {
+  const sel = els.settingsTheme;
+  if (!sel) return;
+  const current = normalizeTheme(savedThemeId);
+  sel.replaceChildren();
+  for (const opt of THEME_OPTIONS) {
+    const o = document.createElement('option');
+    o.value = opt.id;
+    o.textContent = opt.label;
+    if (opt.id === current) o.selected = true;
+    sel.appendChild(o);
+  }
+  sel.value = current;
+}
+
 /**
  * Show/hide + copy controls for a password-style settings field.
  * @param {HTMLInputElement|null} input
@@ -964,6 +991,10 @@ function openSettingsDialog() {
   populateLocaleSelect();
   savedPosterScalePercent = getStoredPosterScalePercent();
   savedPosterGapPx = getStoredPosterGapPx();
+  savedThemeId = getStoredTheme();
+  populateThemeSelect();
+  // Ensure UI matches saved theme when opening (in case a prior preview lingered)
+  applyTheme(savedThemeId);
   if (els.settingsPosterScale) {
     els.settingsPosterScale.min = String(CONFIG.POSTER_SCALE_MIN);
     els.settingsPosterScale.max = String(CONFIG.POSTER_SCALE_MAX);
@@ -1002,6 +1033,8 @@ function closeSettingsDialog({ revertPreview = false } = {}) {
     syncPosterGapControl(gap);
     grid.setScale(scale / 100);
     grid.setGap(gap);
+    applyTheme(savedThemeId);
+    if (els.settingsTheme) els.settingsTheme.value = normalizeTheme(savedThemeId);
   }
   els.settingsBackdrop.classList.add('hidden');
   els.settingsBackdrop.setAttribute('aria-hidden', 'true');
@@ -1175,6 +1208,11 @@ function saveSettings() {
   const locale = setStoredLocale(els.settingsLocale?.value);
   const localeLabel =
     LOCALE_OPTIONS.find((o) => o.id === locale)?.label || locale;
+  const themeId = setStoredTheme(els.settingsTheme?.value);
+  savedThemeId = themeId;
+  applyTheme(themeId);
+  const themeLabel =
+    THEME_OPTIONS.find((o) => o.id === themeId)?.label || themeId;
   const scalePercent = applyPosterScaleFromSettingsControl({ preview: false });
   const gapPx = applyPosterGapFromSettingsControl({ preview: false });
   const parts = [
@@ -1183,9 +1221,10 @@ function saveSettings() {
     `language ${localeLabel}`,
     `poster size ${scalePercent}%`,
     `spacing ${gapPx}px`,
+    `theme ${themeLabel}`,
   ];
   setSettingsStatus(`${parts.join('. ')}.`);
-  // Brief confirmation then close (keep applied layout; do not revert)
+  // Brief confirmation then close (keep applied layout/theme; do not revert)
   window.setTimeout(() => closeSettingsDialog({ revertPreview: false }), 400);
 }
 

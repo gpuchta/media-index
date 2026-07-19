@@ -84,11 +84,35 @@ export const CONFIG = {
   LOCALE_STORAGE: 'pmi:locale',
   LOCALE_DEFAULT: 'en',
 
+  /**
+   * UI theme id (Settings dropdown). Stored in localStorage.
+   * Applied via documentElement data-theme (see css/app.css).
+   */
+  THEME_STORAGE: 'pmi:theme',
+  THEME_DEFAULT: 'dark',
+
   /** Extra rows rendered above/below the viewport. */
   VIRTUAL_BUFFER_ROWS: 2,
 
   SESSION_SORT_KEY: 'pmi:sort',
 };
+
+/**
+ * Themes offered in Settings (extend as needed).
+ * @type {ReadonlyArray<{ id: string, label: string, scheme: 'dark'|'light' }>}
+ */
+export const THEME_OPTIONS = Object.freeze([
+  { id: 'dark', label: 'Dark', scheme: 'dark' },
+  { id: 'light', label: 'Light', scheme: 'light' },
+  { id: 'midnight', label: 'Midnight Ocean', scheme: 'dark' },
+  { id: 'sunset', label: 'Sunset Amber', scheme: 'dark' },
+  { id: 'forest', label: 'Forest Emerald', scheme: 'dark' },
+  { id: 'aurora', label: 'Aurora', scheme: 'dark' },
+  { id: 'rose', label: 'Rose Mist', scheme: 'dark' },
+  { id: 'slate', label: 'Cool Slate', scheme: 'dark' },
+  { id: 'daybreak', label: 'Daybreak', scheme: 'light' },
+  { id: 'lavender', label: 'Lavender Fields', scheme: 'light' },
+]);
 
 /**
  * Clamp and normalize a poster-scale percent (50–200).
@@ -232,6 +256,62 @@ export function setStoredLocale(locale) {
  */
 export function localeToTmdbLanguage(locale) {
   return normalizeLocale(locale ?? getStoredLocale());
+}
+
+/**
+ * Normalize a theme id to a known option, or default (`dark`).
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function normalizeTheme(value) {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (!raw) return CONFIG.THEME_DEFAULT;
+  const found = THEME_OPTIONS.find((o) => o.id === raw);
+  return found ? found.id : CONFIG.THEME_DEFAULT;
+}
+
+/** @returns {string} theme id e.g. dark */
+export function getStoredTheme() {
+  try {
+    const raw = localStorage.getItem(CONFIG.THEME_STORAGE);
+    if (raw == null || raw === '') return CONFIG.THEME_DEFAULT;
+    return normalizeTheme(raw);
+  } catch {
+    return CONFIG.THEME_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} theme
+ * @returns {string} stored theme id
+ */
+export function setStoredTheme(theme) {
+  const id = normalizeTheme(theme);
+  try {
+    if (id === CONFIG.THEME_DEFAULT) {
+      localStorage.removeItem(CONFIG.THEME_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.THEME_STORAGE, id);
+    }
+  } catch {
+    /* private mode */
+  }
+  return id;
+}
+
+/**
+ * Apply a theme to the document (preview or after Save).
+ * Does not write localStorage — use setStoredTheme for that.
+ * @param {unknown} theme
+ * @returns {string} applied theme id
+ */
+export function applyTheme(theme) {
+  const id = normalizeTheme(theme);
+  const opt = THEME_OPTIONS.find((o) => o.id === id);
+  const root = document.documentElement;
+  root.setAttribute('data-theme', id);
+  root.style.colorScheme = opt?.scheme === 'light' ? 'light' : 'dark';
+  return id;
 }
 
 /**

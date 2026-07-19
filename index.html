@@ -432,6 +432,20 @@
           <p class="form-hint">
             Gap between posters in the grid. Preview updates while you drag; Save stores it in this browser only.
           </p>
+          <label class="form-field" for="settings-theme">
+            <span class="form-label">Theme</span>
+            <select
+              id="settings-theme"
+              name="settings-theme"
+              class="form-input form-select"
+            >
+              <!-- Options filled from THEME_OPTIONS on open -->
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+          <p class="form-hint">
+            Preview updates when you change selection; Save stores the theme in this browser only.
+          </p>
           <p id="settings-status" class="tmdb-search-status" role="status" hidden></p>
         </form>
       </div>
