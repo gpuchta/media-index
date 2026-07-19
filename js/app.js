@@ -431,6 +431,38 @@ els.tmdbSearchBtn?.addEventListener('click', () => {
   openTmdbSearchDialog();
 });
 
+// Platform-specific shortcut hints in the menu (⌘ vs Ctrl)
+const isApplePlatform =
+  /Mac|iPhone|iPad|iPod/i.test(navigator.platform || '') ||
+  /Mac OS X|Macintosh/i.test(navigator.userAgent || '');
+const settingsShortcutHint = document.getElementById('settings-shortcut-hint');
+if (settingsShortcutHint) {
+  settingsShortcutHint.textContent = isApplePlatform ? '⌘.' : 'Ctrl+.';
+}
+const tmdbSearchShortcutHint = document.getElementById('tmdb-search-shortcut-hint');
+if (tmdbSearchShortcutHint) {
+  tmdbSearchShortcutHint.textContent = isApplePlatform ? '⌘K' : 'Ctrl+K';
+}
+
+// Ctrl+K / ⌘K — open Search Movies (skip when another modal owns the UI)
+document.addEventListener(
+  'keydown',
+  (e) => {
+    const isK = e.key === 'k' || e.key === 'K' || e.code === 'KeyK';
+    if (!isK || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+    // Already on TMDB search — still swallow the chord
+    if (els.tmdbBackdrop && !els.tmdbBackdrop.classList.contains('hidden')) {
+      e.preventDefault();
+      return;
+    }
+    if (isAnyModalOpen()) return;
+    e.preventDefault();
+    closeMenu();
+    openTmdbSearchDialog();
+  },
+  true
+);
+
 els.statsBtn?.addEventListener('click', () => {
   closeMenu();
   openStatsDialog();
@@ -446,15 +478,6 @@ els.settingsBtn?.addEventListener('click', () => {
   closeMenu();
   openSettingsDialog();
 });
-
-// Platform-specific shortcut hint in the menu (⌘. vs Ctrl+.)
-(() => {
-  const hint = document.getElementById('settings-shortcut-hint');
-  if (!hint) return;
-  const isApple = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || '')
-    || /Mac OS X|Macintosh/i.test(navigator.userAgent || '');
-  hint.textContent = isApple ? '⌘.' : 'Ctrl+.';
-})();
 
 // Ctrl+. / ⌘+. — open Settings (skip when another modal owns the UI)
 document.addEventListener(

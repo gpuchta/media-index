@@ -44,7 +44,17 @@
               </button>
               <div class="menu-accordion-panel" id="menu-panel-collection" role="region" aria-labelledby="menu-trigger-collection">
                 <div class="menu-accordion-panel-inner">
-                  <button type="button" role="menuitem" id="tmdb-search-btn">Search Movies</button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    id="tmdb-search-btn"
+                    aria-keyshortcuts="Control+K Meta+K"
+                  >
+                    <span class="menu-item-label">Search Movies</span>
+                    <kbd class="menu-shortcut" id="tmdb-search-shortcut-hint" aria-hidden="true"
+                      >⌘K</kbd
+                    >
+                  </button>
                   <button type="button" role="menuitem" id="stats-btn">Statistics</button>
                 </div>
               </div>
