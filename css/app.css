@@ -874,16 +874,27 @@ input {
   gap: 0.5rem;
 }
 
-/* Movie dialog: prev/next truly centered in header; close stays on the right */
+/* Movie dialog: "Movie Details" left; prev/next centered; close right */
 .dialog-header-movie {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 0.5rem;
   /* Room for nav buttons matching footer .btn height */
   min-height: calc(0.45rem * 2 + 1.25em + 2px + 0.7rem);
   padding-top: 0.45rem;
   padding-bottom: 0.45rem;
+}
+
+.dialog-header-movie .dialog-header-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* Keep title clear of centered nav */
+  padding-right: calc(0.45rem * 4 + 1.25em * 2 + 2px * 2 + 0.85rem + 0.75rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dialog-header-movie .dialog-header-nav {
@@ -896,6 +907,7 @@ input {
   justify-content: center;
   gap: 0.85rem; /* space between prev and next */
   pointer-events: none; /* let empty header area pass through */
+  z-index: 1;
 }
 
 .dialog-header-movie .dialog-header-nav .dialog-nav-btn {
@@ -905,6 +917,7 @@ input {
 .dialog-header-movie .dialog-close {
   position: relative;
   z-index: 1;
+  flex: 0 0 auto;
 }
 
 /* Match footer .btn height (padding 0.45rem 0.9rem); square width from that height */

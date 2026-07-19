@@ -362,7 +362,7 @@ export class MovieDialog {
           id="dialog-poster-btn"
         ></button>
         <div class="dialog-overview-wrap">
-          <h2 class="dialog-title" id="dialog-title">${escapeHtml(m.title || 'Untitled')}</h2>
+          <h2 class="dialog-title">${escapeHtml(m.title || 'Untitled')}</h2>
           <p class="dialog-overview">${escapeHtml(m.overview || 'No description available.')}</p>
         </div>
       </div>
