@@ -92,7 +92,17 @@
               </button>
               <div class="menu-accordion-panel" id="menu-panel-actions" role="region" aria-labelledby="menu-trigger-actions">
                 <div class="menu-accordion-panel-inner">
-                  <button type="button" role="menuitem" id="save-json-btn">Save to GitHub</button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    id="save-json-btn"
+                    aria-keyshortcuts="Control+S"
+                  >
+                    <span class="menu-item-label">Save to GitHub</span>
+                    <kbd class="menu-shortcut" id="save-json-shortcut-hint" aria-hidden="true"
+                      >Ctrl+S</kbd
+                    >
+                  </button>
                   <button type="button" role="menuitem" id="export-btn">Export</button>
                 </div>
               </div>

@@ -497,6 +497,23 @@ document.addEventListener(
   true
 );
 
+// Ctrl+S only — Save to GitHub (not ⌘S: reserved by OS/browser on Apple)
+document.addEventListener(
+  'keydown',
+  (e) => {
+    const isS = e.key === 's' || e.key === 'S' || e.code === 'KeyS';
+    if (!isS || !e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+    // Always take the chord so the browser does not open “Save Page”
+    e.preventDefault();
+    if (saveJsonInFlight) return;
+    if (isAnyModalOpen()) return;
+    if (!state.dataReady) return;
+    closeMenu();
+    saveJsonToGithub();
+  },
+  true
+);
+
 els.statsBtn?.addEventListener('click', () => {
   closeMenu();
   openStatsDialog();
