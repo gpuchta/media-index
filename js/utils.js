@@ -118,6 +118,75 @@ export function downloadJson(filename, data) {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Whether Enter should stay with the focused control instead of activating a
+ * dialog primary action (Save / OK / Search / Close).
+ *
+ * Defers for text-like inputs (native form submit / field commit), textarea,
+ * select, color/file/range, contenteditable, and focused buttons/links.
+ * Checkbox/radio do not reserve Enter so the dialog primary can still run.
+ *
+ * @param {EventTarget|null|undefined} target
+ * @returns {boolean}
+ */
+export function isEnterReservedByTarget(target) {
+  if (!target || !(target instanceof Element)) return false;
+
+  if (target.closest('textarea, [contenteditable="true"]')) return true;
+  if (target.closest('select')) return true;
+
+  const input = target.closest('input');
+  if (input) {
+    const type = String(input.type || 'text').toLowerCase();
+    // Typing / form fields — leave Enter to the field or form
+    if (
+      type === 'text' ||
+      type === 'search' ||
+      type === 'email' ||
+      type === 'url' ||
+      type === 'tel' ||
+      type === 'password' ||
+      type === 'number' ||
+      type === 'date' ||
+      type === 'datetime-local' ||
+      type === 'month' ||
+      type === 'week' ||
+      type === 'time'
+    ) {
+      return true;
+    }
+    // Color picker, file, range — Enter is for the control, not Save
+    if (type === 'color' || type === 'file' || type === 'range') return true;
+    // submit/button inputs act like buttons
+    if (type === 'submit' || type === 'button' || type === 'reset' || type === 'image') {
+      return true;
+    }
+    // checkbox / radio: do not reserve — dialog Enter = primary action
+    return false;
+  }
+
+  // Focused actionable control: Enter activates it natively
+  if (target.closest('button, a[href], [role="button"], summary')) return true;
+
+  return false;
+}
+
+/**
+ * True if the keydown is a plain Enter (no modifiers) that a dialog may map
+ * to its primary action.
+ * @param {KeyboardEvent} e
+ * @returns {boolean}
+ */
+export function isPrimaryActionEnter(e) {
+  if (!e) return false;
+  if (e.key !== 'Enter' && e.code !== 'Enter' && e.code !== 'NumpadEnter') {
+    return false;
+  }
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return false;
+  if (e.isComposing) return false;
+  return !isEnterReservedByTarget(e.target);
+}
+
 export function escapeHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')

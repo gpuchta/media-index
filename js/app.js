@@ -68,6 +68,7 @@ import {
   formatExportFilename,
   escapeHtml,
   flashCopyButton,
+  isPrimaryActionEnter,
   mergePosterLists,
   posterUrl,
   promotePosterSelection,
@@ -554,6 +555,20 @@ document.addEventListener(
   true
 );
 
+// Enter → OK on Save progress when focus is not in a field/button
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (!isPrimaryActionEnter(e)) return;
+    if (isAppAlertOpen()) return;
+    if (!isSaveProgressOpen()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeSaveProgressDialog();
+  },
+  true
+);
+
 els.exportBtn.addEventListener('click', () => {
   closeMenu();
   exportData();
@@ -744,6 +759,24 @@ document.addEventListener(
   true
 );
 
+// Enter → Close on Statistics when focus is not on a control
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (!isPrimaryActionEnter(e)) return;
+    if (isAppAlertOpen()) return;
+    if (!els.statsBackdrop || els.statsBackdrop.classList.contains('hidden')) return;
+    // Higher layers win
+    if (els.tmdbPosterBackdrop && !els.tmdbPosterBackdrop.classList.contains('hidden')) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    closeStatsDialog();
+  },
+  true
+);
+
 // Escape closes Settings when open
 document.addEventListener(
   'keydown',
@@ -767,6 +800,28 @@ document.addEventListener(
   true
 );
 
+// Enter → Save settings when focus is not in a field/dropdown/color control
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (!isPrimaryActionEnter(e)) return;
+    if (isAppAlertOpen()) return;
+    if (!els.settingsBackdrop || els.settingsBackdrop.classList.contains('hidden')) {
+      return;
+    }
+    if (els.tmdbPosterBackdrop && !els.tmdbPosterBackdrop.classList.contains('hidden')) {
+      return;
+    }
+    if (els.statsBackdrop && !els.statsBackdrop.classList.contains('hidden')) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    saveSettings();
+  },
+  true
+);
+
 els.tmdbPosterClose?.addEventListener('click', () => closeTmdbPosterDialog());
 els.tmdbPosterCancel?.addEventListener('click', () => closeTmdbPosterDialog());
 els.tmdbPosterSave?.addEventListener('click', () => saveTmdbPosterSelection());
@@ -786,6 +841,41 @@ document.addEventListener(
     e.preventDefault();
     e.stopPropagation();
     closeTmdbPosterDialog();
+  },
+  true
+);
+
+// Enter → Ok on poster picker when focus is not on a field/control
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (!isPrimaryActionEnter(e)) return;
+    if (isAppAlertOpen()) return;
+    if (!els.tmdbPosterBackdrop || els.tmdbPosterBackdrop.classList.contains('hidden')) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    saveTmdbPosterSelection();
+  },
+  true
+);
+
+// Enter → Search on TMDB search when focus is not on a field/control
+// (text fields still submit via the form’s native Enter → submit path)
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (!isPrimaryActionEnter(e)) return;
+    if (isAppAlertOpen()) return;
+    if (!els.tmdbBackdrop || els.tmdbBackdrop.classList.contains('hidden')) return;
+    // Poster picker sits above search
+    if (els.tmdbPosterBackdrop && !els.tmdbPosterBackdrop.classList.contains('hidden')) {
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    runTmdbSearch();
   },
   true
 );

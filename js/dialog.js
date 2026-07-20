@@ -7,6 +7,7 @@ import {
   escapeHtml,
   flashCopyButton,
   copyTextToClipboard,
+  isPrimaryActionEnter,
 } from './utils.js';
 
 /**
@@ -209,9 +210,18 @@ export class MovieDialog {
 
     if (e.key === 'Escape') {
       // Field-level Escape cancels in-place edit first
-      if (e.target.matches('input') && e.target.closest('.pill.editing')) return;
+      if (e.target.matches('input') && e.target.closest('.pill.editing, .location-edit-wrap')) {
+        return;
+      }
       e.preventDefault();
       // Spec: Escape does the same as Save
+      this.saveAndClose();
+      return;
+    }
+
+    // Enter → Save when focus is not in a field/control that consumes Enter
+    if (isPrimaryActionEnter(e)) {
+      e.preventDefault();
       this.saveAndClose();
       return;
     }

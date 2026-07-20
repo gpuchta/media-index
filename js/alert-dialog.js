@@ -3,6 +3,8 @@
  * Same shell styling as other dialogs; centered via .dialog-backdrop flex.
  */
 
+import { isPrimaryActionEnter } from './utils.js';
+
 /** @type {null | ((value: boolean | void) => void)} */
 let pendingResolve = null;
 /** @type {'alert' | 'confirm'} */
@@ -127,6 +129,19 @@ function wireOnce() {
       e.preventDefault();
       e.stopPropagation();
       close(mode === 'confirm' ? false : undefined);
+    },
+    true
+  );
+
+  // Enter → primary (OK) when focus is not on a control that consumes Enter
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      if (!isPrimaryActionEnter(e)) return;
+      if (!isOpen()) return;
+      e.preventDefault();
+      e.stopPropagation();
+      close(mode === 'confirm' ? true : undefined);
     },
     true
   );
