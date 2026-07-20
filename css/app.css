@@ -2503,6 +2503,19 @@ input {
   background: rgba(255, 193, 7, 0.1);
 }
 
+/* Location edit: span wrap (not button) so Space types a character */
+.pill.location-edit-wrap {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  min-width: 6rem;
+  cursor: text;
+  border-color: var(--loc);
+  color: var(--loc);
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.pill.location-edit-input,
 .pill input {
   border: 0;
   background: transparent;
@@ -2510,6 +2523,13 @@ input {
   outline: none;
   min-width: 6rem;
   width: 100%;
+  font: inherit;
+  padding: 0;
+  margin: 0;
+}
+
+.pill.location-edit-input:focus {
+  outline: none;
 }
 
 .pill .x {

@@ -324,14 +324,25 @@ export class MovieDialog {
   }
 
   commitOpenLocationEdit() {
-    const btn = this.body.querySelector('[data-edit="location"].editing');
-    if (!btn) return;
-    const input = btn.querySelector('input');
-    if (!input || !this.draft) return;
+    const wrap = this.body.querySelector(
+      '[data-edit="location"].editing, .location-edit-wrap'
+    );
+    if (!wrap || !this.draft) return;
+    const input = wrap.matches('input')
+      ? wrap
+      : wrap.querySelector('input');
+    if (!input) return;
     const next = input.value.trim();
     if (next) this.draft.location = next;
-    btn.classList.remove('editing');
-    btn.textContent = this.draft.location || '—';
+    // Replace wrap with a normal location pill button
+    const newBtn = document.createElement('button');
+    newBtn.type = 'button';
+    newBtn.className = 'pill editable';
+    newBtn.dataset.type = 'location';
+    newBtn.dataset.edit = 'location';
+    newBtn.textContent = this.draft.location || '—';
+    wrap.replaceWith(newBtn);
+    newBtn.addEventListener('click', () => this.beginEditLocation(newBtn));
   }
 
   render() {
@@ -638,15 +649,50 @@ export class MovieDialog {
 
   beginEditLocation(btn) {
     if (!this.draft) return;
+    // Already editing (e.g. double-click) — keep the open input
+    if (
+      btn.classList?.contains?.('editing') ||
+      btn.classList?.contains?.('location-edit-wrap')
+    ) {
+      const existing = btn.matches?.('input')
+        ? btn
+        : btn.querySelector?.('input');
+      existing?.focus();
+      return;
+    }
     const prev = this.draft.location || '';
     const input = document.createElement('input');
     input.type = 'text';
     input.value = prev;
+    input.className = 'pill location-edit-input';
     input.setAttribute('aria-label', 'Location');
-    btn.classList.add('editing');
-    btn.replaceChildren(input);
+    input.dataset.type = 'location';
+    input.dataset.edit = 'location';
+
+    // Do not nest <input> inside <button> (invalid HTML): Space would activate
+    // the button and exit edit mode instead of inserting a space character.
+    const wrap = document.createElement('span');
+    wrap.className = 'pill editable editing location-edit-wrap';
+    wrap.dataset.type = 'location';
+    wrap.dataset.edit = 'location';
+    wrap.appendChild(input);
+    btn.replaceWith(wrap);
     input.focus();
     input.select();
+
+    let finished = false;
+    const finish = (value) => {
+      if (finished) return;
+      finished = true;
+      const newBtn = document.createElement('button');
+      newBtn.type = 'button';
+      newBtn.className = 'pill editable';
+      newBtn.dataset.type = 'location';
+      newBtn.dataset.edit = 'location';
+      newBtn.textContent = value || '—';
+      wrap.replaceWith(newBtn);
+      newBtn.addEventListener('click', () => this.beginEditLocation(newBtn));
+    };
 
     const commit = () => {
       const next = input.value.trim();
@@ -654,18 +700,17 @@ export class MovieDialog {
         this.draft.location = next;
       }
       // empty → keep previous draft value
-      btn.classList.remove('editing');
-      btn.textContent = this.draft.location || '—';
+      finish(this.draft.location || '');
     };
 
     const cancel = () => {
-      btn.classList.remove('editing');
-      btn.textContent = prev || '—';
+      finish(prev || '');
     };
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
+        e.stopPropagation();
         commit();
       } else if (e.key === 'Escape') {
         e.preventDefault();
@@ -674,7 +719,10 @@ export class MovieDialog {
       }
     });
     input.addEventListener('blur', () => {
-      if (btn.classList.contains('editing')) commit();
+      // Defer so a click on another control can run first; still commit the value
+      queueMicrotask(() => {
+        if (!finished && wrap.isConnected) commit();
+      });
     });
   }
 }

@@ -112,8 +112,9 @@ export const CONFIG = {
   LOCATION_OVERLAY_DEFAULT: true,
 
   /**
-   * Comma/space-separated location labels whose posters are grayed in the grid
-   * (e.g. "Watch, Buy"). Case-insensitive exact match on movie.location.
+   * Comma-separated location labels whose posters are grayed in the grid
+   * (e.g. "Watch, Buy" or "Watch, Cinema Now"). Spaces inside a name are kept;
+   * only commas (or semicolons) separate entries. Case-insensitive exact match.
    */
   GRAYED_LOCATIONS_STORAGE: 'pmi:grayedLocations',
   GRAYED_LOCATIONS_DEFAULT: 'Watch, Buy',
@@ -208,10 +209,9 @@ export function setStoredLocationOverlayEnabled(enabled) {
 }
 
 /**
- * Parse a comma/space-separated location list into unique lowercase tokens.
- * Prefer commas/semicolons as separators so multi-word labels work
- * ("Watch, Cinema Now"). If neither is present, split on whitespace
- * ("Watch Buy").
+ * Parse a comma-separated location list into unique lowercase tokens.
+ * Separators are commas or semicolons only — spaces stay inside a label
+ * so "Watch, Cinema Now, Buy" → watch | cinema now | buy.
  * @param {unknown} text
  * @returns {string[]} lowercase unique labels (stable first-seen order)
  */
@@ -219,11 +219,9 @@ export function parseGrayedLocationsList(text) {
   const raw = String(text ?? '').trim();
   if (!raw) return [];
   /** @type {string[]} */
-  const parts = /[,;]/.test(raw) ? raw.split(/[,;]+/) : raw.split(/\s+/);
-  /** @type {string[]} */
   const out = [];
   const seen = new Set();
-  for (const part of parts) {
+  for (const part of raw.split(/[,;]+/)) {
     const t = part.trim().toLowerCase();
     if (!t || seen.has(t)) continue;
     seen.add(t);
