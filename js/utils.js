@@ -11,7 +11,8 @@ export function posterUrl(posterPath) {
  * Promote selected alternate to poster_path.
  *
  * If current poster_path differs from selected path:
- * 1. Add current poster_path to the alternate posters collection if not already present
+ * 1. Demote current poster_path to the front of the alternate posters list
+ *    (move if already present; insert at start if not)
  * 2. Set poster_path to the selected path
  * 3. Remove selected from posters so the primary is not duplicated in the collection
  *
@@ -29,13 +30,14 @@ export function promotePosterSelection(posters, currentPath, selectedPath) {
     return { posterPath: cur, posters: list };
   }
 
-  if (cur && cur !== sel) {
-    // Demote current primary into alternates if missing
-    if (!list.includes(cur)) list.push(cur);
-  }
-
   // Selected becomes primary — drop it from alternates to avoid duplicates
   list = list.filter((p) => p !== sel);
+
+  if (cur && cur !== sel) {
+    // Demote previous primary to the start of the alternate list
+    list = list.filter((p) => p !== cur);
+    list.unshift(cur);
+  }
 
   return { posterPath: sel, posters: list };
 }
