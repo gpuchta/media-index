@@ -1954,6 +1954,101 @@ let tmdbPosterPick = {
   selectedPath: null,
 };
 
+/**
+ * Find a library movie by TMDB id.
+ * @param {unknown} tmdbId
+ * @returns {object|null}
+ */
+function findLibraryMovieByTmdbId(tmdbId) {
+  if (tmdbId == null || tmdbId === '') return null;
+  const id = String(tmdbId);
+  return state.movies.find((m) => String(m.tmdb_id) === id) || null;
+}
+
+/**
+ * Mark a search result row as in-library / not, update pill, meta, and action label.
+ * @param {HTMLElement} row
+ * @param {object} searchMovie
+ * @param {object|null} [libraryMovie] if omitted, looked up by searchMovie.id
+ */
+function applyTmdbResultLibraryState(row, searchMovie, libraryMovie) {
+  if (!row) return;
+  const lib =
+    libraryMovie !== undefined
+      ? libraryMovie
+      : findLibraryMovieByTmdbId(searchMovie?.id);
+  const inLib = !!lib;
+  const title = String(searchMovie?.title || 'Untitled');
+  const loc = lib ? String(lib.location || '').trim() : '';
+
+  row.classList.toggle('is-in-library', inLib);
+
+  const titleRow = row.querySelector('.tmdb-result-title-row');
+  let pill = row.querySelector('.tmdb-in-library-pill');
+  if (inLib) {
+    if (!pill && titleRow) {
+      pill = document.createElement('span');
+      pill.className = 'pill tmdb-in-library-pill';
+      titleRow.appendChild(pill);
+    }
+    if (pill) {
+      pill.textContent = loc ? `In library · ${loc}` : 'In library';
+      pill.hidden = false;
+    }
+  } else if (pill) {
+    pill.remove();
+  }
+
+  const addBtn = row.querySelector('.tmdb-add-btn');
+  if (addBtn) {
+    addBtn.textContent = inLib ? 'Update' : 'Add to Collection';
+    addBtn.classList.toggle('is-update', inLib);
+  }
+
+  const posterEl = row.querySelector('.tmdb-result-poster');
+  if (posterEl) {
+    const base = `Choose alternate poster for ${title}`;
+    posterEl.setAttribute(
+      'aria-label',
+      inLib
+        ? `${base} (already in library${loc ? `, ${loc}` : ''})`
+        : base
+    );
+  }
+
+  row.setAttribute(
+    'aria-label',
+    inLib
+      ? `${title}, already in library${loc ? `, location ${loc}` : ''}`
+      : title
+  );
+}
+
+/**
+ * Refresh in-library chrome for one result after add/replace (or all rows).
+ * @param {unknown} [tmdbId] if set, only that row; otherwise all visible rows
+ */
+function refreshTmdbResultLibraryMarkers(tmdbId) {
+  if (!els.tmdbResults) return;
+  const rows =
+    tmdbId != null && tmdbId !== ''
+      ? [
+          els.tmdbResults.querySelector(
+            `.tmdb-result-row[data-tmdb-id="${CSS.escape(String(tmdbId))}"]`
+          ),
+        ].filter(Boolean)
+      : [...els.tmdbResults.querySelectorAll('.tmdb-result-row')];
+  for (const row of rows) {
+    const id = row.dataset.tmdbId;
+    const searchMovie =
+      tmdbSearchSession.movies.find((m) => String(m.id) === String(id)) || {
+        id,
+        title: row.querySelector('.tmdb-result-title')?.textContent || '',
+      };
+    applyTmdbResultLibraryState(row, searchMovie);
+  }
+}
+
 function appendTmdbResultRows(movies) {
   if (!els.tmdbResults || !movies.length) return;
   els.tmdbResults.hidden = false;
@@ -1964,6 +2059,9 @@ function appendTmdbResultRows(movies) {
     const year = m.releaseYear || '—';
     const img = posterUrl(m.posterPath);
     const tmdbHref = `${CONFIG.TMDB_MOVIE_BASE}${m.id}`;
+    const libraryMovie = findLibraryMovieByTmdbId(m.id);
+    const inLib = !!libraryMovie;
+    const loc = libraryMovie ? String(libraryMovie.location || '').trim() : '';
     const posterHtml = img
       ? `<button type="button" class="tmdb-result-poster" style="background-image:url('${escapeHtml(img)}')" aria-label="Choose alternate poster for ${escapeHtml(m.title || 'movie')}"></button>`
       : `<button type="button" class="tmdb-result-poster tmdb-result-poster-empty" aria-label="Choose alternate poster for ${escapeHtml(m.title || 'movie')}"></button>`;
@@ -1973,14 +2071,23 @@ function appendTmdbResultRows(movies) {
           .map((g) => `<span class="pill tmdb-genre-pill">${escapeHtml(g)}</span>`)
           .join('')}</div>`
       : '';
+    const pillHtml = inLib
+      ? `<span class="pill tmdb-in-library-pill">${escapeHtml(
+          loc ? `In library · ${loc}` : 'In library'
+        )}</span>`
+      : '';
+    const actionLabel = inLib ? 'Update' : 'Add to Collection';
     row.innerHTML = `
       ${posterHtml}
       <div class="tmdb-result-body">
-        <span class="tmdb-result-title">${escapeHtml(m.title || 'Untitled')}</span>
+        <div class="tmdb-result-title-row">
+          <span class="tmdb-result-title">${escapeHtml(m.title || 'Untitled')}</span>
+          ${pillHtml}
+        </div>
         <span class="tmdb-result-meta">Release ${escapeHtml(String(year))}</span>
         ${genrePills}
         <div class="tmdb-result-actions">
-          <button type="button" class="btn tmdb-add-btn">Add to Collection</button>
+          <button type="button" class="btn tmdb-add-btn${inLib ? ' is-update' : ''}">${escapeHtml(actionLabel)}</button>
           <a
             class="btn tmdb-open-btn"
             href="${escapeHtml(tmdbHref)}"
@@ -1990,6 +2097,7 @@ function appendTmdbResultRows(movies) {
         </div>
       </div>
     `;
+    applyTmdbResultLibraryState(row, m, libraryMovie);
     // Poster click → pick alternate poster for this search result only
     const posterEl = row.querySelector('.tmdb-result-poster');
     posterEl?.addEventListener('click', () => {
@@ -2002,7 +2110,7 @@ function appendTmdbResultRows(movies) {
         () => m.title || 'Poster'
       );
     }
-    // Add to Collection → add/override library using current result poster
+    // Add / Update collection using current result poster
     row.querySelector('.tmdb-add-btn')?.addEventListener('click', () => {
       addSearchResultToCollection(m);
     });
@@ -2552,6 +2660,10 @@ async function addSearchResultToCollection(searchMovie) {
 function refreshLibraryAfterMutation() {
   state.typeaheadIndex = buildTypeaheadIndex(state.movies);
   recompute({ resetScroll: false });
+  // Keep Search Movies in-library markers in sync (add / replace / delete)
+  if (isTmdbSearchOpen()) {
+    refreshTmdbResultLibraryMarkers();
+  }
 }
 
 async function runTmdbSearch() {
