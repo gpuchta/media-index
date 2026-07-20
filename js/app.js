@@ -23,13 +23,16 @@ import {
   getStoredPosterBacklightPercent,
   getStoredPosterGapPx,
   getStoredPosterScalePercent,
+  getStoredPosterSource,
   getStoredTheme,
   getStoredThemeColors,
   normalizeBinderNotationId,
+  normalizePosterSource,
   normalizeTheme,
   parseGrayedLocationsList,
   readResolvedThemeColors,
   resolveBinderPatternSources,
+  setPosterSourceOverride,
   setStoredBinderCustomPatterns,
   setStoredBinderNotationId,
   setStoredGrayedLocationsText,
@@ -38,6 +41,7 @@ import {
   setStoredPosterBacklightPercent,
   setStoredPosterGapPx,
   setStoredPosterScalePercent,
+  setStoredPosterSource,
   setStoredTheme,
   setStoredThemeColors,
 } from './config.js';
@@ -150,6 +154,7 @@ const els = {
   ),
   settingsLocationOverlay: document.getElementById('settings-location-overlay'),
   settingsGrayedLocations: document.getElementById('settings-grayed-locations'),
+  settingsPosterSource: document.getElementById('settings-poster-source'),
   settingsBinderNotation: document.getElementById('settings-binder-notation'),
   settingsBinderNotationDesc: document.getElementById(
     'settings-binder-notation-desc'
@@ -392,6 +397,7 @@ let savedPosterGapPx = getStoredPosterGapPx();
 let savedPosterBacklightPercent = getStoredPosterBacklightPercent();
 let savedLocationOverlay = getStoredLocationOverlayEnabled();
 let savedGrayedLocationsText = getStoredGrayedLocationsText();
+let savedPosterSource = getStoredPosterSource();
 let savedBinderNotationId = getStoredBinderNotationId();
 let savedBinderCustomPatterns = getStoredBinderCustomPatterns();
 /** Last saved theme prefs; used to revert Settings theme preview on cancel. */
@@ -689,6 +695,12 @@ els.settingsGrayedLocations?.addEventListener('input', () => {
   grid.setGrayedLocations(
     parseGrayedLocationsList(els.settingsGrayedLocations?.value)
   );
+});
+els.settingsPosterSource?.addEventListener('change', () => {
+  // Preview only until Save
+  setPosterSourceOverride(els.settingsPosterSource?.value);
+  grid.render();
+  if (dialog.isOpen()) dialog.render();
 });
 els.settingsBinderNotation?.addEventListener('change', () => {
   syncBinderCustomVisibility();
@@ -1655,6 +1667,7 @@ function openSettingsDialog() {
   savedPosterBacklightPercent = getStoredPosterBacklightPercent();
   savedLocationOverlay = getStoredLocationOverlayEnabled();
   savedGrayedLocationsText = getStoredGrayedLocationsText();
+  savedPosterSource = getStoredPosterSource();
   savedBinderNotationId = getStoredBinderNotationId();
   savedBinderCustomPatterns = getStoredBinderCustomPatterns();
   if (els.settingsLocationOverlay) {
@@ -1665,6 +1678,10 @@ function openSettingsDialog() {
     els.settingsGrayedLocations.value = savedGrayedLocationsText;
   }
   grid.setGrayedLocations(parseGrayedLocationsList(savedGrayedLocationsText));
+  if (els.settingsPosterSource) {
+    els.settingsPosterSource.value = savedPosterSource;
+  }
+  setPosterSourceOverride(null);
   if (els.settingsBinderNotation) {
     els.settingsBinderNotation.value = savedBinderNotationId;
   }
@@ -1749,6 +1766,11 @@ function closeSettingsDialog({ revertPreview = false } = {}) {
       els.settingsGrayedLocations.value = savedGrayedLocationsText;
     }
     grid.setGrayedLocations(parseGrayedLocationsList(savedGrayedLocationsText));
+    if (els.settingsPosterSource) {
+      els.settingsPosterSource.value = savedPosterSource;
+    }
+    setPosterSourceOverride(null);
+    grid.render();
     applyBinderNotation(savedBinderNotationId, savedBinderCustomPatterns);
     if (els.settingsBinderNotation) {
       els.settingsBinderNotation.value = savedBinderNotationId;
@@ -1961,6 +1983,12 @@ function saveSettings() {
     els.settingsGrayedLocations.value = savedGrayedLocationsText;
   }
   grid.setGrayedLocations(parseGrayedLocationsList(savedGrayedLocationsText));
+  savedPosterSource = setStoredPosterSource(els.settingsPosterSource?.value);
+  setPosterSourceOverride(null);
+  if (els.settingsPosterSource) {
+    els.settingsPosterSource.value = savedPosterSource;
+  }
+  grid.render();
   savedBinderNotationId = setStoredBinderNotationId(
     els.settingsBinderNotation?.value
   );
@@ -1985,6 +2013,7 @@ function saveSettings() {
     savedGrayedLocationsText
       ? `grayed locations ${savedGrayedLocationsText}`
       : 'grayed locations none',
+    `poster source ${savedPosterSource === 'local' ? 'local' : 'TMDB'}`,
     `binder notation ${binderLabel}`,
     `theme ${themeLabel} (${customNote})`,
   ];

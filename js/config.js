@@ -42,7 +42,21 @@ export const CONFIG = {
    */
   DATA_VERSION: '2026-07-15-143500',
 
+  /** Remote poster CDN (grid / dialog thumbnails). */
   TMDB_IMAGE_BASE: 'https://image.tmdb.org/t/p/w342',
+  /** Larger remote size for poster zoom lightbox. */
+  TMDB_IMAGE_ZOOM_BASE: 'https://image.tmdb.org/t/p/w780',
+  /**
+   * Local primary-poster backup (relative to site root).
+   * Filled by `node posters/sync-posters.mjs` → posters/w342/{path}.
+   */
+  LOCAL_POSTER_BASE: 'posters/w342',
+  /**
+   * Poster image source: "tmdb" (default) or "local" (synced files under LOCAL_POSTER_BASE).
+   * Stored in localStorage.
+   */
+  POSTER_SOURCE_STORAGE: 'pmi:posterSource',
+  POSTER_SOURCE_DEFAULT: 'tmdb',
   TMDB_MOVIE_BASE: 'https://www.themoviedb.org/movie/',
 
   /** Design cell size (px) at comfortable desktop widths. */
@@ -206,6 +220,92 @@ export function setStoredLocationOverlayEnabled(enabled) {
     /* private mode */
   }
   return on;
+}
+
+/**
+ * @param {unknown} id
+ * @returns {'tmdb'|'local'}
+ */
+export function normalizePosterSource(id) {
+  const s = String(id || '')
+    .trim()
+    .toLowerCase();
+  return s === 'local' ? 'local' : 'tmdb';
+}
+
+/** @returns {'tmdb'|'local'} */
+export function getStoredPosterSource() {
+  try {
+    const raw = localStorage.getItem(CONFIG.POSTER_SOURCE_STORAGE);
+    if (raw == null || raw === '') return CONFIG.POSTER_SOURCE_DEFAULT;
+    return normalizePosterSource(raw);
+  } catch {
+    return CONFIG.POSTER_SOURCE_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} id
+ * @returns {'tmdb'|'local'}
+ */
+export function setStoredPosterSource(id) {
+  const n = normalizePosterSource(id);
+  try {
+    if (n === CONFIG.POSTER_SOURCE_DEFAULT) {
+      localStorage.removeItem(CONFIG.POSTER_SOURCE_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.POSTER_SOURCE_STORAGE, n);
+    }
+  } catch {
+    /* private mode */
+  }
+  return n;
+}
+
+/**
+ * Optional in-session override while Settings is open (preview without Save).
+ * @type {'tmdb'|'local'|null}
+ */
+let posterSourceOverride = null;
+
+/**
+ * @param {unknown} id pass null/undefined to clear override
+ * @returns {'tmdb'|'local'|null}
+ */
+export function setPosterSourceOverride(id) {
+  if (id == null || id === '') {
+    posterSourceOverride = null;
+  } else {
+    posterSourceOverride = normalizePosterSource(id);
+  }
+  return posterSourceOverride;
+}
+
+/** @returns {'tmdb'|'local'} effective source (override or stored) */
+export function getEffectivePosterSource() {
+  return posterSourceOverride ?? getStoredPosterSource();
+}
+
+/**
+ * Base URL/path for grid and dialog posters (no trailing slash).
+ * Local = posters/w342 from sync-posters.mjs; remote = TMDB w342 CDN.
+ * @returns {string}
+ */
+export function getPosterImageBase() {
+  return getEffectivePosterSource() === 'local'
+    ? CONFIG.LOCAL_POSTER_BASE
+    : CONFIG.TMDB_IMAGE_BASE;
+}
+
+/**
+ * Base for enlarged poster zoom. Local backup only has w342 files, so zoom
+ * reuses the local base; remote uses a larger TMDB size.
+ * @returns {string}
+ */
+export function getPosterZoomImageBase() {
+  return getEffectivePosterSource() === 'local'
+    ? CONFIG.LOCAL_POSTER_BASE
+    : CONFIG.TMDB_IMAGE_ZOOM_BASE;
 }
 
 /**

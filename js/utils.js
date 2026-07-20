@@ -1,10 +1,10 @@
-import { CONFIG } from './config.js';
+import { getPosterImageBase } from './config.js';
 
 export function posterUrl(posterPath) {
   if (!posterPath) return '';
   if (posterPath.startsWith('http')) return posterPath;
   const path = posterPath.startsWith('/') ? posterPath : `/${posterPath}`;
-  return `${CONFIG.TMDB_IMAGE_BASE}${path}`;
+  return `${getPosterImageBase()}${path}`;
 }
 
 /**

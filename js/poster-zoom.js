@@ -7,6 +7,7 @@
  * would otherwise hit the poster/grid under the finger.
  */
 
+import { getPosterZoomImageBase } from './config.js';
 import { trapModalCloseEvent } from './event-trap.js';
 
 const LONG_PRESS_MS = 550;
@@ -188,13 +189,16 @@ export function showPosterZoom(url, alt = '') {
   ignoreDismissUntil = Date.now() + 350;
 }
 
-/** Larger TMDB size for lightbox (grid uses w342). */
+/**
+ * Lightbox poster URL. TMDB uses w780; local backup (sync-posters.mjs) only
+ * has w342 files so zoom reuses the local base.
+ */
 export function posterZoomUrl(posterPath) {
   if (!posterPath) return '';
   const p = String(posterPath);
   if (p.startsWith('http')) return p;
   const path = p.startsWith('/') ? p : `/${p}`;
-  return `https://image.tmdb.org/t/p/w780${path}`;
+  return `${getPosterZoomImageBase()}${path}`;
 }
 
 /**

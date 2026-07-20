@@ -418,8 +418,20 @@
                 placeholder="Watch, Buy, Cinema Now"
               />
             </label>
+            <label class="form-field" for="settings-poster-source">
+              <span class="form-label">Poster source</span>
+              <select
+                id="settings-poster-source"
+                name="settings-poster-source"
+                class="form-input form-select"
+              >
+                <option value="tmdb">TMDB (online CDN)</option>
+                <option value="local">Local (posters/w342)</option>
+              </select>
+            </label>
             <p class="form-hint">
-              Size, gap, glow, and location badge. Comma-separated locations are shown in grayscale (spaces allowed inside a name, e.g. Watch, Cinema Now). Preview updates live.
+              Size, gap, glow, location badge, and grayed list. Poster source: TMDB CDN or files from
+              <code>node posters/sync-posters.mjs</code>. Preview updates live.
             </p>
           </div>
 
