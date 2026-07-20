@@ -126,11 +126,11 @@ export const CONFIG = {
   THEME_COLORS_STORAGE: 'pmi:themeColors',
 
   /**
-   * UI font size: "small" (default / current) or "large".
+   * UI font size: "small" or "large" (default).
    * Applied via documentElement data-font-size (see css/app.css).
    */
   FONT_SIZE_STORAGE: 'pmi:fontSize',
-  FONT_SIZE_DEFAULT: 'small',
+  FONT_SIZE_DEFAULT: 'large',
 
   /**
    * Show location badge on poster grid cells.
@@ -673,8 +673,8 @@ export function setStoredTheme(theme) {
 
 /** @type {readonly { id: 'small'|'large', label: string }[]} */
 export const FONT_SIZE_OPTIONS = Object.freeze([
-  { id: 'small', label: 'Small' },
   { id: 'large', label: 'Large' },
+  { id: 'small', label: 'Small' },
 ]);
 
 /**
@@ -685,7 +685,7 @@ export function normalizeFontSize(value) {
   const s = String(value ?? '')
     .trim()
     .toLowerCase();
-  return s === 'large' ? 'large' : CONFIG.FONT_SIZE_DEFAULT;
+  return s === 'small' ? 'small' : CONFIG.FONT_SIZE_DEFAULT;
 }
 
 /** @returns {'small'|'large'} */
@@ -727,12 +727,13 @@ export function setStoredFontSize(value) {
 export function applyFontSize(value) {
   const id = normalizeFontSize(value);
   const root = document.documentElement;
-  if (id === 'large') {
+  if (id === 'small') {
+    root.setAttribute('data-font-size', 'small');
+    root.style.fontSize = '16px';
+  } else {
+    // Default large: attribute optional but kept for CSS parity
     root.setAttribute('data-font-size', 'large');
     root.style.fontSize = '18.5px';
-  } else {
-    root.removeAttribute('data-font-size');
-    root.style.fontSize = '16px';
   }
   return id;
 }
