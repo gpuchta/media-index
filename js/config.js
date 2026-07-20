@@ -719,14 +719,21 @@ export function setStoredFontSize(value) {
 
 /**
  * Apply font size to the document (does not write localStorage).
+ * Sets data-font-size and an inline root font-size so mobile browsers
+ * (especially iOS Safari) cannot ignore a CSS-only percentage scale.
  * @param {unknown} value
  * @returns {'small'|'large'}
  */
 export function applyFontSize(value) {
   const id = normalizeFontSize(value);
   const root = document.documentElement;
-  if (id === 'large') root.setAttribute('data-font-size', 'large');
-  else root.removeAttribute('data-font-size');
+  if (id === 'large') {
+    root.setAttribute('data-font-size', 'large');
+    root.style.fontSize = '18.5px';
+  } else {
+    root.removeAttribute('data-font-size');
+    root.style.fontSize = '16px';
+  }
   return id;
 }
 

@@ -339,14 +339,20 @@
 
 /*
  * Font size (Settings → Appearance). Most UI uses rem, so root size scales text.
- * small = current default; large ≈ +15%.
+ * Use px (not %) so mobile Safari/Chrome honor the setting. Disable automatic
+ * text inflation that otherwise fights data-font-size on phones.
+ * small = 16px (default); large ≈ +15%.
  */
 html {
-  font-size: 100%;
+  --app-font-size: 16px;
+  font-size: var(--app-font-size);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 html[data-font-size='large'] {
-  font-size: 115%;
+  --app-font-size: 18.5px;
+  font-size: var(--app-font-size);
 }
 
 html,
@@ -355,6 +361,7 @@ body {
   padding: 0;
   height: 100%;
   font-family: var(--font);
+  font-size: 1rem; /* lock rem cascade (esp. important on iOS) */
   color: var(--text);
   background: var(--bg-deep);
   overflow: hidden;
