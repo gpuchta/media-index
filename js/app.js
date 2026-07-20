@@ -93,6 +93,7 @@ import {
   computeGitBlobSha,
   getFileContent,
   getStoredGithubToken,
+  listCommitsForPath,
   putFileContent,
   setStoredGithubToken,
 } from './github.js';
@@ -131,7 +132,19 @@ const els = {
   dirtyBanner: document.getElementById('dirty-banner'),
   saveJsonBtn: document.getElementById('save-json-btn'),
   viewJsonBtn: document.getElementById('view-json-btn'),
+  libraryHistoryBtn: document.getElementById('library-history-btn'),
   githubDeploymentBtn: document.getElementById('github-deployment-btn'),
+  historyBackdrop: document.getElementById('history-backdrop'),
+  historyScroll: document.getElementById('history-scroll'),
+  historySubtitle: document.getElementById('history-subtitle'),
+  historyStatus: document.getElementById('history-status'),
+  historyList: document.getElementById('history-list'),
+  historySentinel: document.getElementById('history-sentinel'),
+  historyLoadMore: document.getElementById('history-load-more'),
+  historyEnd: document.getElementById('history-end'),
+  historyClose: document.getElementById('history-close'),
+  historyCloseFooter: document.getElementById('history-close-footer'),
+  historyOpenGithub: document.getElementById('history-open-github'),
   exportBtn: document.getElementById('export-btn'),
   importBtn: document.getElementById('import-btn'),
   importFileInput: document.getElementById('import-file-input'),
@@ -264,7 +277,8 @@ function isAnyModalOpen() {
     shown(els.tmdbBackdrop) ||
     shown(els.tmdbPosterBackdrop) ||
     shown(els.saveProgressBackdrop) ||
-    shown(els.metaRefreshBackdrop)
+    shown(els.metaRefreshBackdrop) ||
+    shown(els.historyBackdrop)
   );
 }
 
@@ -567,10 +581,61 @@ els.viewJsonBtn?.addEventListener('click', () => {
   openGithubDataCommitsView();
 });
 
+els.libraryHistoryBtn?.addEventListener('click', () => {
+  closeMenu();
+  void openLibraryHistoryDialog();
+});
+
 els.githubDeploymentBtn?.addEventListener('click', () => {
   closeMenu();
   openGithubDeploymentView();
 });
+
+els.historyClose?.addEventListener('click', () => closeLibraryHistoryDialog());
+els.historyCloseFooter?.addEventListener('click', () => closeLibraryHistoryDialog());
+els.historyBackdrop?.addEventListener('click', (e) => {
+  if (e.target === els.historyBackdrop) closeLibraryHistoryDialog();
+});
+els.historyOpenGithub?.addEventListener('click', () => {
+  void openGithubDataCommitsView();
+});
+els.historyList?.addEventListener('click', (e) => {
+  const btn = e.target.closest?.('button[data-history-action]');
+  if (!btn || !els.historyList.contains(btn)) return;
+  const sha = btn.dataset.sha || '';
+  const action = btn.dataset.historyAction;
+  if (!sha || !action) return;
+  if (action === 'download') void downloadHistoryCommit(sha, btn);
+  else if (action === 'restore') void restoreHistoryCommit(sha, btn);
+});
+
+// Escape closes Library history when open
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (e.key !== 'Escape') return;
+    if (isAppAlertOpen()) return;
+    if (!isLibraryHistoryOpen()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeLibraryHistoryDialog();
+  },
+  true
+);
+
+// Enter → Close on Library history when focus is not on a control
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (!isPrimaryActionEnter(e)) return;
+    if (isAppAlertOpen()) return;
+    if (!isLibraryHistoryOpen()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeLibraryHistoryDialog();
+  },
+  true
+);
 
 els.saveProgressClose?.addEventListener('click', () => closeSaveProgressDialog());
 els.saveProgressOk?.addEventListener('click', () => closeSaveProgressDialog());
@@ -1160,6 +1225,91 @@ function startLibraryImport() {
 }
 
 /**
+ * Confirm and replace the in-browser library with a parsed movie array.
+ * @param {object[]} imported
+ * @param {{
+ *   sourceLabel: string,
+ *   title?: string,
+ *   okLabel?: string,
+ *   toastPrefix?: string,
+ * }} opts
+ * @returns {Promise<boolean>} true if the library was replaced
+ */
+async function confirmAndApplyImportedLibrary(imported, opts) {
+  const sourceLabel = String(opts?.sourceLabel || 'import').trim() || 'import';
+  const title = opts?.title || 'Import library';
+  const okLabel = opts?.okLabel || 'Replace library';
+  const toastPrefix = opts?.toastPrefix || 'Imported';
+
+  if (!Array.isArray(imported)) {
+    await showAppAlert(
+      `Could not load “${sourceLabel}”.\n\nExpected a JSON array of movies.`,
+      { title: `${title} failed` }
+    );
+    return false;
+  }
+
+  const objectCount = imported.filter(
+    (m) => m && typeof m === 'object' && !Array.isArray(m)
+  ).length;
+  if (imported.length > 0 && objectCount === 0) {
+    await showAppAlert(
+      `“${sourceLabel}” is a JSON array, but it does not look like movie objects.`,
+      { title: `${title} failed` }
+    );
+    return false;
+  }
+
+  const before = state.movies;
+  const after = imported;
+  const diff = diffLibraries(before, after);
+  const fromN = before.length;
+  const toN = after.length;
+
+  if (diff.totalTouched === 0 && fromN === toN) {
+    await showAppAlert(
+      `“${sourceLabel}” matches your current library (${toN} movie${
+        toN === 1 ? '' : 's'
+      }). Nothing to change.`,
+      { title }
+    );
+    return false;
+  }
+
+  const dirtyNote = state.dirty
+    ? '\n\nYou have unsaved changes in this browser; this will replace them too.'
+    : '';
+  const ok = await showAppConfirm(
+    `Replace your current library with “${sourceLabel}”?\n\n` +
+      `Current: ${fromN} movie${fromN === 1 ? '' : 's'}\n` +
+      `Import:  ${toN} movie${toN === 1 ? '' : 's'}\n\n` +
+      `Compared to now: +${diff.addedCount} added · −${diff.removedCount} removed · ~${diff.changedCount} changed.\n\n` +
+      `This only updates the library in this browser. Use Save to GitHub (or Export) to keep the result.` +
+      dirtyNote,
+    {
+      title,
+      okLabel,
+      cancelLabel: 'Cancel',
+    }
+  );
+  if (!ok) return false;
+
+  if (dialog.isOpen()) {
+    dialog.close();
+  }
+
+  finishLibraryLoad(after);
+  setDirty(true);
+  showAppToast(
+    `${toastPrefix} ${toN} movie${toN === 1 ? '' : 's'}` +
+      (diff.totalTouched
+        ? ` (+${diff.addedCount} · −${diff.removedCount} · ~${diff.changedCount})`
+        : '')
+  );
+  return true;
+}
+
+/**
  * Replace the in-browser library with movies from a user-selected JSON file.
  * @param {File} file
  */
@@ -1189,65 +1339,12 @@ async function importLibraryFromFile(file) {
     return;
   }
 
-  // Soft validation: warn if items look empty/non-objects, but still allow
-  const objectCount = imported.filter(
-    (m) => m && typeof m === 'object' && !Array.isArray(m)
-  ).length;
-  if (imported.length > 0 && objectCount === 0) {
-    await showAppAlert(
-      `“${name}” is a JSON array, but it does not look like movie objects.`,
-      { title: 'Import failed' }
-    );
-    return;
-  }
-
-  const before = state.movies;
-  const after = imported;
-  const diff = diffLibraries(before, after);
-  const fromN = before.length;
-  const toN = after.length;
-
-  if (diff.totalTouched === 0 && fromN === toN) {
-    await showAppAlert(
-      `“${name}” matches your current library (${toN} movie${
-        toN === 1 ? '' : 's'
-      }). Nothing to import.`,
-      { title: 'Import' }
-    );
-    return;
-  }
-
-  const dirtyNote = state.dirty
-    ? '\n\nYou have unsaved changes in this browser; import will replace them too.'
-    : '';
-  const ok = await showAppConfirm(
-    `Replace your current library with “${name}”?\n\n` +
-      `Current: ${fromN} movie${fromN === 1 ? '' : 's'}\n` +
-      `Import:  ${toN} movie${toN === 1 ? '' : 's'}\n\n` +
-      `Compared to now: +${diff.addedCount} added · −${diff.removedCount} removed · ~${diff.changedCount} changed.\n\n` +
-      `This only updates the library in this browser. Use Save to GitHub (or Export) to keep the result.` +
-      dirtyNote,
-    {
-      title: 'Import library',
-      okLabel: 'Replace library',
-      cancelLabel: 'Cancel',
-    }
-  );
-  if (!ok) return;
-
-  // Drop open detail dialog — movie object references will be stale
-  if (dialog.isOpen()) {
-    dialog.close();
-  }
-
-  finishLibraryLoad(after);
-  setDirty(true);
-  showAppToast(
-    `Imported ${toN} movie${toN === 1 ? '' : 's'}` +
-      (diff.totalTouched
-        ? ` (+${diff.addedCount} · −${diff.removedCount} · ~${diff.changedCount})`
-        : '')
-  );
+  await confirmAndApplyImportedLibrary(imported, {
+    sourceLabel: name,
+    title: 'Import library',
+    okLabel: 'Replace library',
+    toastPrefix: 'Imported',
+  });
 }
 
 /**
@@ -1343,6 +1440,535 @@ async function openGithubDeploymentView() {
   const target = await requireGithubTarget();
   if (!target) return;
   window.open(target.deploymentUrl, '_blank', 'noopener,noreferrer');
+}
+
+// —— Library history (GitHub commits for data file) ——
+
+const HISTORY_PAGE_SIZE = 15;
+
+/**
+ * @type {{
+ *   page: number,
+ *   hasNextPage: boolean,
+ *   loading: boolean,
+ *   loadingMore: boolean,
+ *   commits: object[],
+ * }}
+ */
+const historyState = {
+  page: 0,
+  hasNextPage: false,
+  loading: false,
+  loadingMore: false,
+  commits: [],
+};
+
+/** @type {IntersectionObserver|null} */
+let historySentinelObserver = null;
+
+function isLibraryHistoryOpen() {
+  return Boolean(
+    els.historyBackdrop && !els.historyBackdrop.classList.contains('hidden')
+  );
+}
+
+function disconnectHistorySentinel() {
+  if (historySentinelObserver) {
+    historySentinelObserver.disconnect();
+    historySentinelObserver = null;
+  }
+}
+
+/**
+ * Watch the bottom sentinel; when it enters the dialog body viewport, fetch more.
+ */
+function connectHistorySentinel() {
+  disconnectHistorySentinel();
+  const root = els.historyScroll;
+  const sentinel = els.historySentinel;
+  if (!root || !sentinel || typeof IntersectionObserver === 'undefined') {
+    return;
+  }
+  historySentinelObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        maybeLoadMoreHistory();
+      }
+    },
+    {
+      root,
+      // Start loading a bit before the sentinel is fully visible
+      rootMargin: '0px 0px 80px 0px',
+      threshold: 0,
+    }
+  );
+  historySentinelObserver.observe(sentinel);
+}
+
+function setHistoryStatus(message, { error = false } = {}) {
+  if (!els.historyStatus) return;
+  if (!message) {
+    els.historyStatus.hidden = true;
+    els.historyStatus.textContent = '';
+    els.historyStatus.classList.remove('is-error');
+    return;
+  }
+  els.historyStatus.hidden = false;
+  els.historyStatus.textContent = message;
+  els.historyStatus.classList.toggle('is-error', !!error);
+}
+
+/**
+ * @param {string|null|undefined} iso
+ * @returns {string}
+ */
+function formatHistoryDate(iso) {
+  if (!iso) return 'Unknown date';
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return String(iso);
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return String(iso);
+  }
+}
+
+/**
+ * @param {string} sha
+ * @returns {object|null}
+ */
+function findHistoryCommit(sha) {
+  const s = String(sha || '').trim();
+  return historyState.commits.find((c) => c.sha === s) || null;
+}
+
+/**
+ * @param {object} c — commit from listCommitsForPath
+ * @returns {HTMLElement}
+ */
+function createHistoryItem(c) {
+  const item = document.createElement('div');
+  item.className = 'history-item';
+  item.setAttribute('role', 'listitem');
+
+  const main = document.createElement('div');
+  main.className = 'history-item-main';
+
+  const headline = c.messageHeadline || '(no message)';
+  const fullMsg = String(c.message || '').trim();
+  const body = fullMsg
+    .split(/\r?\n/)
+    .slice(1)
+    .join('\n')
+    .replace(/^\s+/, '')
+    .trimEnd();
+  const hasDetails = Boolean(body);
+
+  const msg = document.createElement('p');
+  msg.className = 'history-item-msg';
+  msg.textContent = headline;
+  main.appendChild(msg);
+
+  if (hasDetails) {
+    const details = document.createElement('pre');
+    details.className = 'history-item-details';
+    details.hidden = true;
+    details.textContent = body;
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'history-item-more';
+    toggle.textContent = 'Show more';
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const open = details.hidden;
+      details.hidden = !open;
+      toggle.textContent = open ? 'Show less' : 'Show more';
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    main.append(toggle, details);
+  }
+
+  const meta = document.createElement('p');
+  meta.className = 'history-item-meta';
+  const who = c.authorLogin || c.authorName || 'unknown';
+  meta.innerHTML =
+    `<span class="history-item-sha">${escapeHtml(c.shortSha || c.sha.slice(0, 7))}</span>` +
+    ` · ${escapeHtml(formatHistoryDate(c.date))}` +
+    ` · ${escapeHtml(who)}`;
+  main.appendChild(meta);
+
+  const actions = document.createElement('div');
+  actions.className = 'history-item-actions';
+
+  const dl = document.createElement('button');
+  dl.type = 'button';
+  dl.className = 'btn';
+  dl.dataset.historyAction = 'download';
+  dl.dataset.sha = c.sha;
+  dl.textContent = 'Download';
+  dl.title = 'Download this version as JSON';
+
+  const restore = document.createElement('button');
+  restore.type = 'button';
+  restore.className = 'btn btn-primary';
+  restore.dataset.historyAction = 'restore';
+  restore.dataset.sha = c.sha;
+  restore.textContent = 'Restore';
+  restore.title = 'Replace the current library with this version';
+
+  actions.append(dl, restore);
+  item.append(main, actions);
+  return item;
+}
+
+function syncHistoryScrollHints() {
+  if (els.historyLoadMore) {
+    els.historyLoadMore.hidden = !historyState.loadingMore;
+  }
+  if (els.historyEnd) {
+    const showEnd =
+      !historyState.loading &&
+      !historyState.loadingMore &&
+      historyState.commits.length > 0 &&
+      !historyState.hasNextPage;
+    els.historyEnd.hidden = !showEnd;
+  }
+  // Keep sentinel in the layout only while more pages may exist
+  if (els.historySentinel) {
+    els.historySentinel.hidden =
+      historyState.loading ||
+      !historyState.hasNextPage ||
+      historyState.commits.length === 0;
+  }
+}
+
+/**
+ * Full re-render of the commit list (initial load / error / empty).
+ */
+function renderHistoryList() {
+  const host = els.historyList;
+  if (!host) return;
+  host.innerHTML = '';
+
+  if (historyState.loading && !historyState.commits.length) {
+    host.innerHTML = `<p class="history-empty">Loading commits…</p>`;
+    syncHistoryScrollHints();
+    return;
+  }
+
+  if (!historyState.commits.length) {
+    host.innerHTML = `<p class="history-empty">No commits found for this file.</p>`;
+    syncHistoryScrollHints();
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  for (const c of historyState.commits) {
+    frag.appendChild(createHistoryItem(c));
+  }
+  host.appendChild(frag);
+  syncHistoryScrollHints();
+}
+
+/**
+ * Append newly fetched commits without wiping expanded “Show more” rows.
+ * @param {object[]} commits
+ */
+function appendHistoryItems(commits) {
+  const host = els.historyList;
+  if (!host || !commits?.length) return;
+  // Drop empty placeholder if present
+  const empty = host.querySelector('.history-empty');
+  if (empty) empty.remove();
+  const frag = document.createDocumentFragment();
+  for (const c of commits) {
+    frag.appendChild(createHistoryItem(c));
+  }
+  host.appendChild(frag);
+  syncHistoryScrollHints();
+}
+
+/**
+ * Load a history page. Page 1 replaces the list; later pages append.
+ * @param {number} page
+ * @param {{ append?: boolean }} [opts]
+ */
+async function loadLibraryHistoryPage(page, { append = false } = {}) {
+  const target = GITHUB_TARGET;
+  if (!target) {
+    historyState.loading = false;
+    historyState.loadingMore = false;
+    setHistoryStatus('GitHub target is not configured.', { error: true });
+    renderHistoryList();
+    return;
+  }
+
+  // Append: block if anything is in flight or no more pages.
+  // Initial load: allow when openLibraryHistoryDialog already set loading=true.
+  if (append) {
+    if (historyState.loading || historyState.loadingMore) return;
+    if (!historyState.hasNextPage) return;
+  } else if (historyState.loadingMore) {
+    return;
+  }
+
+  const token = await getGithubTokenOrPrompt();
+  if (!token) {
+    historyState.loading = false;
+    historyState.loadingMore = false;
+    setHistoryStatus('GitHub API key required to load history.', { error: true });
+    renderHistoryList();
+    return;
+  }
+
+  if (append) {
+    historyState.loadingMore = true;
+    syncHistoryScrollHints();
+  } else {
+    historyState.loading = true;
+    historyState.page = page;
+    setHistoryStatus('Loading commit history…');
+    // Only re-render the placeholder when the list is still empty
+    if (!historyState.commits.length) renderHistoryList();
+  }
+
+  try {
+    const result = await listCommitsForPath({
+      token,
+      owner: target.owner,
+      repo: target.repo,
+      path: target.path,
+      sha: target.branch,
+      page,
+      perPage: HISTORY_PAGE_SIZE,
+    });
+
+    if (append) {
+      // De-dupe by sha in case of overlap
+      const seen = new Set(historyState.commits.map((c) => c.sha));
+      const fresh = result.commits.filter((c) => c.sha && !seen.has(c.sha));
+      historyState.commits = historyState.commits.concat(fresh);
+      historyState.page = result.page;
+      historyState.hasNextPage = result.hasNextPage;
+      historyState.loadingMore = false;
+      appendHistoryItems(fresh);
+    } else {
+      historyState.commits = result.commits;
+      historyState.page = result.page;
+      historyState.hasNextPage = result.hasNextPage;
+      historyState.loading = false;
+      renderHistoryList();
+    }
+
+    const n = historyState.commits.length;
+    setHistoryStatus(
+      n
+        ? `Showing ${n} commit${n === 1 ? '' : 's'}${
+            historyState.hasNextPage ? ' · scroll for more' : ''
+          }.`
+        : 'No commits found for this file.'
+    );
+    // Sentinel may already be visible if the list is short — fill the viewport
+    queueMicrotask(() => maybeLoadMoreHistory());
+  } catch (err) {
+    console.error(err);
+    historyState.loading = false;
+    historyState.loadingMore = false;
+    if (!append) {
+      historyState.commits = [];
+      historyState.hasNextPage = false;
+      setHistoryStatus(err?.message || String(err), { error: true });
+      renderHistoryList();
+    } else {
+      setHistoryStatus(err?.message || String(err), { error: true });
+      syncHistoryScrollHints();
+    }
+  }
+}
+
+/** Called by the scroll sentinel observer (and short-list fill). */
+function maybeLoadMoreHistory() {
+  if (!isLibraryHistoryOpen()) return;
+  if (historyState.loading || historyState.loadingMore) return;
+  if (!historyState.hasNextPage) return;
+  void loadLibraryHistoryPage(historyState.page + 1, { append: true });
+}
+
+async function openLibraryHistoryDialog() {
+  if (!els.historyBackdrop) return;
+  if (metaRefreshJob.running) {
+    await showAppAlert(
+      'Wait for the metadata update to finish before browsing history.',
+      { title: 'Library history' }
+    );
+    return;
+  }
+  const target = await requireGithubTarget();
+  if (!target) return;
+  const token = await getGithubTokenOrPrompt();
+  if (!token) return;
+
+  if (els.historySubtitle) {
+    els.historySubtitle.textContent = `${target.owner}/${target.repo} · ${target.branch} · ${target.path}`;
+  }
+  historyState.page = 0;
+  historyState.hasNextPage = false;
+  historyState.commits = [];
+  historyState.loading = true;
+  historyState.loadingMore = false;
+
+  resetDialogScroll(els.historyBackdrop);
+  els.historyBackdrop.classList.remove('hidden');
+  els.historyBackdrop.setAttribute('aria-hidden', 'false');
+  setHistoryStatus('Loading commit history…');
+  if (els.historyLoadMore) els.historyLoadMore.hidden = true;
+  if (els.historyEnd) els.historyEnd.hidden = true;
+  if (els.historySentinel) els.historySentinel.hidden = true;
+  renderHistoryList();
+  connectHistorySentinel();
+  queueMicrotask(() => {
+    resetDialogScroll(els.historyBackdrop);
+    els.historyCloseFooter?.focus();
+  });
+
+  await loadLibraryHistoryPage(1, { append: false });
+}
+
+function closeLibraryHistoryDialog() {
+  if (!els.historyBackdrop) return;
+  disconnectHistorySentinel();
+  els.historyBackdrop.classList.add('hidden');
+  els.historyBackdrop.setAttribute('aria-hidden', 'true');
+  if (els.historyList) els.historyList.innerHTML = '';
+  setHistoryStatus('');
+  if (els.historyLoadMore) els.historyLoadMore.hidden = true;
+  if (els.historyEnd) els.historyEnd.hidden = true;
+  if (els.historySentinel) els.historySentinel.hidden = true;
+  historyState.loading = false;
+  historyState.loadingMore = false;
+  historyState.commits = [];
+  historyState.hasNextPage = false;
+  historyState.page = 0;
+  focusFilterWhenIdle();
+}
+
+/**
+ * @param {string} sha
+ * @returns {Promise<{ text: string, movies: object[] }|null>}
+ */
+async function fetchLibraryAtCommit(sha) {
+  const target = GITHUB_TARGET;
+  if (!target) {
+    await showAppAlert('GitHub target is not configured.', {
+      title: 'Library history',
+    });
+    return null;
+  }
+  const token = await getGithubTokenOrPrompt();
+  if (!token) return null;
+
+  const file = await getFileContent({
+    token,
+    owner: target.owner,
+    repo: target.repo,
+    path: target.path,
+    ref: sha,
+  });
+  if (!file.exists) {
+    throw new Error('File not found at this commit (removed or path changed).');
+  }
+  const text = String(file.content ?? '');
+  const movies = parseLibraryJson(text);
+  if (movies == null) {
+    throw new Error('File at this commit is not a valid JSON movie array.');
+  }
+  return { text, movies };
+}
+
+/**
+ * @param {string} sha
+ * @param {HTMLButtonElement} [btn]
+ */
+async function downloadHistoryCommit(sha, btn) {
+  const commit = findHistoryCommit(sha);
+  const short = commit?.shortSha || String(sha).slice(0, 7);
+  const prevLabel = btn?.textContent;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Downloading…';
+  }
+  try {
+    const result = await fetchLibraryAtCommit(sha);
+    if (!result) return;
+    const datePart = commit?.date
+      ? String(commit.date).slice(0, 10)
+      : 'unknown-date';
+    const base = formatExportFilename(CONFIG.DATA_PATH).replace(/\.json$/i, '');
+    downloadJson(`${base}-${datePart}-${short}.json`, result.movies);
+    showAppToast(`Downloaded ${short} (${result.movies.length} movies)`);
+  } catch (err) {
+    console.error(err);
+    await showAppAlert(err?.message || String(err), {
+      title: 'Download failed',
+    });
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = prevLabel || 'Download';
+    }
+  }
+}
+
+/**
+ * @param {string} sha
+ * @param {HTMLButtonElement} [btn]
+ */
+async function restoreHistoryCommit(sha, btn) {
+  const commit = findHistoryCommit(sha);
+  const short = commit?.shortSha || String(sha).slice(0, 7);
+  const label =
+    commit?.messageHeadline
+      ? `${short} — ${commit.messageHeadline}`
+      : short;
+  const prevLabel = btn?.textContent;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+  }
+  try {
+    const result = await fetchLibraryAtCommit(sha);
+    if (!result) return;
+    const applied = await confirmAndApplyImportedLibrary(result.movies, {
+      sourceLabel: label,
+      title: 'Restore library version',
+      okLabel: 'Restore',
+      toastPrefix: 'Restored',
+    });
+    if (applied) {
+      closeLibraryHistoryDialog();
+    }
+  } catch (err) {
+    console.error(err);
+    await showAppAlert(err?.message || String(err), {
+      title: 'Restore failed',
+    });
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = prevLabel || 'Restore';
+    }
+  }
 }
 
 /** Guard against double-clicks while a remote save is in flight. */

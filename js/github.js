@@ -343,6 +343,102 @@ export async function upsertFileContent(opts) {
 }
 
 /**
+ * List commits that touched a file path (newest first).
+ * GET /repos/{owner}/{repo}/commits?path=…&sha=…&page=…&per_page=…
+ *
+ * @param {object} opts
+ * @param {string} opts.token
+ * @param {string} opts.owner
+ * @param {string} opts.repo
+ * @param {string} opts.path — file path in the repo
+ * @param {string} [opts.sha] — branch, tag, or commit SHA (default: default branch)
+ * @param {number} [opts.page=1] — 1-based page
+ * @param {number} [opts.perPage=15] — page size (max 100)
+ * @returns {Promise<{
+ *   commits: {
+ *     sha: string,
+ *     shortSha: string,
+ *     message: string,
+ *     messageHeadline: string,
+ *     authorName: string,
+ *     authorLogin: string,
+ *     date: string|null,
+ *     htmlUrl: string,
+ *   }[],
+ *   page: number,
+ *   perPage: number,
+ *   hasNextPage: boolean,
+ *   hasPrevPage: boolean,
+ * }>}
+ */
+export async function listCommitsForPath(opts) {
+  const token = requireToken(opts.token);
+  const { owner, repo, path } = requirePathParts(opts);
+  const page = Math.max(1, parseInt(String(opts.page ?? 1), 10) || 1);
+  const perPage = Math.min(
+    100,
+    Math.max(1, parseInt(String(opts.perPage ?? 15), 10) || 15)
+  );
+
+  const params = new URLSearchParams();
+  params.set('path', path);
+  params.set('page', String(page));
+  params.set('per_page', String(perPage));
+  const ref = String(opts.sha || opts.branch || '').trim();
+  if (ref) params.set('sha', ref);
+
+  const url = `${GITHUB_API_BASE}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/commits?${params}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: apiHeaders(token),
+  });
+  if (!res.ok) {
+    throw new Error(`GitHub list commits failed (${res.status}): ${await parseError(res)}`);
+  }
+
+  const data = await res.json();
+  if (!Array.isArray(data)) {
+    throw new Error('GitHub list commits returned an unexpected response');
+  }
+
+  // Prefer Link: rel="next" when present; fall back to full-page heuristic
+  const link = res.headers.get('Link') || res.headers.get('link') || '';
+  const hasNextPage = link
+    ? /\brel="next"/i.test(link)
+    : data.length >= perPage;
+
+  const commits = data.map((c) => {
+    const sha = String(c?.sha || '').trim();
+    const fullMsg = String(c?.commit?.message || '').trim();
+    const headline = fullMsg.split(/\r?\n/, 1)[0] || '(no message)';
+    const date =
+      c?.commit?.author?.date ||
+      c?.commit?.committer?.date ||
+      null;
+    return {
+      sha,
+      shortSha: sha ? sha.slice(0, 7) : '',
+      message: fullMsg,
+      messageHeadline: headline,
+      authorName: String(
+        c?.commit?.author?.name || c?.commit?.committer?.name || ''
+      ).trim(),
+      authorLogin: String(c?.author?.login || c?.committer?.login || '').trim(),
+      date: date ? String(date) : null,
+      htmlUrl: String(c?.html_url || '').trim(),
+    };
+  });
+
+  return {
+    commits,
+    page,
+    perPage,
+    hasNextPage: hasNextPage && commits.length > 0,
+    hasPrevPage: page > 1,
+  };
+}
+
+/**
  * Resolve the authenticated GitHub username (login) for the given token.
  * @param {string} token
  * @returns {Promise<string>}

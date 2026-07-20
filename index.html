@@ -51,18 +51,13 @@
                     aria-keyshortcuts="Control+K Meta+K"
                   >
                     <span class="menu-item-label">Search Movies</span>
-                    <kbd class="menu-shortcut" id="tmdb-search-shortcut-hint" aria-hidden="true"
-                      >⌘K</kbd
-                    >
+                    <kbd class="menu-shortcut" id="tmdb-search-shortcut-hint" aria-hidden="true">⌘K</kbd>
                   </button>
                   <button type="button" role="menuitem" id="stats-btn">Statistics</button>
-                  <button type="button" role="menuitem" id="meta-refresh-btn">
-                    Update Metadata
-                  </button>
+                  <button type="button" role="menuitem" id="meta-refresh-btn">Update Metadata</button>
                   <button type="button" role="menuitem" id="import-btn">Import</button>
-                  <button type="button" role="menuitem" id="empty-collection-btn">
-                    Empty collection
-                  </button>
+                  <button type="button" role="menuitem" id="library-history-btn">History</button>
+                  <button type="button" role="menuitem" id="empty-collection-btn">Remove All</button>
                 </div>
               </div>
             </div>
@@ -127,7 +122,9 @@
               </button>
               <div class="menu-accordion-panel" id="menu-panel-github" role="region" aria-labelledby="menu-trigger-github">
                 <div class="menu-accordion-panel-inner">
-                  <button type="button" role="menuitem" id="view-json-btn">Data History</button>
+                  <button type="button" role="menuitem" id="view-json-btn">
+                    Data History (GitHub)
+                  </button>
                   <button type="button" role="menuitem" id="github-deployment-btn">Deployments</button>
                 </div>
               </div>
@@ -684,6 +681,43 @@
       <div class="dialog-footer">
         <div class="dialog-footer-actions">
           <button type="button" class="btn btn-primary" id="stats-close-footer">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Library history (GitHub commits for data file) -->
+  <div id="history-backdrop" class="dialog-backdrop hidden" aria-hidden="true">
+    <div
+      class="dialog dialog-history"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="history-title"
+      id="history-dialog"
+    >
+      <div class="dialog-header">
+        <h2 class="dialog-header-title" id="history-title">Library history</h2>
+        <button type="button" class="dialog-close" id="history-close" aria-label="Close">
+          ×
+        </button>
+      </div>
+      <div class="dialog-body" id="history-scroll">
+        <p id="history-subtitle" class="history-subtitle"></p>
+        <p id="history-status" class="tmdb-search-status" role="status" hidden></p>
+        <div id="history-list" class="history-list" role="list"></div>
+        <!-- Sentinel: when this enters the scroll viewport, load the next page -->
+        <div
+          id="history-sentinel"
+          class="history-sentinel"
+          aria-hidden="true"
+        ></div>
+        <p id="history-load-more" class="history-load-more" hidden>Loading more…</p>
+        <p id="history-end" class="history-end" hidden>End of history</p>
+      </div>
+      <div class="dialog-footer">
+        <div class="dialog-footer-actions">
+          <button type="button" class="btn" id="history-open-github">Open on GitHub</button>
+          <button type="button" class="btn btn-primary" id="history-close-footer">Close</button>
         </div>
       </div>
     </div>

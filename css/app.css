@@ -1492,6 +1492,158 @@ input {
   max-height: min(92vh, 900px);
 }
 
+.dialog-history {
+  width: min(640px, 100%);
+  max-height: min(92vh, 900px);
+}
+
+.history-subtitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-height: 8rem;
+}
+
+.history-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem 0.85rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.history-item-main {
+  flex: 1 1 12rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.history-item-msg {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.history-item-more {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--focus);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.history-item-more:hover,
+.history-item-more:focus-visible {
+  color: var(--text);
+  outline: none;
+}
+
+.history-item-more:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.history-item-details {
+  margin: 0.15rem 0 0;
+  padding: 0.5rem 0.6rem;
+  max-height: 12rem;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.history-item-details[hidden] {
+  display: none !important;
+}
+
+.history-item-meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.history-item-sha {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  color: var(--focus);
+}
+
+.history-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.history-item-actions .btn {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+}
+
+.history-empty,
+.history-load-more,
+.history-end {
+  margin: 0.85rem 0 0.35rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.history-load-more[hidden],
+.history-end[hidden],
+.history-sentinel[hidden] {
+  display: none !important;
+}
+
+.history-load-more {
+  color: var(--focus);
+  font-weight: 600;
+}
+
+/* IntersectionObserver target at the bottom of the commit list */
+.history-sentinel {
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
 .stats-section {
   margin-bottom: 1.35rem;
 }
