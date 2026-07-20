@@ -227,6 +227,73 @@ function isAnyModalOpen() {
   );
 }
 
+/** Search Movies (TMDB) dialog is visible. */
+function isTmdbSearchOpen() {
+  return Boolean(els.tmdbBackdrop && !els.tmdbBackdrop.classList.contains('hidden'));
+}
+
+/**
+ * Layers that can sit above Search Movies while it stays open underneath
+ * (poster picker, alert/confirm, poster zoom).
+ */
+function isModalAboveTmdbSearch() {
+  const shown = (el) => el && !el.classList.contains('hidden');
+  return (
+    isAppAlertOpen() ||
+    isPosterZoomOpen() ||
+    shown(els.tmdbPosterBackdrop)
+  );
+}
+
+/** True if keyboard focus is already inside the Search Movies dialog. */
+function isFocusInsideTmdbSearch() {
+  const root = els.tmdbBackdrop;
+  if (!root) return false;
+  const ae = document.activeElement;
+  return Boolean(ae && root.contains(ae));
+}
+
+/**
+ * Focus the Search Movies title field and optionally select all text.
+ * Used when an overlay above search closes, or the tab/window returns after
+ * being in the background — not while the user is working inside the dialog.
+ * @param {{ selectAll?: boolean }} [opts]
+ */
+function focusTmdbSearchTitle({ selectAll = true } = {}) {
+  const input = els.tmdbTitle;
+  if (!input || !isTmdbSearchOpen()) return;
+  if (isModalAboveTmdbSearch()) return;
+  requestAnimationFrame(() => {
+    queueMicrotask(() => {
+      if (!isTmdbSearchOpen() || isModalAboveTmdbSearch()) return;
+      try {
+        input.focus({ preventScroll: true });
+      } catch {
+        input.focus();
+      }
+      if (selectAll) {
+        try {
+          input.select();
+        } catch {
+          /* ignore unsupported select */
+        }
+      }
+    });
+  });
+}
+
+/**
+ * Restore Search Movies title (select-all) only when the dialog is topmost and
+ * focus is not already on year / results / other controls inside it.
+ */
+function maybeRestoreTmdbSearchFocus() {
+  if (!isTmdbSearchOpen() || isModalAboveTmdbSearch()) return false;
+  // Leave the user alone if they are already in title, year, buttons, etc.
+  if (isFocusInsideTmdbSearch()) return false;
+  focusTmdbSearchTitle({ selectAll: true });
+  return true;
+}
+
 /**
  * Whether auto-focusing the filter field is appropriate.
  * Prefer “no touch / no coarse pointer” over primary-pointer-only checks:
@@ -257,10 +324,15 @@ function preferDesktopAutoFocus() {
 
 /**
  * When every modal is closed, put caret in the filter field for immediate typing.
- * Desktop only — auto-focus is disruptive on mobile (keyboard popup, scroll jumps).
+ * If Search Movies is still open after a stacked modal closes, restore its title
+ * only when focus is not already inside that dialog (so year/results stay usable).
+ * Desktop only for the grid filter.
  * All post-modal filter focus must go through this helper (not returnFocus).
  */
 function focusFilterWhenIdle() {
+  // Overlay above search dismissed → restore title unless user is already in the form
+  if (maybeRestoreTmdbSearchFocus()) return;
+  if (isTmdbSearchOpen()) return; // search still owns the UI; don't focus grid filter
   if (!preferDesktopAutoFocus()) return;
   requestAnimationFrame(() => {
     queueMicrotask(() => {
@@ -277,6 +349,26 @@ function focusFilterWhenIdle() {
 
 document.addEventListener('pmi:modals-maybe-idle', () => {
   focusFilterWhenIdle();
+});
+
+// Tab / window returns from background while Search is topmost → title + select all.
+// Only after a real window blur (not focus moves between inputs inside the page).
+let tmdbSearchWindowBlurred = false;
+window.addEventListener('blur', () => {
+  tmdbSearchWindowBlurred = true;
+});
+window.addEventListener('focus', () => {
+  if (!tmdbSearchWindowBlurred) return;
+  tmdbSearchWindowBlurred = false;
+  if (isTmdbSearchOpen() && !isModalAboveTmdbSearch()) {
+    focusTmdbSearchTitle({ selectAll: true });
+  }
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  if (isTmdbSearchOpen() && !isModalAboveTmdbSearch()) {
+    focusTmdbSearchTitle({ selectAll: true });
+  }
 });
 
 const grid = new PosterGrid({
@@ -1793,7 +1885,7 @@ function openTmdbSearchDialog() {
   els.tmdbBackdrop.setAttribute('aria-hidden', 'false');
   queueMicrotask(() => {
     resetDialogScroll(els.tmdbBackdrop);
-    els.tmdbTitle?.focus();
+    focusTmdbSearchTitle({ selectAll: true });
   });
 }
 
