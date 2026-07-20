@@ -59,6 +59,10 @@
                   <button type="button" role="menuitem" id="meta-refresh-btn">
                     Update Metadata
                   </button>
+                  <button type="button" role="menuitem" id="import-btn">Import</button>
+                  <button type="button" role="menuitem" id="empty-collection-btn">
+                    Empty collection
+                  </button>
                 </div>
               </div>
             </div>
@@ -937,6 +941,14 @@
   </div>
 
   <div id="app-toast" class="app-toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- Hidden file picker for Import (JSON library) -->
+  <input
+    type="file"
+    id="import-file-input"
+    accept="application/json,.json"
+    hidden
+  />
 
   <script type="module" src="js/app.js"></script>
 </body>

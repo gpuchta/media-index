@@ -133,6 +133,9 @@ const els = {
   viewJsonBtn: document.getElementById('view-json-btn'),
   githubDeploymentBtn: document.getElementById('github-deployment-btn'),
   exportBtn: document.getElementById('export-btn'),
+  importBtn: document.getElementById('import-btn'),
+  importFileInput: document.getElementById('import-file-input'),
+  emptyCollectionBtn: document.getElementById('empty-collection-btn'),
   tmdbSearchBtn: document.getElementById('tmdb-search-btn'),
   statsBtn: document.getElementById('stats-btn'),
   metaRefreshBtn: document.getElementById('meta-refresh-btn'),
@@ -609,6 +612,23 @@ document.addEventListener(
 els.exportBtn.addEventListener('click', () => {
   closeMenu();
   exportData();
+});
+
+els.importBtn?.addEventListener('click', () => {
+  closeMenu();
+  startLibraryImport();
+});
+
+els.importFileInput?.addEventListener('change', () => {
+  const file = els.importFileInput?.files?.[0] || null;
+  // Allow re-selecting the same file later
+  if (els.importFileInput) els.importFileInput.value = '';
+  if (file) void importLibraryFromFile(file);
+});
+
+els.emptyCollectionBtn?.addEventListener('click', () => {
+  closeMenu();
+  void emptyCollection();
 });
 
 els.tmdbSearchBtn?.addEventListener('click', () => {
@@ -1110,6 +1130,175 @@ window.addEventListener('beforeunload', (e) => {
 function exportData() {
   downloadJson(formatExportFilename(CONFIG.DATA_PATH), state.movies);
   setDirty(false);
+}
+
+/**
+ * Open the system file picker for a library JSON export (same shape as Export).
+ * Browser SPA can read local files via input[type=file] + File API — no server.
+ */
+function startLibraryImport() {
+  if (!state.dataReady) {
+    void showAppAlert('Library is still loading. Try again in a moment.', {
+      title: 'Import',
+    });
+    return;
+  }
+  if (metaRefreshJob.running) {
+    void showAppAlert('Wait for the metadata update to finish before importing.', {
+      title: 'Import',
+    });
+    return;
+  }
+  const input = els.importFileInput;
+  if (!input) {
+    void showAppAlert('Import is not available in this browser.', {
+      title: 'Import',
+    });
+    return;
+  }
+  input.click();
+}
+
+/**
+ * Replace the in-browser library with movies from a user-selected JSON file.
+ * @param {File} file
+ */
+async function importLibraryFromFile(file) {
+  if (!file) return;
+  const name = String(file.name || 'file').trim() || 'file';
+
+  let text;
+  try {
+    text = await file.text();
+  } catch (err) {
+    console.error(err);
+    await showAppAlert(
+      `Could not read “${name}”.\n\n${err?.message || err}`,
+      { title: 'Import failed' }
+    );
+    return;
+  }
+
+  const imported = parseLibraryJson(text);
+  if (imported == null) {
+    await showAppAlert(
+      `“${name}” is not a valid library file.\n\n` +
+        `Expected a JSON array of movies (same format as Export / media-index.json).`,
+      { title: 'Import failed' }
+    );
+    return;
+  }
+
+  // Soft validation: warn if items look empty/non-objects, but still allow
+  const objectCount = imported.filter(
+    (m) => m && typeof m === 'object' && !Array.isArray(m)
+  ).length;
+  if (imported.length > 0 && objectCount === 0) {
+    await showAppAlert(
+      `“${name}” is a JSON array, but it does not look like movie objects.`,
+      { title: 'Import failed' }
+    );
+    return;
+  }
+
+  const before = state.movies;
+  const after = imported;
+  const diff = diffLibraries(before, after);
+  const fromN = before.length;
+  const toN = after.length;
+
+  if (diff.totalTouched === 0 && fromN === toN) {
+    await showAppAlert(
+      `“${name}” matches your current library (${toN} movie${
+        toN === 1 ? '' : 's'
+      }). Nothing to import.`,
+      { title: 'Import' }
+    );
+    return;
+  }
+
+  const dirtyNote = state.dirty
+    ? '\n\nYou have unsaved changes in this browser; import will replace them too.'
+    : '';
+  const ok = await showAppConfirm(
+    `Replace your current library with “${name}”?\n\n` +
+      `Current: ${fromN} movie${fromN === 1 ? '' : 's'}\n` +
+      `Import:  ${toN} movie${toN === 1 ? '' : 's'}\n\n` +
+      `Compared to now: +${diff.addedCount} added · −${diff.removedCount} removed · ~${diff.changedCount} changed.\n\n` +
+      `This only updates the library in this browser. Use Save to GitHub (or Export) to keep the result.` +
+      dirtyNote,
+    {
+      title: 'Import library',
+      okLabel: 'Replace library',
+      cancelLabel: 'Cancel',
+    }
+  );
+  if (!ok) return;
+
+  // Drop open detail dialog — movie object references will be stale
+  if (dialog.isOpen()) {
+    dialog.close();
+  }
+
+  finishLibraryLoad(after);
+  setDirty(true);
+  showAppToast(
+    `Imported ${toN} movie${toN === 1 ? '' : 's'}` +
+      (diff.totalTouched
+        ? ` (+${diff.addedCount} · −${diff.removedCount} · ~${diff.changedCount})`
+        : '')
+  );
+}
+
+/**
+ * Clear every movie from the in-browser library (after confirmation).
+ * Does not touch GitHub until the user Saves.
+ */
+async function emptyCollection() {
+  if (!state.dataReady) {
+    await showAppAlert('Library is still loading. Try again in a moment.', {
+      title: 'Empty collection',
+    });
+    return;
+  }
+  if (metaRefreshJob.running) {
+    await showAppAlert(
+      'Wait for the metadata update to finish before emptying the collection.',
+      { title: 'Empty collection' }
+    );
+    return;
+  }
+
+  const n = state.movies.length;
+  if (n === 0) {
+    await showAppAlert('The collection is already empty.', {
+      title: 'Empty collection',
+    });
+    return;
+  }
+
+  const dirtyNote = state.dirty
+    ? '\n\nYou also have unsaved changes; those will be discarded with the library.'
+    : '';
+  const ok = await showAppConfirm(
+    `Remove all ${n} movie${n === 1 ? '' : 's'} from this collection?\n\n` +
+      `This only clears the library in this browser. Use Save to GitHub (or Export a backup first) if you need to keep or restore data.` +
+      dirtyNote,
+    {
+      title: 'Empty collection',
+      okLabel: 'Empty collection',
+      cancelLabel: 'Cancel',
+    }
+  );
+  if (!ok) return;
+
+  if (dialog.isOpen()) {
+    dialog.close();
+  }
+
+  finishLibraryLoad([]);
+  setDirty(true);
+  showAppToast(`Emptied collection (${n} movie${n === 1 ? '' : 's'} removed)`);
 }
 
 async function getGithubTokenOrPrompt() {
