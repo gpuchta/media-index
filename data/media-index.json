@@ -86435,5 +86435,91 @@
     ],
     "collection": "",
     "location": "Watch"
+  },
+  {
+    "tmdb_id": "1284465",
+    "title": "The Death of Robin Hood",
+    "year": "2026",
+    "released": "2026-06-18",
+    "runtime": 123,
+    "overview": "Grappling with his past after a life of crime and murder, Robin Hood finds himself gravely injured after a battle he thought would be his last. In the hands of a mysterious woman, he is offered a chance at salvation.",
+    "poster_path": "/13MmRwmG5NmaMfU8qNrtgGXisiD.jpg",
+    "backdrop_path": "/aM3pduSU53VjcALWOfLWNw8v2TI.jpg",
+    "posters": [
+      "/4cD7KeABHyzeJmzdA6QKe36fp2d.jpg",
+      "/uDxlvgooSHFRZMPll1dLl15WUXp.jpg",
+      "/cC9QLZ0o7ES8Uvl0iW7dCPzzrCo.jpg",
+      "/wOszWFRpvF3zipqoNA9wURRQZEc.jpg",
+      "/3nbmbDYOCKaLnS19YNw3l8Sxzgl.jpg",
+      "/mRdphEIJL8153BoM1g8wg7q4lbj.jpg",
+      "/fLSDraHNWA6BwoD0pzARqu8fEwv.jpg",
+      "/1asdRxoBm51WqJaPLH4sScTyGN8.jpg",
+      "/avPlzUHfIGuXecXohtOJiAlMXH8.jpg",
+      "/sbEbaP5eybImhhyE21pFYV4uMSj.jpg",
+      "/n4h8V7gyu1laHmV6NjFAGrOaLQU.jpg",
+      "/eQhh2Js3R1xoyEj5q38YAca7i0w.jpg",
+      "/pcSlt7mXDSZBZOev9eLiBS9m2HI.jpg",
+      "/im4h90Ujp26a8SxyulHJptE3lla.jpg",
+      "/8buNrCYMAxrmC1phDLRzAsOufxH.jpg",
+      "/8eWpkHAsVHVEk9byq8KmJk1ZiZP.jpg",
+      "/wxaQARMWgwNlFcDgzU9DzwSBV8s.jpg",
+      "/caQa35Bl5h8QR4D4TcI3B7EcmAs.jpg",
+      "/bCyTiV8fvp9ATHs8kMcF7FvCtwV.jpg"
+    ],
+    "backdrops": [
+      "/4sZ4SAy34TAZEuyH9eJYRClGYUs.jpg",
+      "/c1eugx3HLauL4Ib478HYht7pdsR.jpg",
+      "/5mavx37sAsNq3HFDcYKob1L9wgi.jpg"
+    ],
+    "vote_average": 6.722,
+    "vote_count": 79,
+    "budget": 25000000,
+    "revenue": 3200000,
+    "popularity": 14.1134,
+    "genres": [
+      "Adventure",
+      "Drama",
+      "Thriller",
+      "Action"
+    ],
+    "directors": [
+      "Michael Sarnoski"
+    ],
+    "actors": [
+      "Hugh Jackman",
+      "Jodie Comer",
+      "Bill Skarsgård",
+      "Murray Bartlett",
+      "Noah Jupe",
+      "Jade Croot",
+      "Faith Delaney",
+      "Tabitha Smyth",
+      "Beau Thompson",
+      "Alfie Lawless",
+      "Asher de Silva",
+      "Elijah Ungvary",
+      "Fintan Shevlin",
+      "Katie Breen",
+      "Michael Hanna",
+      "Andrew McCracken",
+      "Clive Russell",
+      "Amy McElhatton",
+      "Maeve Connelly",
+      "Maggie Hayes",
+      "Richie Wilson"
+    ],
+    "keywords": [
+      "based on myths, legends or folklore",
+      "grim",
+      "grimdark",
+      "robin hood",
+      "salvation"
+    ],
+    "production_companies": [
+      "Lyrical Media",
+      "Ryder Picture Company"
+    ],
+    "collection": "",
+    "location": "Watch"
   }
 ]
