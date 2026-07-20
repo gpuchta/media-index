@@ -126,6 +126,13 @@ export const CONFIG = {
   THEME_COLORS_STORAGE: 'pmi:themeColors',
 
   /**
+   * UI font size: "small" (default / current) or "large".
+   * Applied via documentElement data-font-size (see css/app.css).
+   */
+  FONT_SIZE_STORAGE: 'pmi:fontSize',
+  FONT_SIZE_DEFAULT: 'small',
+
+  /**
    * Show location badge on poster grid cells.
    * Stored as "0" | "1" in localStorage; default on.
    */
@@ -661,6 +668,65 @@ export function setStoredTheme(theme) {
   } catch {
     /* private mode */
   }
+  return id;
+}
+
+/** @type {readonly { id: 'small'|'large', label: string }[]} */
+export const FONT_SIZE_OPTIONS = Object.freeze([
+  { id: 'small', label: 'Small' },
+  { id: 'large', label: 'Large' },
+]);
+
+/**
+ * @param {unknown} value
+ * @returns {'small'|'large'}
+ */
+export function normalizeFontSize(value) {
+  const s = String(value ?? '')
+    .trim()
+    .toLowerCase();
+  return s === 'large' ? 'large' : CONFIG.FONT_SIZE_DEFAULT;
+}
+
+/** @returns {'small'|'large'} */
+export function getStoredFontSize() {
+  try {
+    const raw = localStorage.getItem(CONFIG.FONT_SIZE_STORAGE);
+    if (raw == null || raw === '') return CONFIG.FONT_SIZE_DEFAULT;
+    return normalizeFontSize(raw);
+  } catch {
+    return CONFIG.FONT_SIZE_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} value
+ * @returns {'small'|'large'}
+ */
+export function setStoredFontSize(value) {
+  const id = normalizeFontSize(value);
+  try {
+    if (id === CONFIG.FONT_SIZE_DEFAULT) {
+      localStorage.removeItem(CONFIG.FONT_SIZE_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.FONT_SIZE_STORAGE, id);
+    }
+  } catch {
+    /* private mode */
+  }
+  return id;
+}
+
+/**
+ * Apply font size to the document (does not write localStorage).
+ * @param {unknown} value
+ * @returns {'small'|'large'}
+ */
+export function applyFontSize(value) {
+  const id = normalizeFontSize(value);
+  const root = document.documentElement;
+  if (id === 'large') root.setAttribute('data-font-size', 'large');
+  else root.removeAttribute('data-font-size');
   return id;
 }
 

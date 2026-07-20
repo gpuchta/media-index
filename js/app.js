@@ -3,11 +3,13 @@ import {
   CONFIG,
   DEFAULT_SORT,
   FILTER_TYPE_LABELS,
+  FONT_SIZE_OPTIONS,
   GITHUB_TARGET,
   LOCALE_OPTIONS,
   SORT_OPTIONS,
   THEME_COLOR_FIELDS,
   THEME_OPTIONS,
+  applyFontSize,
   applyPosterBacklight,
   applyTheme,
   clampPosterBacklightPercent,
@@ -16,6 +18,7 @@ import {
   compileBinderRegexes,
   getStoredBinderCustomPatterns,
   getStoredBinderNotationId,
+  getStoredFontSize,
   getStoredGrayedLocationsSet,
   getStoredGrayedLocationsText,
   getStoredLocale,
@@ -28,6 +31,7 @@ import {
   getStoredTheme,
   getStoredThemeColors,
   normalizeBinderNotationId,
+  normalizeFontSize,
   normalizePosterSource,
   normalizeTheme,
   parseGrayedLocationsList,
@@ -37,6 +41,7 @@ import {
   setStoredBinderCustomPatterns,
   setStoredBinderNotationId,
   setStoredBulkMetaConfirm2,
+  setStoredFontSize,
   setStoredGrayedLocationsText,
   setStoredLocale,
   setStoredLocationOverlayEnabled,
@@ -190,6 +195,7 @@ const els = {
   settingsTheme: document.getElementById('settings-theme'),
   settingsThemeColors: document.getElementById('settings-theme-colors'),
   settingsThemeResetColors: document.getElementById('settings-theme-reset-colors'),
+  settingsFontSize: document.getElementById('settings-font-size'),
   settingsStatus: document.getElementById('settings-status'),
   settingsClose: document.getElementById('settings-close'),
   settingsCancel: document.getElementById('settings-cancel'),
@@ -453,7 +459,10 @@ let savedThemeColors = getStoredThemeColors();
 /** Draft custom colors while Settings is open (preview only until Save). */
 /** @type {Record<string, string>} */
 let draftThemeColors = { ...savedThemeColors };
+/** Font size while Settings is open (preview until Save). */
+let savedFontSize = getStoredFontSize();
 applyTheme(savedThemeId, savedThemeColors);
+applyFontSize(savedFontSize);
 applyPosterBacklight(savedPosterBacklightPercent);
 applyBinderNotation(savedBinderNotationId, savedBinderCustomPatterns);
 grid.setScale(savedPosterScalePercent / 100);
@@ -920,6 +929,10 @@ els.settingsThemeColors?.addEventListener('input', (e) => {
   };
   applyTheme(els.settingsTheme?.value, draftThemeColors);
   updateThemeGradientPreviews();
+});
+els.settingsFontSize?.addEventListener('change', () => {
+  // Live preview until Save / Cancel
+  applyFontSize(els.settingsFontSize?.value);
 });
 wireSecretFieldControls(
   els.settingsApiKey,
@@ -3101,6 +3114,11 @@ function openSettingsDialog() {
   savedThemeId = getStoredTheme();
   savedThemeColors = getStoredThemeColors();
   draftThemeColors = { ...savedThemeColors };
+  savedFontSize = getStoredFontSize();
+  if (els.settingsFontSize) {
+    els.settingsFontSize.value = savedFontSize;
+  }
+  applyFontSize(savedFontSize);
   populateThemeSelect();
   // Ensure UI matches saved theme + colors when opening
   applyTheme(savedThemeId, draftThemeColors);
@@ -3187,6 +3205,10 @@ function closeSettingsDialog({ revertPreview = false } = {}) {
     draftThemeColors = { ...savedThemeColors };
     applyTheme(savedThemeId, savedThemeColors);
     if (els.settingsTheme) els.settingsTheme.value = normalizeTheme(savedThemeId);
+    if (els.settingsFontSize) {
+      els.settingsFontSize.value = normalizeFontSize(savedFontSize);
+    }
+    applyFontSize(savedFontSize);
   }
   els.settingsBackdrop.classList.add('hidden');
   els.settingsBackdrop.setAttribute('aria-hidden', 'true');
@@ -3370,6 +3392,14 @@ function saveSettings() {
   const customNote = Object.keys(savedThemeColors).length
     ? 'with custom colors'
     : 'default colors';
+  savedFontSize = setStoredFontSize(els.settingsFontSize?.value);
+  applyFontSize(savedFontSize);
+  if (els.settingsFontSize) {
+    els.settingsFontSize.value = savedFontSize;
+  }
+  const fontSizeLabel =
+    FONT_SIZE_OPTIONS.find((o) => o.id === savedFontSize)?.label ||
+    savedFontSize;
   const scalePercent = applyPosterScaleFromSettingsControl({ preview: false });
   const gapPx = applyPosterGapFromSettingsControl({ preview: false });
   const backlightPercent = applyPosterBacklightFromSettingsControl({
@@ -3426,6 +3456,7 @@ function saveSettings() {
     `bulk second confirm ${savedBulkMetaConfirm2 ? 'on' : 'off'}`,
     `binder notation ${binderLabel}`,
     `theme ${themeLabel} (${customNote})`,
+    `font size ${fontSizeLabel}`,
   ];
   setSettingsStatus(`${parts.join('. ')}.`);
   // Brief confirmation then close (keep applied layout/theme; do not revert)

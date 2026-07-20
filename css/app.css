@@ -337,6 +337,18 @@
   box-sizing: border-box;
 }
 
+/*
+ * Font size (Settings → Appearance). Most UI uses rem, so root size scales text.
+ * small = current default; large ≈ +15%.
+ */
+html {
+  font-size: 100%;
+}
+
+html[data-font-size='large'] {
+  font-size: 115%;
+}
+
 html,
 body {
   margin: 0;
