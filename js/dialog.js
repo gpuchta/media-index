@@ -497,20 +497,22 @@ export class MovieDialog {
     }
 
     this.body.innerHTML = `
-      <div class="dialog-hero">
-        <button
-          type="button"
-          class="dialog-poster${url ? '' : ' dialog-poster-empty'}"
-          style="${url ? `background-image:url('${escapeHtml(url)}')` : ''}"
-          aria-label="Choose alternate poster for ${escapeHtml(m.title || 'movie')}"
-          id="dialog-poster-btn"
-        ></button>
-        <div class="dialog-overview-wrap">
-          <h2 class="dialog-title">${escapeHtml(m.title || 'Untitled')}</h2>
-          <p class="dialog-overview">${escapeHtml(m.overview || 'No description available.')}</p>
-        </div>
-      </div>
       <div class="dialog-fields">
+        <div class="field-row field-row-hero" id="field-hero">
+          <div class="field-label field-label-poster">
+            <button
+              type="button"
+              class="dialog-poster${url ? '' : ' dialog-poster-empty'}"
+              style="${url ? `background-image:url('${escapeHtml(url)}')` : ''}"
+              aria-label="Choose alternate poster for ${escapeHtml(m.title || 'movie')}"
+              id="dialog-poster-btn"
+            ></button>
+          </div>
+          <div class="field-values field-values-hero">
+            <h2 class="dialog-title">${escapeHtml(m.title || 'Untitled')}</h2>
+            <p class="dialog-overview">${escapeHtml(m.overview || 'No description available.')}</p>
+          </div>
+        </div>
         <div class="field-row">
           <span class="field-label">Runtime</span>
           <div class="field-values">
