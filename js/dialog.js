@@ -23,12 +23,15 @@ export class MovieDialog {
     btnPrev,
     btnNext,
     btnDelete,
+    btnUpdateMeta,
     btnTmdb,
     btnSave,
     btnCancel,
     onChange,
     onDelete,
     onSelectPoster,
+    /** Re-fetch TMDB metadata for the open movie (single confirm). */
+    onUpdateMetadata,
     /** Apply a filter leaf from a dialog pill (genre/director/actor/collection). */
     onFilterPill,
     /** Whether a type+value is in the current search filters. */
@@ -42,12 +45,15 @@ export class MovieDialog {
     this.btnPrev = btnPrev;
     this.btnNext = btnNext;
     this.btnDelete = btnDelete;
+    this.btnUpdateMeta = btnUpdateMeta || null;
     this.btnTmdb = btnTmdb;
     this.btnSave = btnSave;
     this.btnCancel = btnCancel;
     this.onChange = onChange;
     this.onDelete = onDelete;
     this.onSelectPoster = onSelectPoster;
+    this.onUpdateMetadata =
+      typeof onUpdateMetadata === 'function' ? onUpdateMetadata : null;
     this.onFilterPill = onFilterPill;
     this.isFilterActive =
       typeof isFilterActive === 'function' ? isFilterActive : () => false;
@@ -58,18 +64,31 @@ export class MovieDialog {
     /** Draft editable fields while the dialog is open */
     this.draft = null;
     this.returnFocus = null;
+    /** True while a single-movie TMDB refresh is in flight */
+    this._metaUpdating = false;
     this._keyHandler = (e) => this.onKey(e);
 
     this.btnSave.addEventListener('click', () => this.saveAndClose());
     this.btnCancel.addEventListener('click', () => this.discardAndClose());
     this.btnClose.addEventListener('click', () => this.discardAndClose());
     this.btnDelete.addEventListener('click', () => this.handleDelete());
+    this.btnUpdateMeta?.addEventListener('click', () => this.handleUpdateMetadata());
     this.btnTmdb.addEventListener('click', () => this.openTmdb());
     this.btnPrev?.addEventListener('click', () => this.navigate(-1));
     this.btnNext?.addEventListener('click', () => this.navigate(1));
 
     this.backdrop.addEventListener('click', (e) => {
       if (e.target === this.backdrop) this.discardAndClose();
+    });
+
+    // Event delegation: location pill is replaced often (edit ↔ display).
+    // Per-node listeners on the temporary button are easy to lose; body stays put.
+    this.body.addEventListener('click', (e) => {
+      if (this._metaUpdating) return;
+      const btn = e.target.closest?.('button[data-edit="location"]');
+      if (!btn || !this.body.contains(btn)) return;
+      e.preventDefault();
+      this.beginEditLocation(btn);
     });
   }
 
@@ -92,7 +111,8 @@ export class MovieDialog {
     if (!wasOpen) {
       this.backdrop.classList.remove('hidden');
       this.backdrop.setAttribute('aria-hidden', 'false');
-      document.addEventListener('keydown', this._keyHandler);
+      // Capture so Enter/Escape win over lower layers (e.g. Search Movies under us)
+      document.addEventListener('keydown', this._keyHandler, true);
     }
     // Defer focus until after layout/stacking (e.g. opened above TMDB search)
     const focusAfterOpen = () => {
@@ -100,14 +120,18 @@ export class MovieDialog {
       // Empty location → start editing so user can type a slot immediately
       const locEmpty = !String(this.draft?.location || '').trim();
       if (locEmpty) {
-        const locBtn = this.body.querySelector('[data-edit="location"]');
+        const locBtn = this.body.querySelector('button[data-edit="location"]');
         if (locBtn) {
           this.beginEditLocation(locBtn);
-          const input = locBtn.querySelector('input');
+          // beginEditLocation replaces the button — query the live input
+          const input = this.body.querySelector(
+            '.location-edit-wrap input, input[data-edit="location"]'
+          );
           input?.focus({ preventScroll: true });
           input?.select();
-          // Ensure location row is visible in the dialog body
-          locBtn.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          input
+            ?.closest('.field-row')
+            ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
           return;
         }
       }
@@ -125,6 +149,7 @@ export class MovieDialog {
    */
   navigate(delta) {
     if (!this.movie || !this.isOpen()) return;
+    if (this._metaUpdating) return;
     if (isAppAlertOpen()) return;
 
     this.commitOpenLocationEdit();
@@ -191,7 +216,7 @@ export class MovieDialog {
   close() {
     this.backdrop.classList.add('hidden');
     this.backdrop.setAttribute('aria-hidden', 'true');
-    document.removeEventListener('keydown', this._keyHandler);
+    document.removeEventListener('keydown', this._keyHandler, true);
     this.movie = null;
     this.draft = null;
     // Do not focus returnFocus here for the filter field — app handles
@@ -205,15 +230,46 @@ export class MovieDialog {
     return !this.backdrop.classList.contains('hidden');
   }
 
+  /** Layers that sit above the movie dialog and own keyboard first. */
+  hasHigherModal() {
+    if (isAppAlertOpen()) return true;
+    const posterPick = document.getElementById('tmdb-poster-backdrop');
+    if (posterPick && !posterPick.classList.contains('hidden')) return true;
+    const zoom = document.getElementById('poster-zoom-backdrop');
+    if (zoom && !zoom.classList.contains('hidden')) return true;
+    return false;
+  }
+
   onKey(e) {
-    if (isAppAlertOpen()) return;
+    if (!this.isOpen()) return;
+    // Defer to alert / poster picker / zoom (they also use capture)
+    if (this.hasHigherModal()) return;
+
+    // Block keyboard close/nav while a TMDB refresh is in flight
+    if (this._metaUpdating) {
+      if (
+        e.key === 'Escape' ||
+        e.key === 'ArrowLeft' ||
+        e.key === 'ArrowRight' ||
+        isPrimaryActionEnter(e)
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      return;
+    }
+
+    // Location / keyword fields own Enter & Escape while focused
+    const fieldEdit = e.target?.closest?.(
+      '.location-edit-wrap, input[data-edit="location"], #keyword-add, .keyword-add'
+    );
+    if (fieldEdit && (e.key === 'Enter' || e.key === 'Escape')) {
+      return;
+    }
 
     if (e.key === 'Escape') {
-      // Field-level Escape cancels in-place edit first
-      if (e.target.matches('input') && e.target.closest('.pill.editing, .location-edit-wrap')) {
-        return;
-      }
       e.preventDefault();
+      e.stopPropagation();
       // Spec: Escape does the same as Save
       this.saveAndClose();
       return;
@@ -222,6 +278,7 @@ export class MovieDialog {
     // Enter → Save when focus is not in a field/control that consumes Enter
     if (isPrimaryActionEnter(e)) {
       e.preventDefault();
+      e.stopPropagation();
       this.saveAndClose();
       return;
     }
@@ -237,6 +294,7 @@ export class MovieDialog {
         return;
       }
       e.preventDefault();
+      e.stopPropagation();
       this.navigate(e.key === 'ArrowLeft' ? -1 : 1);
       return;
     }
@@ -290,6 +348,7 @@ export class MovieDialog {
 
   /** Commit draft → movie; mark dirty only if something changed; close. */
   saveAndClose() {
+    if (this._metaUpdating) return;
     if (!this.movie || !this.draft) {
       this.close();
       return;
@@ -311,11 +370,12 @@ export class MovieDialog {
 
   /** Discard draft and close (header ×, Cancel, backdrop). */
   discardAndClose() {
+    if (this._metaUpdating) return;
     this.close();
   }
 
   async handleDelete() {
-    if (!this.movie) return;
+    if (!this.movie || this._metaUpdating) return;
     const ok = await showAppConfirm('Delete this movie?', {
       title: 'Delete Movie',
       okLabel: 'Delete',
@@ -333,26 +393,84 @@ export class MovieDialog {
     window.open(url, '_blank', 'noopener,noreferrer');
   }
 
-  commitOpenLocationEdit() {
-    const wrap = this.body.querySelector(
-      '[data-edit="location"].editing, .location-edit-wrap'
+  /**
+   * Apply current draft location / keywords / poster onto the live movie so a
+   * TMDB refresh can preserve unsaved local edits during merge.
+   */
+  applyDraftPreserveFieldsToMovie() {
+    if (!this.movie || !this.draft) return;
+    this.commitOpenLocationEdit();
+    this.movie.location = this.draft.location ?? '';
+    this.movie.keywords = Array.isArray(this.draft.keywords)
+      ? [...this.draft.keywords]
+      : [];
+    this.movie.poster_path = this.draft.poster_path ?? '';
+    this.movie.posters = Array.isArray(this.draft.posters)
+      ? [...this.draft.posters]
+      : [];
+  }
+
+  /**
+   * Enable/disable footer controls while a single-movie metadata update runs.
+   * @param {boolean} busy
+   */
+  setMetadataUpdateBusy(busy) {
+    this._metaUpdating = !!busy;
+    if (this.btnUpdateMeta) {
+      this.btnUpdateMeta.disabled = busy || !this.movie?.tmdb_id;
+      this.btnUpdateMeta.textContent = busy ? 'Updating…' : 'Update';
+    }
+    if (this.btnDelete) this.btnDelete.disabled = busy;
+    if (this.btnTmdb) this.btnTmdb.disabled = busy || !this.movie?.tmdb_id;
+    if (this.btnSave) this.btnSave.disabled = busy;
+    if (this.btnCancel) this.btnCancel.disabled = busy;
+    if (this.btnPrev) this.btnPrev.disabled = busy;
+    if (this.btnNext) this.btnNext.disabled = busy;
+    if (this.btnClose) this.btnClose.disabled = busy;
+  }
+
+  async handleUpdateMetadata() {
+    if (!this.movie || this._metaUpdating) return;
+    if (typeof this.onUpdateMetadata !== 'function') return;
+    await this.onUpdateMetadata(this.movie);
+  }
+
+  /** @returns {HTMLButtonElement} */
+  makeLocationButton() {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pill editable';
+    btn.dataset.type = 'location';
+    btn.dataset.edit = 'location';
+    btn.textContent = String(this.draft?.location || '').trim() || '—';
+    return btn;
+  }
+
+  /**
+   * End in-place location edit if open. Empty input keeps the previous draft value.
+   * @param {{ commit?: boolean }} [opts] commit=false restores the value from when edit began
+   */
+  commitOpenLocationEdit({ commit = true } = {}) {
+    const wrap = this.body?.querySelector(
+      '.location-edit-wrap, [data-edit="location"].editing'
     );
     if (!wrap || !this.draft) return;
     const input = wrap.matches('input')
       ? wrap
       : wrap.querySelector('input');
-    if (!input) return;
-    const next = input.value.trim();
-    if (next) this.draft.location = next;
-    // Replace wrap with a normal location pill button
-    const newBtn = document.createElement('button');
-    newBtn.type = 'button';
-    newBtn.className = 'pill editable';
-    newBtn.dataset.type = 'location';
-    newBtn.dataset.edit = 'location';
-    newBtn.textContent = this.draft.location || '—';
-    wrap.replaceWith(newBtn);
-    newBtn.addEventListener('click', () => this.beginEditLocation(newBtn));
+    if (commit && input) {
+      const next = input.value.trim();
+      if (next) this.draft.location = next;
+      // empty → keep previous draft value
+    } else if (!commit && this._locationEditPrev != null) {
+      this.draft.location = this._locationEditPrev;
+    }
+    this._locationEditPrev = null;
+    if (this._locationEditSession) {
+      this._locationEditSession.closed = true;
+      this._locationEditSession = null;
+    }
+    wrap.replaceWith(this.makeLocationButton());
   }
 
   render() {
@@ -371,7 +489,12 @@ export class MovieDialog {
     const voteCount = m.vote_count ?? 0;
 
     this.btnTmdb.hidden = !m.tmdb_id;
-    this.btnTmdb.disabled = !m.tmdb_id;
+    this.btnTmdb.disabled = this._metaUpdating || !m.tmdb_id;
+    if (this.btnUpdateMeta) {
+      this.btnUpdateMeta.hidden = !m.tmdb_id;
+      this.btnUpdateMeta.disabled = this._metaUpdating || !m.tmdb_id;
+      if (!this._metaUpdating) this.btnUpdateMeta.textContent = 'Update';
+    }
 
     this.body.innerHTML = `
       <div class="dialog-hero">
@@ -480,9 +603,7 @@ export class MovieDialog {
     }
 
     this.wireFilterPills();
-
-    const locBtn = this.body.querySelector('[data-edit="location"]');
-    locBtn?.addEventListener('click', () => this.beginEditLocation(locBtn));
+    // Location pill clicks: delegated from constructor (survives edit ↔ display swaps)
 
     const kwAdd = this.body.querySelector('#keyword-add');
     kwAdd?.addEventListener('keydown', (e) => {
@@ -658,19 +779,32 @@ export class MovieDialog {
   }
 
   beginEditLocation(btn) {
-    if (!this.draft) return;
-    // Already editing (e.g. double-click) — keep the open input
-    if (
-      btn.classList?.contains?.('editing') ||
-      btn.classList?.contains?.('location-edit-wrap')
-    ) {
-      const existing = btn.matches?.('input')
-        ? btn
-        : btn.querySelector?.('input');
-      existing?.focus();
-      return;
+    if (!this.draft || this._metaUpdating) return;
+
+    // Already editing — focus the live input (or repair a broken wrap)
+    const openWrap = this.body.querySelector('.location-edit-wrap');
+    if (openWrap) {
+      const existing = openWrap.querySelector('input');
+      if (existing) {
+        existing.focus();
+        existing.select();
+        return;
+      }
+      // Wrap without input (stuck state) → restore a clickable pill, then re-enter
+      openWrap.replaceWith(this.makeLocationButton());
     }
+
+    const target =
+      btn &&
+      btn.isConnected &&
+      btn.matches?.('button[data-edit="location"]')
+        ? btn
+        : this.body.querySelector('button[data-edit="location"]');
+    if (!target) return;
+
     const prev = this.draft.location || '';
+    this._locationEditPrev = prev;
+
     const input = document.createElement('input');
     input.type = 'text';
     input.value = prev;
@@ -686,52 +820,51 @@ export class MovieDialog {
     wrap.dataset.type = 'location';
     wrap.dataset.edit = 'location';
     wrap.appendChild(input);
-    btn.replaceWith(wrap);
+    target.replaceWith(wrap);
     input.focus();
     input.select();
 
-    let finished = false;
-    const finish = (value) => {
-      if (finished) return;
-      finished = true;
-      const newBtn = document.createElement('button');
-      newBtn.type = 'button';
-      newBtn.className = 'pill editable';
-      newBtn.dataset.type = 'location';
-      newBtn.dataset.edit = 'location';
-      newBtn.textContent = value || '—';
-      wrap.replaceWith(newBtn);
-      newBtn.addEventListener('click', () => this.beginEditLocation(newBtn));
-    };
+    /** @type {{ closed: boolean }} */
+    const session = { closed: false };
+    this._locationEditSession = session;
 
-    const commit = () => {
-      const next = input.value.trim();
-      if (next) {
-        this.draft.location = next;
+    const end = (mode) => {
+      if (session.closed) return;
+      session.closed = true;
+      if (this._locationEditSession === session) {
+        this._locationEditSession = null;
       }
-      // empty → keep previous draft value
-      finish(this.draft.location || '');
-    };
-
-    const cancel = () => {
-      finish(prev || '');
+      if (!wrap.isConnected) return;
+      if (mode === 'cancel') {
+        this.draft.location = prev;
+        this._locationEditPrev = null;
+        wrap.replaceWith(this.makeLocationButton());
+        return;
+      }
+      // commit — empty keeps previous draft value
+      const next = input.value.trim();
+      if (next) this.draft.location = next;
+      this._locationEditPrev = null;
+      wrap.replaceWith(this.makeLocationButton());
     };
 
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
-        commit();
+        e.stopImmediatePropagation();
+        end('commit');
       } else if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
-        cancel();
+        e.stopImmediatePropagation();
+        end('cancel');
       }
     });
     input.addEventListener('blur', () => {
       // Defer so a click on another control can run first; still commit the value
       queueMicrotask(() => {
-        if (!finished && wrap.isConnected) commit();
+        if (!session.closed && wrap.isConnected) end('commit');
       });
     });
   }

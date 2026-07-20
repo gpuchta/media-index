@@ -20,6 +20,7 @@ import {
   getStoredGrayedLocationsText,
   getStoredLocale,
   getStoredLocationOverlayEnabled,
+  getStoredBulkMetaConfirm2,
   getStoredPosterBacklightPercent,
   getStoredPosterGapPx,
   getStoredPosterScalePercent,
@@ -35,6 +36,7 @@ import {
   setPosterSourceOverride,
   setStoredBinderCustomPatterns,
   setStoredBinderNotationId,
+  setStoredBulkMetaConfirm2,
   setStoredGrayedLocationsText,
   setStoredLocale,
   setStoredLocationOverlayEnabled,
@@ -78,8 +80,11 @@ import {
   promotePosterSelection,
 } from './utils.js';
 import {
+  applyMergedMovieInPlace,
   getMovieById,
   getStoredTmdbApiKey,
+  mergeKeywords,
+  mergeLibraryMovieFromTmdb,
   searchMoviesByTitleAndYear,
   setStoredTmdbApiKey,
   toLibraryMovie,
@@ -130,6 +135,7 @@ const els = {
   exportBtn: document.getElementById('export-btn'),
   tmdbSearchBtn: document.getElementById('tmdb-search-btn'),
   statsBtn: document.getElementById('stats-btn'),
+  metaRefreshBtn: document.getElementById('meta-refresh-btn'),
   statsBackdrop: document.getElementById('stats-backdrop'),
   statsBody: document.getElementById('stats-body'),
   statsClose: document.getElementById('stats-close'),
@@ -144,6 +150,7 @@ const els = {
   settingsGithubApiKeyToggle: document.getElementById('settings-github-api-key-toggle'),
   settingsGithubApiKeyCopy: document.getElementById('settings-github-api-key-copy'),
   settingsLocale: document.getElementById('settings-locale'),
+  settingsBulkMetaConfirm2: document.getElementById('settings-bulk-meta-confirm2'),
   settingsPosterScale: document.getElementById('settings-poster-scale'),
   settingsPosterScaleValue: document.getElementById('settings-poster-scale-value'),
   settingsPosterGap: document.getElementById('settings-poster-gap'),
@@ -175,6 +182,24 @@ const els = {
   saveProgressClose: document.getElementById('save-progress-close'),
   saveProgressCopy: document.getElementById('save-progress-copy'),
   saveProgressOk: document.getElementById('save-progress-ok'),
+  metaRefreshBackdrop: document.getElementById('meta-refresh-backdrop'),
+  metaRefreshRunning: document.getElementById('meta-refresh-running'),
+  metaRefreshDone: document.getElementById('meta-refresh-done'),
+  metaRefreshProgressbar: document.getElementById('meta-refresh-progressbar'),
+  metaRefreshBar: document.getElementById('meta-refresh-bar'),
+  metaRefreshCount: document.getElementById('meta-refresh-count'),
+  metaRefreshPct: document.getElementById('meta-refresh-pct'),
+  metaRefreshMovie: document.getElementById('meta-refresh-movie'),
+  metaRefreshStatus: document.getElementById('meta-refresh-status'),
+  metaRefreshDoneHeading: document.getElementById('meta-refresh-done-heading'),
+  metaRefreshDoneSummary: document.getElementById('meta-refresh-done-summary'),
+  metaRefreshDoneFailed: document.getElementById('meta-refresh-done-failed'),
+  metaRefreshFailures: document.getElementById('meta-refresh-failures'),
+  metaRefreshFailureList: document.getElementById('meta-refresh-failure-list'),
+  metaRefreshCancel: document.getElementById('meta-refresh-cancel'),
+  metaRefreshClose: document.getElementById('meta-refresh-close'),
+  metaRefreshCloseX: document.getElementById('meta-refresh-close-x'),
+  appToast: document.getElementById('app-toast'),
   tmdbBackdrop: document.getElementById('tmdb-search-backdrop'),
   tmdbForm: document.getElementById('tmdb-search-form'),
   tmdbTitle: document.getElementById('tmdb-movie-title'),
@@ -205,6 +230,7 @@ const els = {
   dialogPrev: document.getElementById('dialog-prev'),
   dialogNext: document.getElementById('dialog-next'),
   dialogDelete: document.getElementById('dialog-delete'),
+  dialogUpdateMeta: document.getElementById('dialog-update-meta'),
   dialogTmdb: document.getElementById('dialog-tmdb'),
   dialogSave: document.getElementById('dialog-save'),
   dialogCancel: document.getElementById('dialog-cancel'),
@@ -234,7 +260,8 @@ function isAnyModalOpen() {
     shown(els.statsBackdrop) ||
     shown(els.tmdbBackdrop) ||
     shown(els.tmdbPosterBackdrop) ||
-    shown(els.saveProgressBackdrop)
+    shown(els.saveProgressBackdrop) ||
+    shown(els.metaRefreshBackdrop)
   );
 }
 
@@ -245,11 +272,12 @@ function isTmdbSearchOpen() {
 
 /**
  * Layers that can sit above Search Movies while it stays open underneath
- * (poster picker, alert/confirm, poster zoom).
+ * (movie detail after add, poster picker, alert/confirm, poster zoom).
  */
 function isModalAboveTmdbSearch() {
   const shown = (el) => el && !el.classList.contains('hidden');
   return (
+    dialog?.isOpen?.() ||
     isAppAlertOpen() ||
     isPosterZoomOpen() ||
     shown(els.tmdbPosterBackdrop)
@@ -398,6 +426,7 @@ let savedPosterBacklightPercent = getStoredPosterBacklightPercent();
 let savedLocationOverlay = getStoredLocationOverlayEnabled();
 let savedGrayedLocationsText = getStoredGrayedLocationsText();
 let savedPosterSource = getStoredPosterSource();
+let savedBulkMetaConfirm2 = getStoredBulkMetaConfirm2();
 let savedBinderNotationId = getStoredBinderNotationId();
 let savedBinderCustomPatterns = getStoredBinderCustomPatterns();
 /** Last saved theme prefs; used to revert Settings theme preview on cancel. */
@@ -422,6 +451,7 @@ const dialog = new MovieDialog({
   btnPrev: els.dialogPrev,
   btnNext: els.dialogNext,
   btnDelete: els.dialogDelete,
+  btnUpdateMeta: els.dialogUpdateMeta,
   btnTmdb: els.dialogTmdb,
   btnSave: els.dialogSave,
   btnCancel: els.dialogCancel,
@@ -439,6 +469,7 @@ const dialog = new MovieDialog({
   onSelectPoster: (movie) => {
     openLibraryPosterPicker(movie, dialog.getPosterDraft());
   },
+  onUpdateMetadata: (movie) => startSingleMovieMetadataRefresh(movie),
   onFilterPill: (leaf) => {
     toggleFilterLeaf(leaf);
   },
@@ -639,11 +670,81 @@ els.statsBtn?.addEventListener('click', () => {
   openStatsDialog();
 });
 
+els.metaRefreshBtn?.addEventListener('click', () => {
+  closeMenu();
+  startBulkMetadataRefresh();
+});
+
 els.statsClose?.addEventListener('click', () => closeStatsDialog());
 els.statsCloseFooter?.addEventListener('click', () => closeStatsDialog());
 els.statsBackdrop?.addEventListener('click', (e) => {
   if (e.target === els.statsBackdrop) closeStatsDialog();
 });
+
+els.metaRefreshCancel?.addEventListener('click', () => {
+  if (metaRefreshJob.running) {
+    metaRefreshJob.cancelRequested = true;
+    if (els.metaRefreshStatus) {
+      els.metaRefreshStatus.textContent = 'Cancelling after current movie…';
+    }
+    if (els.metaRefreshCancel) els.metaRefreshCancel.disabled = true;
+    return;
+  }
+  closeMetaRefreshDialog();
+});
+els.metaRefreshClose?.addEventListener('click', () => closeMetaRefreshDialog());
+els.metaRefreshCloseX?.addEventListener('click', () => {
+  if (metaRefreshJob.running) {
+    metaRefreshJob.cancelRequested = true;
+    if (els.metaRefreshStatus) {
+      els.metaRefreshStatus.textContent = 'Cancelling after current movie…';
+    }
+    if (els.metaRefreshCancel) els.metaRefreshCancel.disabled = true;
+    return;
+  }
+  closeMetaRefreshDialog();
+});
+els.metaRefreshBackdrop?.addEventListener('click', (e) => {
+  if (e.target !== els.metaRefreshBackdrop) return;
+  if (metaRefreshJob.running) return; // avoid accidental dismiss mid-run
+  closeMetaRefreshDialog();
+});
+
+// Escape closes metadata refresh when finished (or requests cancel while running)
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (e.key !== 'Escape') return;
+    if (isAppAlertOpen()) return;
+    if (!isMetaRefreshOpen()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (metaRefreshJob.running) {
+      metaRefreshJob.cancelRequested = true;
+      if (els.metaRefreshStatus) {
+        els.metaRefreshStatus.textContent = 'Cancelling after current movie…';
+      }
+      if (els.metaRefreshCancel) els.metaRefreshCancel.disabled = true;
+      return;
+    }
+    closeMetaRefreshDialog();
+  },
+  true
+);
+
+// Enter → Close when refresh is finished
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (!isPrimaryActionEnter(e)) return;
+    if (isAppAlertOpen()) return;
+    if (!isMetaRefreshOpen() || metaRefreshJob.running) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeMetaRefreshDialog();
+  },
+  true
+);
 
 els.settingsBtn?.addEventListener('click', () => {
   closeMenu();
@@ -756,6 +857,28 @@ els.tmdbForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   await runTmdbSearch();
 });
+
+// Escape closes Search Movies when it is the top layer
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (e.key !== 'Escape') return;
+    if (isAppAlertOpen()) return;
+    if (!els.tmdbBackdrop || els.tmdbBackdrop.classList.contains('hidden')) return;
+    // Higher layers own Escape (movie detail, poster picker, zoom, bulk refresh, save log)
+    if (dialog?.isOpen?.()) return;
+    if (els.tmdbPosterBackdrop && !els.tmdbPosterBackdrop.classList.contains('hidden')) {
+      return;
+    }
+    if (isPosterZoomOpen()) return;
+    if (isMetaRefreshOpen()) return;
+    if (isSaveProgressOpen()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeTmdbSearchDialog();
+  },
+  true
+);
 
 // Escape closes Statistics when open
 document.addEventListener(
@@ -881,10 +1004,13 @@ document.addEventListener(
     if (!isPrimaryActionEnter(e)) return;
     if (isAppAlertOpen()) return;
     if (!els.tmdbBackdrop || els.tmdbBackdrop.classList.contains('hidden')) return;
-    // Poster picker sits above search
+    // Higher layers keep Enter (movie detail opens above search after add)
+    if (dialog?.isOpen?.()) return;
     if (els.tmdbPosterBackdrop && !els.tmdbPosterBackdrop.classList.contains('hidden')) {
       return;
     }
+    if (isMetaRefreshOpen()) return;
+    if (isSaveProgressOpen()) return;
     e.preventDefault();
     e.stopPropagation();
     runTmdbSearch();
@@ -1070,6 +1196,464 @@ function appendSaveLog(message) {
   const line = `[${ts}] ${message}`;
   el.textContent = el.textContent ? `${el.textContent}\n${line}` : line;
   el.scrollTop = el.scrollHeight;
+}
+
+// —— Bulk metadata refresh (TMDB) ——
+
+/** @type {{ running: boolean, cancelRequested: boolean }} */
+const metaRefreshJob = {
+  running: false,
+  cancelRequested: false,
+};
+
+/** @type {ReturnType<typeof setTimeout> | null} */
+let appToastTimer = null;
+
+/**
+ * Brief bottom toast (success by default).
+ * @param {string} message
+ * @param {{ error?: boolean, ms?: number }} [opts]
+ */
+function showAppToast(message, { error = false, ms = 4200 } = {}) {
+  const el = els.appToast;
+  if (!el) return;
+  if (appToastTimer) {
+    clearTimeout(appToastTimer);
+    appToastTimer = null;
+  }
+  el.hidden = false;
+  el.textContent = String(message || '');
+  el.classList.toggle('is-error', !!error);
+  // Force reflow so re-show animates
+  void el.offsetWidth;
+  el.classList.add('is-visible');
+  appToastTimer = setTimeout(() => {
+    el.classList.remove('is-visible');
+    appToastTimer = setTimeout(() => {
+      el.hidden = true;
+      el.textContent = '';
+      appToastTimer = null;
+    }, 240);
+  }, ms);
+}
+
+function isMetaRefreshOpen() {
+  return Boolean(
+    els.metaRefreshBackdrop && !els.metaRefreshBackdrop.classList.contains('hidden')
+  );
+}
+
+function openMetaRefreshDialog() {
+  if (!els.metaRefreshBackdrop) return;
+  if (els.metaRefreshRunning) els.metaRefreshRunning.hidden = false;
+  if (els.metaRefreshDone) els.metaRefreshDone.hidden = true;
+  if (els.metaRefreshBar) els.metaRefreshBar.style.width = '0%';
+  if (els.metaRefreshProgressbar) {
+    els.metaRefreshProgressbar.setAttribute('aria-valuenow', '0');
+  }
+  if (els.metaRefreshCount) els.metaRefreshCount.textContent = 'Updating 0 of 0';
+  if (els.metaRefreshPct) els.metaRefreshPct.textContent = '0%';
+  if (els.metaRefreshMovie) els.metaRefreshMovie.textContent = '—';
+  if (els.metaRefreshStatus) els.metaRefreshStatus.textContent = 'Preparing…';
+  if (els.metaRefreshDoneFailed) {
+    els.metaRefreshDoneFailed.hidden = true;
+    els.metaRefreshDoneFailed.textContent = '';
+  }
+  if (els.metaRefreshFailures) els.metaRefreshFailures.hidden = true;
+  if (els.metaRefreshFailureList) els.metaRefreshFailureList.innerHTML = '';
+  if (els.metaRefreshCancel) {
+    els.metaRefreshCancel.disabled = false;
+    els.metaRefreshCancel.hidden = false;
+  }
+  if (els.metaRefreshClose) els.metaRefreshClose.disabled = true;
+  resetDialogScroll(els.metaRefreshBackdrop);
+  els.metaRefreshBackdrop.classList.remove('hidden');
+  els.metaRefreshBackdrop.setAttribute('aria-hidden', 'false');
+  queueMicrotask(() => {
+    resetDialogScroll(els.metaRefreshBackdrop);
+    els.metaRefreshCancel?.focus();
+  });
+}
+
+function closeMetaRefreshDialog() {
+  if (!els.metaRefreshBackdrop) return;
+  if (metaRefreshJob.running) {
+    metaRefreshJob.cancelRequested = true;
+    return;
+  }
+  els.metaRefreshBackdrop.classList.add('hidden');
+  els.metaRefreshBackdrop.setAttribute('aria-hidden', 'true');
+  focusFilterWhenIdle();
+}
+
+/**
+ * @param {{ index: number, total: number, title: string, status: string }} p
+ */
+function updateMetaRefreshProgress({ index, total, title, status }) {
+  const pct = total > 0 ? Math.min(100, Math.round((index / total) * 100)) : 0;
+  if (els.metaRefreshBar) els.metaRefreshBar.style.width = `${pct}%`;
+  if (els.metaRefreshProgressbar) {
+    els.metaRefreshProgressbar.setAttribute('aria-valuenow', String(pct));
+  }
+  if (els.metaRefreshCount) {
+    els.metaRefreshCount.textContent =
+      total > 0 ? `Updating ${index} of ${total}` : 'Updating…';
+  }
+  if (els.metaRefreshPct) els.metaRefreshPct.textContent = `${pct}%`;
+  if (els.metaRefreshMovie) {
+    els.metaRefreshMovie.textContent = title || '—';
+  }
+  if (els.metaRefreshStatus) {
+    els.metaRefreshStatus.textContent = status || '';
+  }
+}
+
+/**
+ * @param {{
+ *   ok: number,
+ *   failed: number,
+ *   total: number,
+ *   cancelled: boolean,
+ *   failures: { title: string, reason: string, warn?: boolean }[],
+ * }} result
+ */
+function showMetaRefreshDone(result) {
+  const { ok, failed, total, cancelled, failures } = result;
+  if (els.metaRefreshRunning) els.metaRefreshRunning.hidden = true;
+  if (els.metaRefreshDone) els.metaRefreshDone.hidden = false;
+
+  const icon = els.metaRefreshDone?.querySelector('.meta-done-icon');
+  if (icon) {
+    icon.classList.toggle('is-error', failed > 0 && ok === 0);
+    icon.classList.toggle('is-partial', failed > 0 && ok > 0);
+  }
+
+  if (els.metaRefreshDoneHeading) {
+    els.metaRefreshDoneHeading.textContent = cancelled
+      ? 'Update cancelled'
+      : failed && !ok
+        ? 'Update failed'
+        : 'Update Complete';
+  }
+  if (els.metaRefreshDoneSummary) {
+    const verb = cancelled ? 'Updated' : 'Updated';
+    els.metaRefreshDoneSummary.textContent = `${verb} ${ok} of ${total} movie${
+      total === 1 ? '' : 's'
+    }${cancelled ? ' before cancel' : ''}.`;
+  }
+  if (els.metaRefreshDoneFailed) {
+    if (failed > 0) {
+      els.metaRefreshDoneFailed.hidden = false;
+      els.metaRefreshDoneFailed.textContent = `${failed} failed`;
+    } else {
+      els.metaRefreshDoneFailed.hidden = true;
+      els.metaRefreshDoneFailed.textContent = '';
+    }
+  }
+
+  if (els.metaRefreshFailureList && els.metaRefreshFailures) {
+    els.metaRefreshFailureList.innerHTML = '';
+    if (failures.length) {
+      els.metaRefreshFailures.hidden = false;
+      const frag = document.createDocumentFragment();
+      for (const f of failures.slice(0, 50)) {
+        const li = document.createElement('li');
+        const t = document.createElement('span');
+        t.className = 'meta-fail-title';
+        t.textContent = f.title || 'Untitled';
+        const r = document.createElement('span');
+        r.className = 'meta-fail-reason' + (f.warn ? ' is-warn' : '');
+        r.textContent = f.reason || 'Error';
+        li.append(t, r);
+        frag.appendChild(li);
+      }
+      if (failures.length > 50) {
+        const li = document.createElement('li');
+        const t = document.createElement('span');
+        t.className = 'meta-fail-title';
+        t.textContent = `… and ${failures.length - 50} more`;
+        li.appendChild(t);
+        frag.appendChild(li);
+      }
+      els.metaRefreshFailureList.appendChild(frag);
+    } else {
+      els.metaRefreshFailures.hidden = true;
+    }
+  }
+
+  if (els.metaRefreshCancel) {
+    els.metaRefreshCancel.hidden = true;
+    els.metaRefreshCancel.disabled = true;
+  }
+  if (els.metaRefreshClose) {
+    els.metaRefreshClose.disabled = false;
+    queueMicrotask(() => els.metaRefreshClose?.focus());
+  }
+}
+
+/**
+ * Shared merge: fetch TMDB detail and apply onto an existing library movie.
+ * @param {object} movie
+ * @param {string} apiKey
+ * @returns {Promise<object>} the same movie reference after in-place update
+ */
+async function refreshMovieFromTmdb(movie, apiKey) {
+  const tmdbId = movie?.tmdb_id != null ? String(movie.tmdb_id).trim() : '';
+  if (!tmdbId) {
+    const err = new Error('Missing TMDB ID');
+    err.code = 'MISSING_TMDB_ID';
+    throw err;
+  }
+  const detail = await getMovieById(apiKey, tmdbId);
+  const merged = mergeLibraryMovieFromTmdb(movie, detail);
+  applyMergedMovieInPlace(movie, merged);
+  return movie;
+}
+
+/**
+ * Update one library movie from TMDB (single confirmation).
+ * Prefer open-dialog draft location/keywords/poster when merging.
+ * @param {object} movie
+ */
+async function startSingleMovieMetadataRefresh(movie) {
+  if (!movie || metaRefreshJob.running) return;
+  if (!state.dataReady) {
+    await showAppAlert('Library is still loading. Try again in a moment.', {
+      title: 'Update metadata',
+    });
+    return;
+  }
+  const apiKey = getStoredTmdbApiKey();
+  if (!apiKey) {
+    await showAppAlert(
+      'Set a TMDB API key in Menu → Settings before updating metadata.',
+      { title: 'TMDB API key required' }
+    );
+    return;
+  }
+
+  const title = String(movie.title || 'Untitled').trim() || 'Untitled';
+  const tmdbId = movie.tmdb_id != null ? String(movie.tmdb_id).trim() : '';
+  if (!tmdbId) {
+    await showAppAlert(`“${title}” has no TMDB id, so it cannot be updated.`, {
+      title: 'Update metadata',
+    });
+    return;
+  }
+
+  const ok = await showAppConfirm(
+    `Update metadata for “${title}” from TMDB?\n\n` +
+      `This re-fetches title, year, overview, cast, crew, genres, ratings, posters, ` +
+      `and related fields.\n\n` +
+      `Location and keywords will be merged:\n` +
+      `• Location — kept as-is (never overwritten)\n` +
+      `• Keywords — TMDB tags combined with yours (duplicates skipped)\n` +
+      `• Poster — kept if it still appears on TMDB (primary or alternate); otherwise the TMDB default`,
+    {
+      title: 'Update metadata',
+      okLabel: 'Update',
+      cancelLabel: 'Cancel',
+    }
+  );
+  if (!ok) return;
+
+  const fromDialog = dialog.isOpen() && dialog.movie === movie;
+  if (fromDialog) {
+    dialog.applyDraftPreserveFieldsToMovie();
+    dialog.setMetadataUpdateBusy(true);
+  }
+
+  try {
+    await refreshMovieFromTmdb(movie, apiKey);
+    setDirty(true);
+    refreshLibraryAfterMutation();
+    if (dialog.isOpen() && dialog.movie === movie) {
+      dialog.open(movie);
+    }
+    showAppToast(`Updated “${movie.title || title}” from TMDB`);
+  } catch (err) {
+    console.error(err);
+    const msg = err instanceof Error ? err.message : String(err);
+    await showAppAlert(msg || 'Update failed.', {
+      title: 'Update metadata failed',
+    });
+  } finally {
+    if (fromDialog || (dialog.isOpen() && dialog.movie === movie)) {
+      dialog.setMetadataUpdateBusy(false);
+    }
+  }
+}
+
+/**
+ * Confirm (optionally twice) then refresh every library movie from TMDB.
+ * Location kept; keywords merged; poster kept if still on TMDB.
+ */
+async function startBulkMetadataRefresh() {
+  if (metaRefreshJob.running) return;
+  if (!state.dataReady) {
+    await showAppAlert('Library is still loading. Try again in a moment.', {
+      title: 'Update metadata',
+    });
+    return;
+  }
+  const apiKey = getStoredTmdbApiKey();
+  if (!apiKey) {
+    await showAppAlert(
+      'Set a TMDB API key in Menu → Settings before updating metadata.',
+      { title: 'TMDB API key required' }
+    );
+    return;
+  }
+
+  const total = state.movies.length;
+  if (!total) {
+    await showAppAlert('Your library is empty — nothing to update.', {
+      title: 'Update metadata',
+    });
+    return;
+  }
+
+  const firstOk = await showAppConfirm(
+    `Update metadata for all ${total} movie${total === 1 ? '' : 's'} from TMDB?\n\n` +
+      `This re-fetches title, year, overview, cast, crew, genres, ratings, posters, ` +
+      `and related fields for every library entry.\n\n` +
+      `Location and keywords will be merged:\n` +
+      `• Location — kept as-is (never overwritten)\n` +
+      `• Keywords — TMDB tags combined with yours (duplicates skipped)\n` +
+      `• Poster — kept if it still appears on TMDB (primary or alternate); otherwise the TMDB default\n\n` +
+      `TMDB limits how many updates we can do per second, so this can take a little while.`,
+    {
+      title: 'Update metadata',
+      okLabel: 'Continue',
+      cancelLabel: 'Cancel',
+    }
+  );
+  if (!firstOk) return;
+
+  if (getStoredBulkMetaConfirm2()) {
+    const secondOk = await showAppConfirm(
+      `Are you sure you want to update metadata for all ${total} movie${
+        total === 1 ? '' : 's'
+      }?\n\n` +
+        `This overwrites TMDB-sourced fields in your library. You can still discard unsaved ` +
+        `changes by reloading without Save to GitHub, or restore an older data file.`,
+      {
+        title: 'Confirm update',
+        okLabel: 'Update all',
+        cancelLabel: 'Cancel',
+      }
+    );
+    if (!secondOk) return;
+  }
+
+  await runBulkMetadataRefresh(apiKey);
+}
+
+/**
+ * @param {string} apiKey
+ */
+async function runBulkMetadataRefresh(apiKey) {
+  metaRefreshJob.running = true;
+  metaRefreshJob.cancelRequested = false;
+  openMetaRefreshDialog();
+
+  const movies = state.movies;
+  const total = movies.length;
+  let ok = 0;
+  let failed = 0;
+  /** @type {{ title: string, reason: string, warn?: boolean }[]} */
+  const failures = [];
+  let cancelled = false;
+  let anySuccess = false;
+
+  try {
+    for (let i = 0; i < movies.length; i += 1) {
+      if (metaRefreshJob.cancelRequested) {
+        cancelled = true;
+        break;
+      }
+
+      const movie = movies[i];
+      const title = String(movie?.title || 'Untitled').trim() || 'Untitled';
+      const tmdbId = movie?.tmdb_id != null ? String(movie.tmdb_id).trim() : '';
+
+      updateMetaRefreshProgress({
+        index: i + 1,
+        total,
+        title,
+        status: 'Fetching details, credits, keywords…',
+      });
+
+      if (!tmdbId) {
+        failed += 1;
+        failures.push({
+          title,
+          reason: 'Missing TMDB ID',
+          warn: true,
+        });
+        continue;
+      }
+
+      try {
+        await refreshMovieFromTmdb(movie, apiKey);
+        anySuccess = true;
+        ok += 1;
+
+        // Keep open detail dialog in sync if this is the same object
+        if (dialog.isOpen() && dialog.movie === movie) {
+          dialog.open(movie);
+        }
+      } catch (err) {
+        failed += 1;
+        const msg = err instanceof Error ? err.message : String(err);
+        failures.push({
+          title,
+          reason: msg,
+          warn: err?.code === 'MISSING_TMDB_ID',
+        });
+        console.error(`Metadata refresh failed for ${title} (${tmdbId}):`, err);
+      }
+    }
+
+    // Final progress bar
+    if (!cancelled) {
+      updateMetaRefreshProgress({
+        index: total,
+        total,
+        title: els.metaRefreshMovie?.textContent || '—',
+        status: 'Finishing…',
+      });
+      if (els.metaRefreshBar) els.metaRefreshBar.style.width = '100%';
+      if (els.metaRefreshProgressbar) {
+        els.metaRefreshProgressbar.setAttribute('aria-valuenow', '100');
+      }
+      if (els.metaRefreshPct) els.metaRefreshPct.textContent = '100%';
+    }
+
+    if (anySuccess) {
+      setDirty(true);
+      refreshLibraryAfterMutation();
+    }
+
+    showMetaRefreshDone({ ok, failed, total, cancelled, failures });
+
+    if (ok > 0 && !cancelled) {
+      showAppToast(
+        `Updated ${ok} movie${ok === 1 ? '' : 's'} from TMDB${
+          failed ? ` · ${failed} failed` : ''
+        }`
+      );
+    } else if (ok > 0 && cancelled) {
+      showAppToast(
+        `Updated ${ok} movie${ok === 1 ? '' : 's'} before cancel${
+          failed ? ` · ${failed} failed` : ''
+        }`
+      );
+    }
+  } finally {
+    metaRefreshJob.running = false;
+    metaRefreshJob.cancelRequested = false;
+  }
 }
 
 async function copySaveProgressLog() {
@@ -1668,8 +2252,12 @@ function openSettingsDialog() {
   savedLocationOverlay = getStoredLocationOverlayEnabled();
   savedGrayedLocationsText = getStoredGrayedLocationsText();
   savedPosterSource = getStoredPosterSource();
+  savedBulkMetaConfirm2 = getStoredBulkMetaConfirm2();
   savedBinderNotationId = getStoredBinderNotationId();
   savedBinderCustomPatterns = getStoredBinderCustomPatterns();
+  if (els.settingsBulkMetaConfirm2) {
+    els.settingsBulkMetaConfirm2.checked = savedBulkMetaConfirm2;
+  }
   if (els.settingsLocationOverlay) {
     els.settingsLocationOverlay.checked = savedLocationOverlay;
   }
@@ -1989,6 +2577,12 @@ function saveSettings() {
     els.settingsPosterSource.value = savedPosterSource;
   }
   grid.render();
+  savedBulkMetaConfirm2 = setStoredBulkMetaConfirm2(
+    !!els.settingsBulkMetaConfirm2?.checked
+  );
+  if (els.settingsBulkMetaConfirm2) {
+    els.settingsBulkMetaConfirm2.checked = savedBulkMetaConfirm2;
+  }
   savedBinderNotationId = setStoredBinderNotationId(
     els.settingsBinderNotation?.value
   );
@@ -2014,6 +2608,7 @@ function saveSettings() {
       ? `grayed locations ${savedGrayedLocationsText}`
       : 'grayed locations none',
     `poster source ${savedPosterSource === 'local' ? 'local' : 'TMDB'}`,
+    `bulk second confirm ${savedBulkMetaConfirm2 ? 'on' : 'off'}`,
     `binder notation ${binderLabel}`,
     `theme ${themeLabel} (${customNote})`,
   ];
@@ -2746,18 +3341,8 @@ async function addSearchResultToCollection(searchMovie) {
     // Keep local location when overriding an existing library entry
     if (existing) {
       record.location = preservedLocation;
-      // Keep old keywords that TMDB no longer returns
-      const incoming = Array.isArray(record.keywords) ? record.keywords : [];
-      const seen = new Set(incoming.map((k) => String(k).toLowerCase()));
-      const merged = incoming.slice();
-      for (const k of preservedKeywords) {
-        const key = String(k).toLowerCase();
-        if (!seen.has(key)) {
-          seen.add(key);
-          merged.push(k);
-        }
-      }
-      record.keywords = merged;
+      // Keep old keywords that TMDB no longer returns (merge, no duplicates)
+      record.keywords = mergeKeywords(preservedKeywords, record.keywords);
     }
     state.movies.push(record);
     setDirty(true);

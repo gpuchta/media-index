@@ -153,15 +153,42 @@ export async function searchMoviesByTitleAndYear(apiKey, title, year, page = 1) 
   };
 }
 
-async function fetchJson(url) {
-  const res = await fetch(url, {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-  });
-  if (!res.ok) {
-    throw new Error(`TMDB request failed: ${res.status} ${res.statusText} (${redactUrl(url)})`);
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * TMDB soft upper limit is ~40–50 req/s per IP (legacy 40/10s removed Dec 2019).
+ * Respect 429 with Retry-After / exponential backoff.
+ * @param {string} url
+ * @param {{ retries?: number }} [opts]
+ */
+async function fetchJson(url, { retries = 6 } = {}) {
+  let lastStatus = 0;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    lastStatus = res.status;
+    if (res.status === 429) {
+      const retryAfter = parseFloat(res.headers.get('Retry-After') || '');
+      const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+        ? Math.min(Math.max(retryAfter * 1000, 400), 30000)
+        : Math.min(800 * 2 ** attempt, 16000);
+      await sleep(waitMs);
+      continue;
+    }
+    if (!res.ok) {
+      throw new Error(
+        `TMDB request failed: ${res.status} ${res.statusText} (${redactUrl(url)})`
+      );
+    }
+    return res.json();
   }
-  return res.json();
+  throw new Error(
+    `TMDB rate limited (HTTP ${lastStatus || 429}) after ${retries + 1} attempts (${redactUrl(url)})`
+  );
 }
 
 /**
@@ -296,4 +323,72 @@ export function toLibraryMovie(detail, opts = {}) {
     collection: detail.collection || '',
     location: '',
   };
+}
+
+/**
+ * Merge keyword lists (case-insensitive). Incoming (TMDB) first, then existing extras.
+ * @param {unknown} existing
+ * @param {unknown} incoming
+ * @returns {string[]}
+ */
+export function mergeKeywords(existing, incoming) {
+  /** @type {string[]} */
+  const out = [];
+  const seen = new Set();
+  for (const list of [incoming, existing]) {
+    if (!Array.isArray(list)) continue;
+    for (const raw of list) {
+      const s = String(raw ?? '').trim();
+      if (!s) continue;
+      const key = s.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(s);
+    }
+  }
+  return out;
+}
+
+/**
+ * Build an updated library movie from a fresh TMDB detail while preserving local data:
+ * 1) Keep existing poster if still present as poster_path or in alternate posters
+ * 2) Keep location as-is
+ * 3) Merge keywords (no duplicates)
+ *
+ * @param {object} existing — current library movie
+ * @param {object} detail — from getMovieById
+ * @returns {object} new library-shaped movie (caller may Object.assign in place)
+ */
+export function mergeLibraryMovieFromTmdb(existing, detail) {
+  const oldPoster = existing?.poster_path ? String(existing.poster_path) : '';
+  const tmdbPrimary = detail?.posterPath ? String(detail.posterPath) : '';
+  const tmdbAlts = Array.isArray(detail?.posters)
+    ? detail.posters.map(String).filter(Boolean)
+    : [];
+  const available = new Set(tmdbAlts);
+  if (tmdbPrimary) available.add(tmdbPrimary);
+
+  // Keep current poster when it still appears on TMDB; otherwise take TMDB primary
+  const selectedPoster =
+    oldPoster && available.has(oldPoster) ? oldPoster : tmdbPrimary || null;
+
+  const fresh = toLibraryMovie(detail, { posterPath: selectedPoster });
+  fresh.location =
+    existing?.location != null ? String(existing.location) : '';
+  fresh.keywords = mergeKeywords(existing?.keywords, fresh.keywords);
+  return fresh;
+}
+
+/**
+ * Apply merged fields onto an existing movie object (preserves array reference).
+ * @param {object} target
+ * @param {object} merged
+ */
+export function applyMergedMovieInPlace(target, merged) {
+  if (!target || !merged) return target;
+  for (const k of Object.keys(target)) {
+    if (!(k in merged)) delete target[k];
+  }
+  Object.assign(target, merged);
+  return target;
 }

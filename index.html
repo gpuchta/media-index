@@ -56,6 +56,9 @@
                     >
                   </button>
                   <button type="button" role="menuitem" id="stats-btn">Statistics</button>
+                  <button type="button" role="menuitem" id="meta-refresh-btn">
+                    Update Metadata
+                  </button>
                 </div>
               </div>
             </div>
@@ -258,6 +261,9 @@
       <div class="dialog-footer">
         <button type="button" class="btn btn-danger" id="dialog-delete">Delete</button>
         <div class="dialog-footer-actions">
+          <button type="button" class="btn" id="dialog-update-meta" title="Re-fetch metadata from TMDB">
+            Update
+          </button>
           <button type="button" class="btn" id="dialog-tmdb">TMDB</button>
           <button type="button" class="btn" id="dialog-cancel">Cancel</button>
           <button type="button" class="btn btn-primary" id="dialog-save">Save</button>
@@ -510,6 +516,27 @@
             </label>
             <p class="form-hint">
               Preferred language for TMDB titles and metadata.
+            </p>
+          </div>
+
+          <div class="settings-section" role="group" aria-labelledby="settings-sec-library">
+            <h3 class="settings-section-title" id="settings-sec-library">Library</h3>
+            <label class="form-field form-check" for="settings-bulk-meta-confirm2">
+              <span class="form-label">Bulk update</span>
+              <span class="form-check-row">
+                <input
+                  type="checkbox"
+                  id="settings-bulk-meta-confirm2"
+                  name="settings-bulk-meta-confirm2"
+                  class="form-check-input"
+                  checked
+                />
+                <span>Require second confirmation for Update metadata</span>
+              </span>
+            </label>
+            <p class="form-hint">
+              Menu → Collection → Update metadata re-fetches every movie from TMDB.
+              Location is kept; keywords are merged. A second “are you sure?” step is on by default.
             </p>
           </div>
 
@@ -827,6 +854,89 @@
       </div>
     </div>
   </div>
+
+  <!-- Bulk TMDB metadata refresh progress -->
+  <div
+    id="meta-refresh-backdrop"
+    class="dialog-backdrop dialog-backdrop-meta-refresh hidden"
+    aria-hidden="true"
+  >
+    <div
+      class="dialog dialog-meta-refresh"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="meta-refresh-title"
+      id="meta-refresh-dialog"
+    >
+      <div class="dialog-header">
+        <h2 class="dialog-header-title" id="meta-refresh-title">Refresh Library Metadata</h2>
+        <button
+          type="button"
+          class="dialog-close"
+          id="meta-refresh-close-x"
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+      <div class="dialog-body">
+        <div id="meta-refresh-running" class="meta-refresh-running">
+          <div
+            class="meta-progress-track"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            id="meta-refresh-progressbar"
+            aria-labelledby="meta-refresh-count"
+          >
+            <div id="meta-refresh-bar" class="meta-progress-fill"></div>
+          </div>
+          <div class="meta-progress-row">
+            <span id="meta-refresh-count" class="meta-progress-count">Updating 0 of 0</span>
+            <span id="meta-refresh-pct" class="meta-progress-pct">0%</span>
+          </div>
+          <p id="meta-refresh-movie" class="meta-progress-movie">—</p>
+          <p id="meta-refresh-status" class="meta-progress-status" role="status">
+            Preparing…
+          </p>
+        </div>
+
+        <div id="meta-refresh-done" class="meta-refresh-done" hidden>
+          <div class="meta-done-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" width="48" height="48" focusable="false">
+              <circle cx="24" cy="24" r="22" fill="currentColor" opacity="0.15" />
+              <path
+                fill="none"
+                stroke="currentColor"
+                stroke-width="3.25"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M14 24.5l6.5 6.5L34 17"
+              />
+            </svg>
+          </div>
+          <h3 class="meta-done-heading" id="meta-refresh-done-heading">Update Complete</h3>
+          <p id="meta-refresh-done-summary" class="meta-done-summary"></p>
+          <p id="meta-refresh-done-failed" class="meta-done-failed" hidden></p>
+          <div id="meta-refresh-failures" class="meta-failures" hidden>
+            <div class="meta-failures-label">Failed</div>
+            <ul id="meta-refresh-failure-list" class="meta-failure-list"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <div class="dialog-footer-actions">
+          <button type="button" class="btn" id="meta-refresh-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="meta-refresh-close" disabled>
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite" hidden></div>
 
   <script type="module" src="js/app.js"></script>
 </body>

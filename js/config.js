@@ -59,6 +59,13 @@ export const CONFIG = {
   POSTER_SOURCE_DEFAULT: 'tmdb',
   TMDB_MOVIE_BASE: 'https://www.themoviedb.org/movie/',
 
+  /**
+   * Require a second confirmation before bulk library metadata refresh.
+   * Stored in localStorage as "1" / "0". Default: on (safer).
+   */
+  BULK_META_CONFIRM2_STORAGE: 'pmi:bulkMetaConfirm2',
+  BULK_META_CONFIRM2_DEFAULT: true,
+
   /** Design cell size (px) at comfortable desktop widths. */
   // CELL_WIDTH: 256,
   // CELL_HEIGHT: 388,
@@ -306,6 +313,37 @@ export function getPosterZoomImageBase() {
   return getEffectivePosterSource() === 'local'
     ? CONFIG.LOCAL_POSTER_BASE
     : CONFIG.TMDB_IMAGE_ZOOM_BASE;
+}
+
+/** @returns {boolean} */
+export function getStoredBulkMetaConfirm2() {
+  try {
+    const raw = localStorage.getItem(CONFIG.BULK_META_CONFIRM2_STORAGE);
+    if (raw == null || raw === '') return CONFIG.BULK_META_CONFIRM2_DEFAULT;
+    if (raw === '0' || raw === 'false') return false;
+    if (raw === '1' || raw === 'true') return true;
+    return CONFIG.BULK_META_CONFIRM2_DEFAULT;
+  } catch {
+    return CONFIG.BULK_META_CONFIRM2_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} enabled
+ * @returns {boolean}
+ */
+export function setStoredBulkMetaConfirm2(enabled) {
+  const on = !!enabled;
+  try {
+    if (on === CONFIG.BULK_META_CONFIRM2_DEFAULT) {
+      localStorage.removeItem(CONFIG.BULK_META_CONFIRM2_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.BULK_META_CONFIRM2_STORAGE, on ? '1' : '0');
+    }
+  } catch {
+    /* private mode */
+  }
+  return on;
 }
 
 /**
