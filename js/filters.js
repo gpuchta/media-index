@@ -506,21 +506,76 @@ export function typeaheadValueLabel(type, value) {
 }
 
 /**
+ * Resolve a typeahead query that targets one filter type:
+ *   "location" | "loc" (unique prefix) | "location:" | "location:cin"
+ * @param {string} q lowercased trimmed query
+ * @returns {{ type: string, sub: string }|null}
+ */
+function resolveTypeaheadTypeScope(q) {
+  if (!q) return null;
+  const typed = /^([a-z_]+):(.*)$/i.exec(q);
+  if (typed) {
+    const type = typed[1].toLowerCase();
+    if (TYPEAHEAD_GROUP_ORDER.includes(type)) {
+      return { type, sub: typed[2].trim().toLowerCase() };
+    }
+    return null;
+  }
+  // Exact type name
+  if (TYPEAHEAD_GROUP_ORDER.includes(q)) {
+    return { type: q, sub: '' };
+  }
+  // Unique type prefix (e.g. "loc" → location, "act" → actor)
+  if (q.length >= 2) {
+    const hits = TYPEAHEAD_GROUP_ORDER.filter((t) => t.startsWith(q));
+    if (hits.length === 1) return { type: hits[0], sub: '' };
+  }
+  return null;
+}
+
+/**
  * Query typeahead; returns [{ type, value }] grouped, limited.
  * Order follows TYPEAHEAD_GROUP_ORDER (year before keyword).
- * Matches against both stored value and display label (e.g. binder "yes" ↔ "In binder").
+ *
+ * Matching:
+ * - Value and display label (e.g. binder "yes" ↔ "In binder").
+ * - Type-scoped browse: typing "location" / "loc" / "location:" lists that type
+ *   with a high limit so long location lists are not truncated mid-alphabet.
+ * - Free-text does not match the type name alone (avoids every location matching
+ *   "location" then stopping at the global 40-hit cap).
  */
 export function queryTypeahead(index, query, limit = 40) {
   const q = query.trim().toLowerCase();
   if (!q) return [];
 
+  const scope = resolveTypeaheadTypeScope(q);
+  if (scope) {
+    const values = index[scope.type] || [];
+    // Full type browse can be large (hundreds of binder slots + digital labels)
+    const max = scope.sub ? limit : Math.max(limit, 500);
+    /** @type {{ type: string, value: string }[]} */
+    const results = [];
+    for (const value of values) {
+      const raw = String(value);
+      const label = typeaheadValueLabel(scope.type, raw);
+      const hay = `${raw} ${label}`.toLowerCase();
+      if (!scope.sub || hay.includes(scope.sub)) {
+        results.push({ type: scope.type, value: raw });
+        if (results.length >= max) break;
+      }
+    }
+    return results;
+  }
+
+  /** @type {{ type: string, value: string }[]} */
   const results = [];
   for (const type of TYPEAHEAD_GROUP_ORDER) {
     const values = index[type] || [];
     for (const value of values) {
       const raw = String(value);
       const label = typeaheadValueLabel(type, raw);
-      const hay = `${raw} ${label} ${type}`.toLowerCase();
+      // Match value/label only — not the type name (see type-scoped branch above)
+      const hay = `${raw} ${label}`.toLowerCase();
       if (hay.includes(q)) {
         results.push({ type, value: raw });
         if (results.length >= limit) return results;
