@@ -112,6 +112,13 @@ export const CONFIG = {
   LOCATION_OVERLAY_DEFAULT: true,
 
   /**
+   * Comma/space-separated location labels whose posters are grayed in the grid
+   * (e.g. "Watch, Buy"). Case-insensitive exact match on movie.location.
+   */
+  GRAYED_LOCATIONS_STORAGE: 'pmi:grayedLocations',
+  GRAYED_LOCATIONS_DEFAULT: 'Watch, Buy',
+
+  /**
    * Binder notation preset id (Settings). Controls which locations count as
    * “In binder” for the binder:yes / binder:no filter.
    */
@@ -198,6 +205,84 @@ export function setStoredLocationOverlayEnabled(enabled) {
     /* private mode */
   }
   return on;
+}
+
+/**
+ * Parse a comma/space-separated location list into unique lowercase tokens.
+ * Prefer commas/semicolons as separators so multi-word labels work
+ * ("Watch, Cinema Now"). If neither is present, split on whitespace
+ * ("Watch Buy").
+ * @param {unknown} text
+ * @returns {string[]} lowercase unique labels (stable first-seen order)
+ */
+export function parseGrayedLocationsList(text) {
+  const raw = String(text ?? '').trim();
+  if (!raw) return [];
+  /** @type {string[]} */
+  const parts = /[,;]/.test(raw) ? raw.split(/[,;]+/) : raw.split(/\s+/);
+  /** @type {string[]} */
+  const out = [];
+  const seen = new Set();
+  for (const part of parts) {
+    const t = part.trim().toLowerCase();
+    if (!t || seen.has(t)) continue;
+    seen.add(t);
+    out.push(t);
+  }
+  return out;
+}
+
+/**
+ * Canonical display string for storage / Settings field (preserve words, join ", ").
+ * @param {unknown} text
+ * @returns {string}
+ */
+export function formatGrayedLocationsList(text) {
+  // Re-parse then re-emit from original casing where possible: use lowercase
+  // tokens with simple first-letter capitalisation per word for readability.
+  const tokens = parseGrayedLocationsList(text);
+  return tokens
+    .map((t) =>
+      t
+        .split(/\s+/)
+        .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+        .join(' ')
+    )
+    .join(', ');
+}
+
+/** @returns {string} display string e.g. "Watch, Buy" */
+export function getStoredGrayedLocationsText() {
+  try {
+    const raw = localStorage.getItem(CONFIG.GRAYED_LOCATIONS_STORAGE);
+    if (raw == null) return CONFIG.GRAYED_LOCATIONS_DEFAULT;
+    return formatGrayedLocationsList(raw);
+  } catch {
+    return CONFIG.GRAYED_LOCATIONS_DEFAULT;
+  }
+}
+
+/** @returns {Set<string>} lowercase location labels to gray */
+export function getStoredGrayedLocationsSet() {
+  return new Set(parseGrayedLocationsList(getStoredGrayedLocationsText()));
+}
+
+/**
+ * @param {unknown} text
+ * @returns {string} stored display string
+ */
+export function setStoredGrayedLocationsText(text) {
+  const formatted = formatGrayedLocationsList(text);
+  try {
+    if (formatted === formatGrayedLocationsList(CONFIG.GRAYED_LOCATIONS_DEFAULT)) {
+      localStorage.removeItem(CONFIG.GRAYED_LOCATIONS_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.GRAYED_LOCATIONS_STORAGE, formatted);
+    }
+  } catch {
+    /* private mode */
+  }
+  return formatted;
 }
 
 /**

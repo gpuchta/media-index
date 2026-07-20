@@ -23,6 +23,11 @@ export class PosterGrid {
     this.bufferRows = CONFIG.VIRTUAL_BUFFER_ROWS;
     /** Show location badge on posters (Settings). */
     this.showLocationOverlay = true;
+    /**
+     * Lowercase location labels whose posters are grayed (Settings).
+     * @type {Set<string>}
+     */
+    this.grayedLocations = new Set();
 
     this._raf = 0;
     this._anchorIndex = 0;
@@ -94,6 +99,25 @@ export class PosterGrid {
    */
   setLocationOverlay(enabled) {
     this.showLocationOverlay = !!enabled;
+    this.render();
+  }
+
+  /**
+   * Locations whose poster art is grayed (case-insensitive exact match).
+   * @param {Iterable<string>|Set<string>|string[]|null|undefined} locations
+   */
+  setGrayedLocations(locations) {
+    /** @type {Set<string>} */
+    const next = new Set();
+    if (locations) {
+      for (const loc of locations) {
+        const t = String(loc || '')
+          .trim()
+          .toLowerCase();
+        if (t) next.add(t);
+      }
+    }
+    this.grayedLocations = next;
     this.render();
   }
 
@@ -201,6 +225,10 @@ export class PosterGrid {
       'aria-label',
       loc ? `${title}, location ${loc}` : title
     );
+    // Gray poster art for configured locations (Settings; CSS filter, not overlay)
+    if (loc && this.grayedLocations.has(loc.toLowerCase())) {
+      btn.classList.add('is-pending-location');
+    }
 
     const letter = document.createElement('span');
     letter.className = 'poster-placeholder';

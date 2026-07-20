@@ -994,6 +994,16 @@ input {
   user-select: none;
 }
 
+/*
+ * Locations Watch / Buy: mute poster art only (filter on image layer).
+ * No extra overlay — hot-corner zoom and location badge stay interactive/readable.
+ */
+.poster-cell.is-pending-location .poster-bg,
+.poster-cell.is-pending-location .poster-placeholder {
+  filter: grayscale(1) brightness(0.78) contrast(0.92);
+  opacity: 0.78;
+}
+
 /* Location badge at top of poster (themeable; optional via Settings) */
 .poster-loc {
   position: absolute;
