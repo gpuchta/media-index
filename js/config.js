@@ -111,6 +111,19 @@ export const CONFIG = {
   LOCATION_OVERLAY_STORAGE: 'pmi:locationOverlay',
   LOCATION_OVERLAY_DEFAULT: true,
 
+  /**
+   * Binder notation preset id (Settings). Controls which locations count as
+   * “In binder” for the binder:yes / binder:no filter.
+   */
+  BINDER_NOTATION_STORAGE: 'pmi:binderNotation',
+  BINDER_NOTATION_DEFAULT: 'letter-page',
+  /**
+   * Custom binder patterns when notation is "custom": one JavaScript regex
+   * source per line (OR’d). Stored as a plain string in localStorage.
+   */
+  BINDER_NOTATION_CUSTOM_STORAGE: 'pmi:binderNotationCustom',
+  BINDER_NOTATION_CUSTOM_DEFAULT: '^[A-Za-z]\\d{1,3}$',
+
   /** Extra rows rendered above/below the viewport. */
   VIRTUAL_BUFFER_ROWS: 2,
 
@@ -664,6 +677,193 @@ export const BINDER_FILTER_OPTIONS = Object.freeze([
   { value: 'yes', label: 'In binder' },
   { value: 'no', label: 'Not in binder' },
 ]);
+
+/**
+ * Binder notation presets (Settings → Binders).
+ * patterns: regex source strings (no slashes); matched with flags `iu` (or `u` only if needed).
+ * Empty location never matches. Multiple patterns are OR’d.
+ * @type {ReadonlyArray<{
+ *   id: string,
+ *   label: string,
+ *   description: string,
+ *   examples: string,
+ *   patterns: string[]|null,
+ * }>}
+ */
+export const BINDER_NOTATION_OPTIONS = Object.freeze([
+  {
+    id: 'letter-page',
+    label: 'Letter + page (A1)',
+    description: 'Single letter binder id and numeric page/slot (A1, F42).',
+    examples: 'A1, F42, N13',
+    patterns: Object.freeze(['^[A-Za-z]\\d{1,3}$']),
+  },
+  {
+    id: 'color-page',
+    label: 'Color + page (Blue A)',
+    description: 'Color name, space, then page letter or number.',
+    examples: 'Blue A, Red 12, Green B',
+    patterns: Object.freeze([
+      '^(?:Blue|Red|Green|Yellow|Orange|Purple|Pink|Black|White|Gray|Grey|Brown)\\s+[A-Za-z0-9]+$',
+    ]),
+  },
+  {
+    id: 'roman-page',
+    label: 'Roman + page (VIII A)',
+    description: 'Roman-numeral binder id, optional hyphen, then page token.',
+    examples: 'VIII A, VIII-A, XII 3',
+    patterns: Object.freeze(['^[IVXLCDM]+\\s*-?\\s*[A-Za-z0-9]+$']),
+  },
+  {
+    id: 'emoji-page',
+    label: 'Emoji + page (😀1)',
+    description: 'Leading emoji (or emoji sequence), optional space, then page.',
+    examples: '😀1, 📕 A, 😊12',
+    patterns: Object.freeze([
+      // Extended pictographic (+ ZWJ sequences / variation selectors) then page
+      '^(?:\\p{Extended_Pictographic}(?:\\uFE0F|\\uFE0E)?(?:\\u200D\\p{Extended_Pictographic}(?:\\uFE0F|\\uFE0E)?)*)+\\s*[A-Za-z0-9]+$',
+    ]),
+  },
+  {
+    id: 'custom',
+    label: 'Custom…',
+    description:
+      'Your own patterns: one JavaScript regular expression per line (OR). Lines starting with # are comments.',
+    examples: 'any notation you invent',
+    patterns: null,
+  },
+]);
+
+const BINDER_NOTATION_ID_SET = new Set(
+  BINDER_NOTATION_OPTIONS.map((o) => o.id)
+);
+
+/**
+ * @param {unknown} id
+ * @returns {string}
+ */
+export function normalizeBinderNotationId(id) {
+  const s = String(id || '').trim();
+  if (BINDER_NOTATION_ID_SET.has(s)) return s;
+  return CONFIG.BINDER_NOTATION_DEFAULT;
+}
+
+/** @returns {string} */
+export function getStoredBinderNotationId() {
+  try {
+    const raw = localStorage.getItem(CONFIG.BINDER_NOTATION_STORAGE);
+    if (raw == null || raw === '') return CONFIG.BINDER_NOTATION_DEFAULT;
+    return normalizeBinderNotationId(raw);
+  } catch {
+    return CONFIG.BINDER_NOTATION_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} id
+ * @returns {string} stored id
+ */
+export function setStoredBinderNotationId(id) {
+  const n = normalizeBinderNotationId(id);
+  try {
+    if (n === CONFIG.BINDER_NOTATION_DEFAULT) {
+      localStorage.removeItem(CONFIG.BINDER_NOTATION_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.BINDER_NOTATION_STORAGE, n);
+    }
+  } catch {
+    /* private mode */
+  }
+  return n;
+}
+
+/** @returns {string} multiline custom pattern text */
+export function getStoredBinderCustomPatterns() {
+  try {
+    const raw = localStorage.getItem(CONFIG.BINDER_NOTATION_CUSTOM_STORAGE);
+    if (raw == null) return CONFIG.BINDER_NOTATION_CUSTOM_DEFAULT;
+    return String(raw);
+  } catch {
+    return CONFIG.BINDER_NOTATION_CUSTOM_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} text
+ * @returns {string} stored text
+ */
+export function setStoredBinderCustomPatterns(text) {
+  const s = String(text ?? '');
+  try {
+    if (s === CONFIG.BINDER_NOTATION_CUSTOM_DEFAULT) {
+      localStorage.removeItem(CONFIG.BINDER_NOTATION_CUSTOM_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.BINDER_NOTATION_CUSTOM_STORAGE, s);
+    }
+  } catch {
+    /* private mode */
+  }
+  return s;
+}
+
+/**
+ * Parse custom textarea into pattern source lines (skip blanks and # comments).
+ * @param {unknown} text
+ * @returns {string[]}
+ */
+export function parseBinderCustomPatternLines(text) {
+  const lines = String(text ?? '').split(/\r?\n/);
+  /** @type {string[]} */
+  const out = [];
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) continue;
+    out.push(t);
+  }
+  return out;
+}
+
+/**
+ * Resolve pattern source strings for a notation id.
+ * @param {unknown} notationId
+ * @param {unknown} [customText] used when id is custom
+ * @returns {string[]}
+ */
+export function resolveBinderPatternSources(notationId, customText) {
+  const id = normalizeBinderNotationId(notationId);
+  if (id === 'custom') {
+    const lines = parseBinderCustomPatternLines(customText);
+    return lines.length
+      ? lines
+      : parseBinderCustomPatternLines(CONFIG.BINDER_NOTATION_CUSTOM_DEFAULT);
+  }
+  const opt = BINDER_NOTATION_OPTIONS.find((o) => o.id === id);
+  return opt?.patterns ? [...opt.patterns] : [...(BINDER_NOTATION_OPTIONS[0].patterns || [])];
+}
+
+/**
+ * Compile pattern sources to RegExp list. Invalid patterns are skipped and reported.
+ * @param {string[]} sources
+ * @returns {{ regexes: RegExp[], errors: { source: string, message: string }[] }}
+ */
+export function compileBinderRegexes(sources) {
+  /** @type {RegExp[]} */
+  const regexes = [];
+  /** @type {{ source: string, message: string }[]} */
+  const errors = [];
+  for (const source of sources) {
+    try {
+      // `i` for roman/color friendliness; `u` for emoji property escapes
+      regexes.push(new RegExp(source, 'iu'));
+    } catch (err) {
+      errors.push({
+        source,
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+  return { regexes, errors };
+}
 
 /** Typeahead group order (title near top; year before keyword so "2020" ranks over "2020s") */
 export const TYPEAHEAD_GROUP_ORDER = [

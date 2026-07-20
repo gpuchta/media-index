@@ -401,6 +401,65 @@
             </p>
           </div>
 
+          <div class="settings-section" role="group" aria-labelledby="settings-sec-binders">
+            <h3 class="settings-section-title" id="settings-sec-binders">Binders</h3>
+            <label class="form-field" for="settings-binder-notation">
+              <span class="form-label">Notation</span>
+              <select
+                id="settings-binder-notation"
+                name="settings-binder-notation"
+                class="form-input form-select"
+              >
+                <!-- Options filled from BINDER_NOTATION_OPTIONS on open -->
+                <option value="letter-page">Letter + page (A1)</option>
+              </select>
+            </label>
+            <p class="form-hint" id="settings-binder-notation-desc">
+              Defines which locations count as physical binder slots for the In binder filter.
+            </p>
+            <div
+              class="form-field"
+              id="settings-binder-custom-wrap"
+              hidden
+            >
+              <label class="form-label" for="settings-binder-custom">Custom patterns</label>
+              <textarea
+                id="settings-binder-custom"
+                name="settings-binder-custom"
+                class="form-input form-textarea"
+                rows="5"
+                spellcheck="false"
+                autocomplete="off"
+                placeholder="One JavaScript regex per line (OR). # comments allowed.&#10;^[A-Za-z]\\d{1,3}$"
+              ></textarea>
+            </div>
+            <p
+              class="form-hint settings-binder-preview"
+              id="settings-binder-preview"
+              role="status"
+            ></p>
+            <label class="form-field" for="settings-binder-test">
+              <span class="form-label">Test location</span>
+              <input
+                type="text"
+                id="settings-binder-test"
+                name="settings-binder-test"
+                class="form-input"
+                spellcheck="false"
+                autocomplete="off"
+                placeholder="e.g. A1, Blue A, VIII-A"
+              />
+            </label>
+            <p
+              class="form-hint settings-binder-test-result"
+              id="settings-binder-test-result"
+              role="status"
+            ></p>
+            <p class="form-hint">
+              Preview updates while you edit; Save stores the notation in this browser only.
+            </p>
+          </div>
+
           <div class="settings-section" role="group" aria-labelledby="settings-sec-language">
             <h3 class="settings-section-title" id="settings-sec-language">Language</h3>
             <label class="form-field" for="settings-locale">

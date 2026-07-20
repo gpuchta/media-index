@@ -1,20 +1,130 @@
 import {
   BINDER_FILTER_OPTIONS,
+  BINDER_NOTATION_OPTIONS,
+  CONFIG,
   FILTER_TYPES,
   TYPEAHEAD_GROUP_ORDER,
+  compileBinderRegexes,
+  getStoredBinderCustomPatterns,
+  getStoredBinderNotationId,
+  resolveBinderPatternSources,
 } from './config.js';
 import { movieYear } from './utils.js';
 
 const FILTER_TYPE_SET = new Set(FILTER_TYPES);
 
 /**
- * Binder slot pattern: single letter + 1–3 digits (A1, F42, N13).
- * Free-form locations (Amazon, Todo, Netflix, empty) are not binders.
+ * Active binder matchers (from Settings notation). Null until first apply/lazy load.
+ * @type {RegExp[]|null}
+ */
+let activeBinderRegexes = null;
+
+/**
+ * Apply binder notation rules used by isBinderLocation / binder:yes filter.
+ * Does not write localStorage — callers persist via setStored* when saving Settings.
+ * @param {unknown} [notationId]
+ * @param {unknown} [customText]
+ * @returns {{
+ *   id: string,
+ *   sources: string[],
+ *   regexes: RegExp[],
+ *   errors: { source: string, message: string }[],
+ * }}
+ */
+export function applyBinderNotation(notationId, customText) {
+  const id =
+    notationId != null && String(notationId).trim() !== ''
+      ? String(notationId).trim()
+      : getStoredBinderNotationId();
+  const custom =
+    customText != null
+      ? String(customText)
+      : getStoredBinderCustomPatterns();
+  const sources = resolveBinderPatternSources(id, custom);
+  const { regexes, errors } = compileBinderRegexes(sources);
+  // Fall back to default letter+page if every pattern is invalid
+  if (!regexes.length) {
+    const fallback = compileBinderRegexes(
+      resolveBinderPatternSources(CONFIG.BINDER_NOTATION_DEFAULT, '')
+    );
+    activeBinderRegexes = fallback.regexes;
+  } else {
+    activeBinderRegexes = regexes;
+  }
+  return { id, sources, regexes: activeBinderRegexes, errors };
+}
+
+/** Ensure matchers exist (load from storage once). */
+function ensureBinderRegexes() {
+  if (!activeBinderRegexes) {
+    applyBinderNotation();
+  }
+  return activeBinderRegexes || [];
+}
+
+/**
+ * Whether a location string counts as a physical binder slot under the
+ * active Settings notation (letter+page, color, roman, emoji, or custom).
+ * Empty location is never a binder.
  * @param {unknown} location
  * @returns {boolean}
  */
 export function isBinderLocation(location) {
-  return /^[A-Za-z]\d{1,3}$/.test(String(location || '').trim());
+  const s = String(location || '').trim();
+  if (!s) return false;
+  const regexes = ensureBinderRegexes();
+  for (const re of regexes) {
+    // Reset sticky/global lastIndex if any future flags add them
+    re.lastIndex = 0;
+    if (re.test(s)) return true;
+  }
+  return false;
+}
+
+/**
+ * Count movies whose location matches the given regex list (or active rules).
+ * @param {object[]} movies
+ * @param {RegExp[]} [regexes]
+ * @returns {number}
+ */
+export function countBinderMatches(movies, regexes) {
+  const list = Array.isArray(movies) ? movies : [];
+  const matchers = regexes || ensureBinderRegexes();
+  let n = 0;
+  for (const m of list) {
+    const s = String(m?.location || '').trim();
+    if (!s) continue;
+    for (const re of matchers) {
+      re.lastIndex = 0;
+      if (re.test(s)) {
+        n += 1;
+        break;
+      }
+    }
+  }
+  return n;
+}
+
+/**
+ * Test one location against the given (or active) binder rules.
+ * @param {unknown} location
+ * @param {RegExp[]} [regexes]
+ * @returns {boolean}
+ */
+export function testBinderLocation(location, regexes) {
+  const s = String(location || '').trim();
+  if (!s) return false;
+  const matchers = regexes || ensureBinderRegexes();
+  for (const re of matchers) {
+    re.lastIndex = 0;
+    if (re.test(s)) return true;
+  }
+  return false;
+}
+
+/** @returns {typeof BINDER_NOTATION_OPTIONS} */
+export function getBinderNotationOptions() {
+  return BINDER_NOTATION_OPTIONS;
 }
 
 const BINDER_YES_ALIASES = new Set([

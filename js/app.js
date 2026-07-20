@@ -1,4 +1,5 @@
 import {
+  BINDER_NOTATION_OPTIONS,
   CONFIG,
   DEFAULT_SORT,
   FILTER_TYPE_LABELS,
@@ -12,6 +13,9 @@ import {
   clampPosterBacklightPercent,
   clampPosterGapPx,
   clampPosterScalePercent,
+  compileBinderRegexes,
+  getStoredBinderCustomPatterns,
+  getStoredBinderNotationId,
   getStoredLocale,
   getStoredLocationOverlayEnabled,
   getStoredPosterBacklightPercent,
@@ -19,8 +23,12 @@ import {
   getStoredPosterScalePercent,
   getStoredTheme,
   getStoredThemeColors,
+  normalizeBinderNotationId,
   normalizeTheme,
   readResolvedThemeColors,
+  resolveBinderPatternSources,
+  setStoredBinderCustomPatterns,
+  setStoredBinderNotationId,
   setStoredLocale,
   setStoredLocationOverlayEnabled,
   setStoredPosterBacklightPercent,
@@ -31,8 +39,10 @@ import {
 } from './config.js';
 import {
   addLeaf,
+  applyBinderNotation,
   applyFilters,
   buildTypeaheadIndex,
+  countBinderMatches,
   displayLabel,
   leafFromFreeText,
   queryTypeahead,
@@ -41,6 +51,7 @@ import {
   sameTypeJoinLabel,
   sortMovies,
   stripLeadingNot,
+  testBinderLocation,
   toggleLeafNot,
   typeaheadValueLabel,
 } from './filters.js';
@@ -133,6 +144,15 @@ const els = {
     'settings-poster-backlight-value'
   ),
   settingsLocationOverlay: document.getElementById('settings-location-overlay'),
+  settingsBinderNotation: document.getElementById('settings-binder-notation'),
+  settingsBinderNotationDesc: document.getElementById(
+    'settings-binder-notation-desc'
+  ),
+  settingsBinderCustomWrap: document.getElementById('settings-binder-custom-wrap'),
+  settingsBinderCustom: document.getElementById('settings-binder-custom'),
+  settingsBinderPreview: document.getElementById('settings-binder-preview'),
+  settingsBinderTest: document.getElementById('settings-binder-test'),
+  settingsBinderTestResult: document.getElementById('settings-binder-test-result'),
   settingsTheme: document.getElementById('settings-theme'),
   settingsThemeColors: document.getElementById('settings-theme-colors'),
   settingsThemeResetColors: document.getElementById('settings-theme-reset-colors'),
@@ -273,6 +293,8 @@ let savedPosterScalePercent = getStoredPosterScalePercent();
 let savedPosterGapPx = getStoredPosterGapPx();
 let savedPosterBacklightPercent = getStoredPosterBacklightPercent();
 let savedLocationOverlay = getStoredLocationOverlayEnabled();
+let savedBinderNotationId = getStoredBinderNotationId();
+let savedBinderCustomPatterns = getStoredBinderCustomPatterns();
 /** Last saved theme prefs; used to revert Settings theme preview on cancel. */
 let savedThemeId = getStoredTheme();
 /** @type {Record<string, string>} */
@@ -282,6 +304,7 @@ let savedThemeColors = getStoredThemeColors();
 let draftThemeColors = { ...savedThemeColors };
 applyTheme(savedThemeId, savedThemeColors);
 applyPosterBacklight(savedPosterBacklightPercent);
+applyBinderNotation(savedBinderNotationId, savedBinderCustomPatterns);
 grid.setScale(savedPosterScalePercent / 100);
 grid.setGap(savedPosterGapPx);
 grid.setLocationOverlay(savedLocationOverlay);
@@ -530,6 +553,16 @@ els.settingsPosterBacklight?.addEventListener('input', () => {
 });
 els.settingsLocationOverlay?.addEventListener('change', () => {
   grid.setLocationOverlay(!!els.settingsLocationOverlay.checked);
+});
+els.settingsBinderNotation?.addEventListener('change', () => {
+  syncBinderCustomVisibility();
+  updateBinderNotationPreview({ applyLive: true });
+});
+els.settingsBinderCustom?.addEventListener('input', () => {
+  updateBinderNotationPreview({ applyLive: true });
+});
+els.settingsBinderTest?.addEventListener('input', () => {
+  updateBinderTestResult();
 });
 els.settingsTheme?.addEventListener('change', () => {
   // Switching base theme clears draft overrides and reloads that theme’s defaults
@@ -1106,6 +1139,102 @@ function populateLocaleSelect() {
   sel.value = current;
 }
 
+function populateBinderNotationSelect() {
+  const sel = els.settingsBinderNotation;
+  if (!sel) return;
+  const current = normalizeBinderNotationId(
+    els.settingsBinderNotation.value || savedBinderNotationId
+  );
+  sel.replaceChildren();
+  for (const opt of BINDER_NOTATION_OPTIONS) {
+    const o = document.createElement('option');
+    o.value = opt.id;
+    o.textContent = opt.label;
+    if (opt.id === current) o.selected = true;
+    sel.appendChild(o);
+  }
+  sel.value = current;
+}
+
+function syncBinderCustomVisibility() {
+  const id = normalizeBinderNotationId(els.settingsBinderNotation?.value);
+  const isCustom = id === 'custom';
+  if (els.settingsBinderCustomWrap) {
+    els.settingsBinderCustomWrap.hidden = !isCustom;
+  }
+  const opt = BINDER_NOTATION_OPTIONS.find((o) => o.id === id);
+  if (els.settingsBinderNotationDesc && opt) {
+    els.settingsBinderNotationDesc.textContent = `${opt.description} Examples: ${opt.examples}.`;
+  }
+}
+
+/**
+ * Preview binder notation against the loaded library; optionally apply live
+ * so binder:yes filter updates while Settings is open.
+ * @param {{ applyLive?: boolean }} [opts]
+ */
+function updateBinderNotationPreview({ applyLive = false } = {}) {
+  const id = normalizeBinderNotationId(els.settingsBinderNotation?.value);
+  const custom = els.settingsBinderCustom?.value ?? savedBinderCustomPatterns;
+  const sources = resolveBinderPatternSources(id, custom);
+  const { regexes, errors } = compileBinderRegexes(sources);
+
+  if (applyLive) {
+    applyBinderNotation(id, custom);
+    // Re-run filters if a binder leaf is active
+    if (state.leaves.some((l) => l.type === 'binder')) {
+      recompute({ resetScroll: false });
+    }
+  }
+
+  const preview = els.settingsBinderPreview;
+  if (preview) {
+    preview.classList.toggle('is-error', errors.length > 0);
+    const total = state.movies.length;
+    if (!regexes.length) {
+      preview.textContent =
+        errors.length > 0
+          ? `Invalid pattern(s): ${errors.map((e) => e.message).join('; ')}. Falling back until fixed.`
+          : 'No valid patterns.';
+    } else {
+      const matched = countBinderMatches(state.movies, regexes);
+      const errNote =
+        errors.length > 0
+          ? ` (${errors.length} invalid pattern${errors.length === 1 ? '' : 's'} skipped)`
+          : '';
+      preview.textContent = `${matched} of ${total} location${total === 1 ? '' : 's'} match this notation${errNote}.`;
+    }
+  }
+  updateBinderTestResult(regexes);
+}
+
+/**
+ * @param {RegExp[]} [regexes]
+ */
+function updateBinderTestResult(regexes) {
+  const el = els.settingsBinderTestResult;
+  if (!el) return;
+  const sample = String(els.settingsBinderTest?.value || '').trim();
+  el.classList.remove('is-error', 'is-match');
+  if (!sample) {
+    el.textContent = '';
+    return;
+  }
+  const matchers =
+    regexes ||
+    compileBinderRegexes(
+      resolveBinderPatternSources(
+        els.settingsBinderNotation?.value,
+        els.settingsBinderCustom?.value
+      )
+    ).regexes;
+  const hit = testBinderLocation(sample, matchers);
+  el.classList.add(hit ? 'is-match' : 'is-error');
+  el.textContent = hit
+    ? `“${sample}” → In binder`
+    : `“${sample}” → Not in binder`;
+}
+
 function populateThemeSelect() {
   const sel = els.settingsTheme;
   if (!sel) return;
@@ -1314,10 +1443,25 @@ function openSettingsDialog() {
   savedPosterGapPx = getStoredPosterGapPx();
   savedPosterBacklightPercent = getStoredPosterBacklightPercent();
   savedLocationOverlay = getStoredLocationOverlayEnabled();
+  savedBinderNotationId = getStoredBinderNotationId();
+  savedBinderCustomPatterns = getStoredBinderCustomPatterns();
   if (els.settingsLocationOverlay) {
     els.settingsLocationOverlay.checked = savedLocationOverlay;
   }
   grid.setLocationOverlay(savedLocationOverlay);
+  if (els.settingsBinderNotation) {
+    els.settingsBinderNotation.value = savedBinderNotationId;
+  }
+  if (els.settingsBinderCustom) {
+    els.settingsBinderCustom.value = savedBinderCustomPatterns;
+  }
+  if (els.settingsBinderTest) {
+    els.settingsBinderTest.value = '';
+  }
+  populateBinderNotationSelect();
+  syncBinderCustomVisibility();
+  applyBinderNotation(savedBinderNotationId, savedBinderCustomPatterns);
+  updateBinderNotationPreview({ applyLive: false });
   savedThemeId = getStoredTheme();
   savedThemeColors = getStoredThemeColors();
   draftThemeColors = { ...savedThemeColors };
@@ -1385,6 +1529,16 @@ function closeSettingsDialog({ revertPreview = false } = {}) {
       els.settingsLocationOverlay.checked = savedLocationOverlay;
     }
     grid.setLocationOverlay(savedLocationOverlay);
+    applyBinderNotation(savedBinderNotationId, savedBinderCustomPatterns);
+    if (els.settingsBinderNotation) {
+      els.settingsBinderNotation.value = savedBinderNotationId;
+    }
+    if (els.settingsBinderCustom) {
+      els.settingsBinderCustom.value = savedBinderCustomPatterns;
+    }
+    if (state.leaves.some((l) => l.type === 'binder')) {
+      recompute({ resetScroll: false });
+    }
     draftThemeColors = { ...savedThemeColors };
     applyTheme(savedThemeId, savedThemeColors);
     if (els.settingsTheme) els.settingsTheme.value = normalizeTheme(savedThemeId);
@@ -1580,6 +1734,19 @@ function saveSettings() {
     !!els.settingsLocationOverlay?.checked
   );
   grid.setLocationOverlay(savedLocationOverlay);
+  savedBinderNotationId = setStoredBinderNotationId(
+    els.settingsBinderNotation?.value
+  );
+  savedBinderCustomPatterns = setStoredBinderCustomPatterns(
+    els.settingsBinderCustom?.value ?? ''
+  );
+  applyBinderNotation(savedBinderNotationId, savedBinderCustomPatterns);
+  if (state.leaves.some((l) => l.type === 'binder')) {
+    recompute({ resetScroll: false });
+  }
+  const binderLabel =
+    BINDER_NOTATION_OPTIONS.find((o) => o.id === savedBinderNotationId)
+      ?.label || savedBinderNotationId;
   const parts = [
     tmdbKey ? 'TMDB API key saved' : 'TMDB API key cleared',
     githubKey ? 'GitHub API key saved' : 'GitHub API key cleared',
@@ -1588,6 +1755,7 @@ function saveSettings() {
     `spacing ${gapPx}px`,
     `lighting ${backlightPercent}%`,
     `location overlay ${savedLocationOverlay ? 'on' : 'off'}`,
+    `binder notation ${binderLabel}`,
     `theme ${themeLabel} (${customNote})`,
   ];
   setSettingsStatus(`${parts.join('. ')}.`);

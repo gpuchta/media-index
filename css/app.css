@@ -1454,10 +1454,27 @@ input {
 }
 
 /* Section footer hint: clear end of each group */
-.settings-section > .form-hint {
+.settings-section > .form-hint:last-child {
   margin: 0;
   padding-top: 0.55rem;
   border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+}
+
+.form-textarea {
+  min-height: 6.5rem;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.settings-binder-preview.is-error,
+.settings-binder-test-result.is-error {
+  color: var(--danger);
+}
+
+.settings-binder-test-result.is-match {
+  color: var(--ok);
 }
 
 .dialog-stats {
