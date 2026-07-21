@@ -170,6 +170,9 @@ const els = {
   statsCloseFooter: document.getElementById('stats-close-footer'),
   settingsBtn: document.getElementById('settings-btn'),
   exportSettingsBtn: document.getElementById('export-settings-btn'),
+  exportSettingsClipboardBtn: document.getElementById(
+    'export-settings-clipboard-btn'
+  ),
   importSettingsBtn: document.getElementById('import-settings-btn'),
   importSettingsFileInput: document.getElementById('import-settings-file-input'),
   importSettingsClipboardBtn: document.getElementById(
@@ -869,6 +872,11 @@ els.exportSettingsBtn?.addEventListener('click', () => {
   exportSettings();
 });
 
+els.exportSettingsClipboardBtn?.addEventListener('click', () => {
+  closeMenu();
+  void exportSettingsToClipboard();
+});
+
 els.importSettingsBtn?.addEventListener('click', () => {
   closeMenu();
   startSettingsImport();
@@ -1291,6 +1299,25 @@ function exportData() {
 function exportSettings() {
   downloadJson(SETTINGS_EXPORT_FILENAME, buildSettingsExportObject());
   showAppToast(t('settingsIo.exportDone'));
+}
+
+/**
+ * Copy current non-secret settings JSON to the system clipboard (API keys excluded).
+ * Same payload as Export settings.
+ */
+async function exportSettingsToClipboard() {
+  const text = JSON.stringify(buildSettingsExportObject(), null, 2);
+  try {
+    await copyTextToClipboard(text);
+    showAppToast(t('settingsIo.exportClipboardDone'));
+  } catch (err) {
+    await showAppAlert(
+      t('settingsIo.exportClipboardFailed', {
+        error: err?.message || String(err),
+      }),
+      { title: t('menu.exportSettingsClipboard') }
+    );
+  }
 }
 
 /**

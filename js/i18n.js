@@ -144,11 +144,14 @@ const en = {
   'menu.configuration': 'Configuration',
   'menu.settings': 'Settings',
   'menu.exportSettings': 'Export settings',
+  'menu.exportSettingsClipboard': 'Export to Clipboard',
   'menu.importSettings': 'Import settings',
   'menu.importSettingsClipboard': 'Import from Clipboard',
   'menu.clearSession': 'Clear session',
 
   'settingsIo.exportDone': 'Settings exported',
+  'settingsIo.exportClipboardDone': 'Settings copied to clipboard',
+  'settingsIo.exportClipboardFailed': 'Could not copy settings: {error}',
   'settingsIo.importTitle': 'Import settings',
   'settingsIo.importUnavailable': 'Import settings is not available in this browser.',
   'settingsIo.importStarting': 'Importing “{name}”…',
@@ -409,11 +412,15 @@ const de = {
   'menu.configuration': 'Konfiguration',
   'menu.settings': 'Einstellungen',
   'menu.exportSettings': 'Einstellungen exportieren',
+  'menu.exportSettingsClipboard': 'In Zwischenablage exportieren',
   'menu.importSettings': 'Einstellungen importieren',
   'menu.importSettingsClipboard': 'Aus Zwischenablage importieren',
   'menu.clearSession': 'Sitzung löschen',
 
   'settingsIo.exportDone': 'Einstellungen exportiert',
+  'settingsIo.exportClipboardDone': 'Einstellungen in Zwischenablage kopiert',
+  'settingsIo.exportClipboardFailed':
+    'Einstellungen konnten nicht kopiert werden: {error}',
   'settingsIo.importTitle': 'Einstellungen importieren',
   'settingsIo.importUnavailable':
     'Einstellungen importieren ist in diesem Browser nicht verfügbar.',
@@ -678,11 +685,15 @@ const es = {
   'menu.configuration': 'Configuración',
   'menu.settings': 'Ajustes',
   'menu.exportSettings': 'Exportar ajustes',
+  'menu.exportSettingsClipboard': 'Exportar al portapapeles',
   'menu.importSettings': 'Importar ajustes',
   'menu.importSettingsClipboard': 'Importar desde el portapapeles',
   'menu.clearSession': 'Borrar sesión',
 
   'settingsIo.exportDone': 'Ajustes exportados',
+  'settingsIo.exportClipboardDone': 'Ajustes copiados al portapapeles',
+  'settingsIo.exportClipboardFailed':
+    'No se pudieron copiar los ajustes: {error}',
   'settingsIo.importTitle': 'Importar ajustes',
   'settingsIo.importUnavailable':
     'Importar ajustes no está disponible en este navegador.',
@@ -947,11 +958,15 @@ const fr = {
   'menu.configuration': 'Configuration',
   'menu.settings': 'Paramètres',
   'menu.exportSettings': 'Exporter les paramètres',
+  'menu.exportSettingsClipboard': 'Exporter vers le presse-papiers',
   'menu.importSettings': 'Importer les paramètres',
   'menu.importSettingsClipboard': 'Importer depuis le presse-papiers',
   'menu.clearSession': 'Effacer la session',
 
   'settingsIo.exportDone': 'Paramètres exportés',
+  'settingsIo.exportClipboardDone': 'Paramètres copiés dans le presse-papiers',
+  'settingsIo.exportClipboardFailed':
+    'Impossible de copier les paramètres : {error}',
   'settingsIo.importTitle': 'Importer les paramètres',
   'settingsIo.importUnavailable':
     'L’import des paramètres n’est pas disponible dans ce navigateur.',
