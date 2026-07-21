@@ -136,7 +136,6 @@ const els = {
   activeFilters: document.getElementById('active-filters'),
   dirtyBanner: document.getElementById('dirty-banner'),
   saveJsonBtn: document.getElementById('save-json-btn'),
-  viewJsonBtn: document.getElementById('view-json-btn'),
   libraryHistoryBtn: document.getElementById('library-history-btn'),
   githubDeploymentBtn: document.getElementById('github-deployment-btn'),
   historyBackdrop: document.getElementById('history-backdrop'),
@@ -583,11 +582,6 @@ els.menuDropdown.addEventListener('click', (e) => {
 els.saveJsonBtn?.addEventListener('click', () => {
   closeMenu();
   saveJsonToGithub();
-});
-
-els.viewJsonBtn?.addEventListener('click', () => {
-  closeMenu();
-  openGithubDataCommitsView();
 });
 
 els.libraryHistoryBtn?.addEventListener('click', () => {
@@ -4595,7 +4589,7 @@ async function loadData() {
     console.warn(
       'CONFIG.GITHUB_DATA_COMMITS_URL is missing or invalid; loading fallback path',
       CONFIG.DATA_PATH,
-      '(Save / Data Changes / Deployments will not work until fixed — see docs/README.md)'
+      '(Save / Restore / Deployments will not work until fixed — see docs/README.md)'
     );
   }
 

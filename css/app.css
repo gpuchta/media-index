@@ -496,7 +496,8 @@ input {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  min-width: 220px;
+  min-width: 260px;
+  white-space: nowrap;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
