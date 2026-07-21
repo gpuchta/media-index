@@ -172,7 +172,17 @@ const els = {
   exportSettingsBtn: document.getElementById('export-settings-btn'),
   importSettingsBtn: document.getElementById('import-settings-btn'),
   importSettingsFileInput: document.getElementById('import-settings-file-input'),
+  importSettingsClipboardBtn: document.getElementById(
+    'import-settings-clipboard-btn'
+  ),
   clearSessionBtn: document.getElementById('clear-session-btn'),
+  clipboardImportBackdrop: document.getElementById('clipboard-import-backdrop'),
+  clipboardImportText: document.getElementById('clipboard-import-text'),
+  clipboardImportConsole: document.getElementById('clipboard-import-console'),
+  clipboardImportClose: document.getElementById('clipboard-import-close'),
+  clipboardImportCancel: document.getElementById('clipboard-import-cancel'),
+  clipboardImportRun: document.getElementById('clipboard-import-run'),
+  clipboardImportPasteBtn: document.getElementById('clipboard-import-paste-btn'),
   settingsBackdrop: document.getElementById('settings-backdrop'),
   settingsForm: document.getElementById('settings-form'),
   settingsApiKey: document.getElementById('settings-tmdb-api-key'),
@@ -295,6 +305,7 @@ function isAnyModalOpen() {
     shown(els.tmdbBackdrop) ||
     shown(els.tmdbPosterBackdrop) ||
     shown(els.saveProgressBackdrop) ||
+    shown(els.clipboardImportBackdrop) ||
     shown(els.metaRefreshBackdrop) ||
     shown(els.historyBackdrop)
   );
@@ -869,6 +880,41 @@ els.importSettingsFileInput?.addEventListener('change', () => {
   if (file) void importSettingsFromFile(file);
 });
 
+els.importSettingsClipboardBtn?.addEventListener('click', () => {
+  closeMenu();
+  openClipboardImportDialog();
+});
+
+els.clipboardImportClose?.addEventListener('click', () => {
+  closeClipboardImportDialog();
+});
+els.clipboardImportCancel?.addEventListener('click', () => {
+  closeClipboardImportDialog();
+});
+els.clipboardImportBackdrop?.addEventListener('click', (e) => {
+  if (e.target === els.clipboardImportBackdrop) closeClipboardImportDialog();
+});
+els.clipboardImportRun?.addEventListener('click', () => {
+  runClipboardSettingsImport();
+});
+els.clipboardImportPasteBtn?.addEventListener('click', () => {
+  void pasteIntoClipboardImport();
+});
+
+// Escape closes clipboard-import dialog when open
+document.addEventListener(
+  'keydown',
+  (e) => {
+    if (e.key !== 'Escape') return;
+    if (isAppAlertOpen()) return;
+    if (!isClipboardImportOpen()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeClipboardImportDialog();
+  },
+  true
+);
+
 els.clearSessionBtn?.addEventListener('click', () => {
   closeMenu();
   void clearSession();
@@ -1301,13 +1347,105 @@ function reapplySettingsFromStorage() {
 }
 
 /**
+ * Shared settings import + console logging (file and clipboard).
+ * @param {string} text raw JSON text
+ * @param {{
+ *   sourceLabel: string,
+ *   log: (message: string, opts?: { level?: 'normal'|'error'|'warn'|'ok' }) => void,
+ * }} opts
+ * @returns {boolean} true if settings were applied (including partial defaults)
+ */
+function importSettingsFromText(text, { sourceLabel, log }) {
+  const name = String(sourceLabel || 'settings.json').trim() || 'settings.json';
+  log(t('settingsIo.importStarting', { name }));
+
+  const raw = String(text ?? '');
+  if (!raw.trim()) {
+    log(t('settingsIo.importEmpty'), { level: 'error' });
+    log(t('settingsIo.finished'));
+    return false;
+  }
+
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch (err) {
+    log(
+      t('settingsIo.importParseFailed', {
+        error: err?.message || String(err),
+      }),
+      { level: 'error' }
+    );
+    log(t('settingsIo.finished'));
+    return false;
+  }
+
+  const result = applySettingsImport(data);
+  if (!result.ok) {
+    log(result.error || t('settingsIo.importFailed'), { level: 'error' });
+    log(t('settingsIo.finished'));
+    return false;
+  }
+
+  let applied = 0;
+  let defaults = 0;
+  let invalid = 0;
+  let ignored = 0;
+  for (const line of result.lines) {
+    if (line.status === 'applied') {
+      applied += 1;
+      log(`${line.label}: ${t('settingsIo.statusApplied')}`);
+    } else if (line.status === 'default') {
+      defaults += 1;
+      log(`${line.label}: ${line.detail || t('settingsIo.statusDefault')}`);
+    } else if (line.status === 'invalid') {
+      invalid += 1;
+      log(`${line.label}: ${line.detail || t('settingsIo.statusInvalid')}`, {
+        level: 'warn',
+      });
+    } else if (line.status === 'ignored') {
+      ignored += 1;
+      log(`${line.key}: ${line.detail || t('settingsIo.statusIgnored')}`);
+    } else if (line.status === 'secret') {
+      log(`${line.label}: ${line.detail || t('settingsIo.statusSecret')}`, {
+        level: 'error',
+      });
+    }
+  }
+
+  if (result.secretsApplied.length) {
+    log(
+      t('settingsIo.secretWarning', {
+        keys: result.secretsApplied.join(', '),
+      }),
+      { level: 'error' }
+    );
+    log(t('settingsIo.secretClearHint'), { level: 'error' });
+  }
+
+  reapplySettingsFromStorage();
+
+  log(
+    t('settingsIo.importSummary', {
+      applied,
+      defaults,
+      invalid,
+      ignored,
+      secrets: result.secretsApplied.length,
+    }),
+    { level: 'ok' }
+  );
+  log(t('settingsIo.finished'));
+  return true;
+}
+
+/**
  * Parse and apply a settings.json file; log results in the progress console.
  * @param {File} file
  */
 async function importSettingsFromFile(file) {
   const name = file?.name || 'settings.json';
   openSaveProgressDialog({ title: t('settingsIo.importTitle') });
-  appendSaveLog(t('settingsIo.importStarting', { name }));
 
   let text;
   try {
@@ -1323,84 +1461,90 @@ async function importSettingsFromFile(file) {
     return;
   }
 
-  let data;
+  importSettingsFromText(text, {
+    sourceLabel: name,
+    log: appendSaveLog,
+  });
+}
+
+function isClipboardImportOpen() {
+  return Boolean(
+    els.clipboardImportBackdrop &&
+      !els.clipboardImportBackdrop.classList.contains('hidden')
+  );
+}
+
+function openClipboardImportDialog() {
+  if (!els.clipboardImportBackdrop) return;
+  if (els.clipboardImportText) els.clipboardImportText.value = '';
+  if (els.clipboardImportConsole) els.clipboardImportConsole.textContent = '';
+  resetDialogScroll(els.clipboardImportBackdrop);
+  els.clipboardImportBackdrop.classList.remove('hidden');
+  els.clipboardImportBackdrop.setAttribute('aria-hidden', 'false');
+  queueMicrotask(() => {
+    resetDialogScroll(els.clipboardImportBackdrop);
+    els.clipboardImportText?.focus();
+  });
+}
+
+function closeClipboardImportDialog() {
+  if (!els.clipboardImportBackdrop) return;
+  els.clipboardImportBackdrop.classList.add('hidden');
+  els.clipboardImportBackdrop.setAttribute('aria-hidden', 'true');
+  focusFilterWhenIdle();
+}
+
+/**
+ * Append a line to the clipboard-import dialog console.
+ * @param {string} message
+ * @param {{ level?: 'normal' | 'error' | 'warn' | 'ok' }} [opts]
+ */
+function appendClipboardImportLog(message, opts = {}) {
+  appendProgressLog(els.clipboardImportConsole, message, opts);
+}
+
+/**
+ * Read system clipboard into the paste field (best-effort).
+ */
+async function pasteIntoClipboardImport() {
+  const ta = els.clipboardImportText;
+  if (!ta) return;
   try {
-    data = JSON.parse(text);
+    if (!navigator.clipboard?.readText) {
+      appendClipboardImportLog(t('settingsIo.clipboardPasteUnsupported'), {
+        level: 'warn',
+      });
+      ta.focus();
+      return;
+    }
+    const text = await navigator.clipboard.readText();
+    ta.value = text;
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+    appendClipboardImportLog(
+      t('settingsIo.clipboardPasted', { n: text.length })
+    );
   } catch (err) {
-    appendSaveLog(
-      t('settingsIo.importParseFailed', {
+    appendClipboardImportLog(
+      t('settingsIo.clipboardPasteFailed', {
         error: err?.message || String(err),
       }),
       { level: 'error' }
     );
-    appendSaveLog(t('settingsIo.finished'));
-    return;
+    ta.focus();
   }
+}
 
-  const result = applySettingsImport(data);
-  if (!result.ok) {
-    appendSaveLog(result.error || t('settingsIo.importFailed'), {
-      level: 'error',
-    });
-    appendSaveLog(t('settingsIo.finished'));
-    return;
+/** Run settings import from the clipboard dialog textarea. */
+function runClipboardSettingsImport() {
+  const text = els.clipboardImportText?.value ?? '';
+  if (els.clipboardImportConsole) {
+    els.clipboardImportConsole.textContent = '';
   }
-
-  let applied = 0;
-  let defaults = 0;
-  let invalid = 0;
-  let ignored = 0;
-  for (const line of result.lines) {
-    if (line.status === 'applied') {
-      applied += 1;
-      appendSaveLog(`${line.label}: ${t('settingsIo.statusApplied')}`);
-    } else if (line.status === 'default') {
-      defaults += 1;
-      appendSaveLog(
-        `${line.label}: ${line.detail || t('settingsIo.statusDefault')}`
-      );
-    } else if (line.status === 'invalid') {
-      invalid += 1;
-      appendSaveLog(
-        `${line.label}: ${line.detail || t('settingsIo.statusInvalid')}`,
-        { level: 'warn' }
-      );
-    } else if (line.status === 'ignored') {
-      ignored += 1;
-      appendSaveLog(
-        `${line.key}: ${line.detail || t('settingsIo.statusIgnored')}`
-      );
-    } else if (line.status === 'secret') {
-      appendSaveLog(
-        `${line.label}: ${line.detail || t('settingsIo.statusSecret')}`,
-        { level: 'error' }
-      );
-    }
-  }
-
-  if (result.secretsApplied.length) {
-    appendSaveLog(
-      t('settingsIo.secretWarning', {
-        keys: result.secretsApplied.join(', '),
-      }),
-      { level: 'error' }
-    );
-    appendSaveLog(t('settingsIo.secretClearHint'), { level: 'error' });
-  }
-
-  reapplySettingsFromStorage();
-
-  appendSaveLog(
-    t('settingsIo.importSummary', {
-      applied,
-      defaults,
-      invalid,
-      ignored,
-      secrets: result.secretsApplied.length,
-    }),
-    { level: 'ok' }
-  );
-  appendSaveLog(t('settingsIo.finished'));
+  importSettingsFromText(text, {
+    sourceLabel: t('settingsIo.clipboardSource'),
+    log: appendClipboardImportLog,
+  });
 }
 
 /**
@@ -2270,12 +2414,14 @@ function isSaveProgressOpen() {
 }
 
 /**
- * Append a timestamped line to the progress console.
+ * Append a timestamped line to a progress console element.
+ * Shared by Save to GitHub, Import settings (file), and Import from Clipboard.
+ * @param {HTMLElement|null|undefined} consoleEl
  * @param {string} message
  * @param {{ level?: 'normal' | 'error' | 'warn' | 'ok' }} [opts]
  */
-function appendSaveLog(message, opts = {}) {
-  const el = els.saveProgressConsole;
+function appendProgressLog(consoleEl, message, opts = {}) {
+  const el = consoleEl;
   if (!el) return;
   const now = new Date();
   const pad = (n) => String(n).padStart(2, '0');
@@ -2294,6 +2440,15 @@ function appendSaveLog(message, opts = {}) {
   }
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
+}
+
+/**
+ * Append a timestamped line to the Save / file-import progress console.
+ * @param {string} message
+ * @param {{ level?: 'normal' | 'error' | 'warn' | 'ok' }} [opts]
+ */
+function appendSaveLog(message, opts = {}) {
+  appendProgressLog(els.saveProgressConsole, message, opts);
 }
 
 // —— Bulk metadata refresh (TMDB) ——

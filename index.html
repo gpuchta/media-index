@@ -157,6 +157,14 @@
                   <button type="button" role="menuitem" id="import-settings-btn" data-i18n="menu.importSettings">
                     Import settings
                   </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    id="import-settings-clipboard-btn"
+                    data-i18n="menu.importSettingsClipboard"
+                  >
+                    Import from Clipboard
+                  </button>
                   <button type="button" role="menuitem" id="clear-session-btn" data-i18n="menu.clearSession">
                     Clear session
                   </button>
@@ -919,6 +927,77 @@
         <div class="dialog-footer-actions">
           <button type="button" class="btn" id="save-progress-copy" data-i18n="common.copy">Copy</button>
           <button type="button" class="btn btn-primary" id="save-progress-ok" data-i18n="common.ok">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import settings from clipboard -->
+  <div
+    id="clipboard-import-backdrop"
+    class="dialog-backdrop hidden"
+    aria-hidden="true"
+  >
+    <div
+      class="dialog dialog-clipboard-import"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="clipboard-import-title"
+      id="clipboard-import-dialog"
+    >
+      <div class="dialog-header">
+        <h2 class="dialog-header-title" id="clipboard-import-title" data-i18n="settingsIo.clipboardTitle">
+          Import from Clipboard
+        </h2>
+        <button
+          type="button"
+          class="dialog-close"
+          id="clipboard-import-close"
+          aria-label="Close"
+          data-i18n-aria-label="common.close"
+        >
+          ×
+        </button>
+      </div>
+      <div class="dialog-body clipboard-import-body">
+        <section class="clipboard-import-section" aria-labelledby="clipboard-import-paste-label">
+          <div class="clipboard-import-section-head">
+            <label class="clipboard-import-label" id="clipboard-import-paste-label" for="clipboard-import-text" data-i18n="settingsIo.clipboardPasteLabel">
+              Paste settings JSON
+            </label>
+            <button type="button" class="btn btn-sm" id="clipboard-import-paste-btn" data-i18n="settingsIo.clipboardPasteBtn">
+              Paste
+            </button>
+          </div>
+          <textarea
+            id="clipboard-import-text"
+            class="form-textarea clipboard-import-textarea"
+            rows="8"
+            spellcheck="false"
+            autocomplete="off"
+            data-i18n-placeholder="settingsIo.clipboardPlaceholder"
+            placeholder="Paste settings.json content here…"
+          ></textarea>
+        </section>
+        <section class="clipboard-import-section" aria-labelledby="clipboard-import-log-label">
+          <label class="clipboard-import-label" id="clipboard-import-log-label" data-i18n="settingsIo.clipboardLogLabel">
+            Import log
+          </label>
+          <pre
+            id="clipboard-import-console"
+            class="progress-console clipboard-import-console"
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions"
+          ></pre>
+        </section>
+      </div>
+      <div class="dialog-footer">
+        <div class="dialog-footer-actions">
+          <button type="button" class="btn" id="clipboard-import-cancel" data-i18n="common.close">Close</button>
+          <button type="button" class="btn btn-primary" id="clipboard-import-run" data-i18n="settingsIo.clipboardImportBtn">
+            Import
+          </button>
         </div>
       </div>
     </div>

@@ -145,15 +145,28 @@ const en = {
   'menu.settings': 'Settings',
   'menu.exportSettings': 'Export settings',
   'menu.importSettings': 'Import settings',
+  'menu.importSettingsClipboard': 'Import from Clipboard',
   'menu.clearSession': 'Clear session',
 
   'settingsIo.exportDone': 'Settings exported',
   'settingsIo.importTitle': 'Import settings',
   'settingsIo.importUnavailable': 'Import settings is not available in this browser.',
   'settingsIo.importStarting': 'Importing “{name}”…',
+  'settingsIo.importEmpty': 'Nothing to import — paste or provide JSON content first.',
   'settingsIo.importReadFailed': 'Could not read file: {error}',
   'settingsIo.importParseFailed': 'Invalid JSON: {error}',
   'settingsIo.importFailed': 'Import failed',
+  'settingsIo.clipboardTitle': 'Import from Clipboard',
+  'settingsIo.clipboardPasteLabel': 'Paste settings JSON',
+  'settingsIo.clipboardLogLabel': 'Import log',
+  'settingsIo.clipboardPlaceholder': 'Paste settings.json content here…',
+  'settingsIo.clipboardPasteBtn': 'Paste',
+  'settingsIo.clipboardImportBtn': 'Import',
+  'settingsIo.clipboardSource': 'clipboard',
+  'settingsIo.clipboardPasteUnsupported':
+    'Clipboard API not available — paste into the field with ⌘V / Ctrl+V.',
+  'settingsIo.clipboardPasteFailed': 'Could not read clipboard: {error}',
+  'settingsIo.clipboardPasted': 'Pasted {n} character(s) from the system clipboard.',
   'settingsIo.statusApplied': 'applied',
   'settingsIo.statusDefault': 'missing → default',
   'settingsIo.statusInvalid': 'invalid → default',
@@ -397,6 +410,7 @@ const de = {
   'menu.settings': 'Einstellungen',
   'menu.exportSettings': 'Einstellungen exportieren',
   'menu.importSettings': 'Einstellungen importieren',
+  'menu.importSettingsClipboard': 'Aus Zwischenablage importieren',
   'menu.clearSession': 'Sitzung löschen',
 
   'settingsIo.exportDone': 'Einstellungen exportiert',
@@ -404,9 +418,24 @@ const de = {
   'settingsIo.importUnavailable':
     'Einstellungen importieren ist in diesem Browser nicht verfügbar.',
   'settingsIo.importStarting': 'Importiere „{name}“…',
+  'settingsIo.importEmpty':
+    'Nichts zu importieren — zuerst JSON-Inhalt einfügen.',
   'settingsIo.importReadFailed': 'Datei konnte nicht gelesen werden: {error}',
   'settingsIo.importParseFailed': 'Ungültiges JSON: {error}',
   'settingsIo.importFailed': 'Import fehlgeschlagen',
+  'settingsIo.clipboardTitle': 'Aus Zwischenablage importieren',
+  'settingsIo.clipboardPasteLabel': 'Einstellungen-JSON einfügen',
+  'settingsIo.clipboardLogLabel': 'Importprotokoll',
+  'settingsIo.clipboardPlaceholder': 'Inhalt von settings.json hier einfügen…',
+  'settingsIo.clipboardPasteBtn': 'Einfügen',
+  'settingsIo.clipboardImportBtn': 'Importieren',
+  'settingsIo.clipboardSource': 'Zwischenablage',
+  'settingsIo.clipboardPasteUnsupported':
+    'Zwischenablage-API nicht verfügbar — mit ⌘V / Strg+V ins Feld einfügen.',
+  'settingsIo.clipboardPasteFailed':
+    'Zwischenablage konnte nicht gelesen werden: {error}',
+  'settingsIo.clipboardPasted':
+    '{n} Zeichen aus der Systemzwischenablage eingefügt.',
   'settingsIo.statusApplied': 'angewendet',
   'settingsIo.statusDefault': 'fehlend → Standard',
   'settingsIo.statusInvalid': 'ungültig → Standard',
@@ -650,6 +679,7 @@ const es = {
   'menu.settings': 'Ajustes',
   'menu.exportSettings': 'Exportar ajustes',
   'menu.importSettings': 'Importar ajustes',
+  'menu.importSettingsClipboard': 'Importar desde el portapapeles',
   'menu.clearSession': 'Borrar sesión',
 
   'settingsIo.exportDone': 'Ajustes exportados',
@@ -657,9 +687,24 @@ const es = {
   'settingsIo.importUnavailable':
     'Importar ajustes no está disponible en este navegador.',
   'settingsIo.importStarting': 'Importando “{name}”…',
+  'settingsIo.importEmpty':
+    'Nada que importar — pegue o proporcione contenido JSON primero.',
   'settingsIo.importReadFailed': 'No se pudo leer el archivo: {error}',
   'settingsIo.importParseFailed': 'JSON no válido: {error}',
   'settingsIo.importFailed': 'Error al importar',
+  'settingsIo.clipboardTitle': 'Importar desde el portapapeles',
+  'settingsIo.clipboardPasteLabel': 'Pegar JSON de ajustes',
+  'settingsIo.clipboardLogLabel': 'Registro de importación',
+  'settingsIo.clipboardPlaceholder': 'Pegue aquí el contenido de settings.json…',
+  'settingsIo.clipboardPasteBtn': 'Pegar',
+  'settingsIo.clipboardImportBtn': 'Importar',
+  'settingsIo.clipboardSource': 'portapapeles',
+  'settingsIo.clipboardPasteUnsupported':
+    'API del portapapeles no disponible — pegue en el campo con ⌘V / Ctrl+V.',
+  'settingsIo.clipboardPasteFailed':
+    'No se pudo leer el portapapeles: {error}',
+  'settingsIo.clipboardPasted':
+    'Se pegaron {n} carácter(es) del portapapeles del sistema.',
   'settingsIo.statusApplied': 'aplicado',
   'settingsIo.statusDefault': 'faltante → valor predeterminado',
   'settingsIo.statusInvalid': 'no válido → valor predeterminado',
@@ -903,6 +948,7 @@ const fr = {
   'menu.settings': 'Paramètres',
   'menu.exportSettings': 'Exporter les paramètres',
   'menu.importSettings': 'Importer les paramètres',
+  'menu.importSettingsClipboard': 'Importer depuis le presse-papiers',
   'menu.clearSession': 'Effacer la session',
 
   'settingsIo.exportDone': 'Paramètres exportés',
@@ -910,9 +956,25 @@ const fr = {
   'settingsIo.importUnavailable':
     'L’import des paramètres n’est pas disponible dans ce navigateur.',
   'settingsIo.importStarting': 'Import de « {name} »…',
+  'settingsIo.importEmpty':
+    'Rien à importer — collez d’abord du contenu JSON.',
   'settingsIo.importReadFailed': 'Impossible de lire le fichier : {error}',
   'settingsIo.importParseFailed': 'JSON invalide : {error}',
   'settingsIo.importFailed': 'Échec de l’import',
+  'settingsIo.clipboardTitle': 'Importer depuis le presse-papiers',
+  'settingsIo.clipboardPasteLabel': 'Coller le JSON des paramètres',
+  'settingsIo.clipboardLogLabel': 'Journal d’import',
+  'settingsIo.clipboardPlaceholder':
+    'Collez ici le contenu de settings.json…',
+  'settingsIo.clipboardPasteBtn': 'Coller',
+  'settingsIo.clipboardImportBtn': 'Importer',
+  'settingsIo.clipboardSource': 'presse-papiers',
+  'settingsIo.clipboardPasteUnsupported':
+    'API presse-papiers indisponible — collez dans le champ avec ⌘V / Ctrl+V.',
+  'settingsIo.clipboardPasteFailed':
+    'Impossible de lire le presse-papiers : {error}',
+  'settingsIo.clipboardPasted':
+    '{n} caractère(s) collés depuis le presse-papiers système.',
   'settingsIo.statusApplied': 'appliqué',
   'settingsIo.statusDefault': 'manquant → valeur par défaut',
   'settingsIo.statusInvalid': 'invalide → valeur par défaut',
