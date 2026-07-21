@@ -1567,6 +1567,9 @@ function createHistoryItem(c) {
   item.className = 'history-item';
   item.setAttribute('role', 'listitem');
 
+  const top = document.createElement('div');
+  top.className = 'history-item-top';
+
   const main = document.createElement('div');
   main.className = 'history-item-main';
 
@@ -1585,8 +1588,19 @@ function createHistoryItem(c) {
   msg.textContent = headline;
   main.appendChild(msg);
 
+  const meta = document.createElement('p');
+  meta.className = 'history-item-meta';
+  const who = c.authorLogin || c.authorName || 'unknown';
+  meta.innerHTML =
+    `<span class="history-item-sha">${escapeHtml(c.shortSha || c.sha.slice(0, 7))}</span>` +
+    ` · ${escapeHtml(formatHistoryDate(c.date))}` +
+    ` · ${escapeHtml(who)}`;
+  main.appendChild(meta);
+
+  /** @type {HTMLPreElement|null} */
+  let details = null;
   if (hasDetails) {
-    const details = document.createElement('pre');
+    details = document.createElement('pre');
     details.className = 'history-item-details';
     details.hidden = true;
     details.textContent = body;
@@ -1605,17 +1619,8 @@ function createHistoryItem(c) {
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
 
-    main.append(toggle, details);
+    main.appendChild(toggle);
   }
-
-  const meta = document.createElement('p');
-  meta.className = 'history-item-meta';
-  const who = c.authorLogin || c.authorName || 'unknown';
-  meta.innerHTML =
-    `<span class="history-item-sha">${escapeHtml(c.shortSha || c.sha.slice(0, 7))}</span>` +
-    ` · ${escapeHtml(formatHistoryDate(c.date))}` +
-    ` · ${escapeHtml(who)}`;
-  main.appendChild(meta);
 
   const actions = document.createElement('div');
   actions.className = 'history-item-actions';
@@ -1636,8 +1641,11 @@ function createHistoryItem(c) {
   restore.textContent = t('history.restore');
   restore.title = t('history.restoreTitle');
 
-  actions.append(dl, restore);
-  item.append(main, actions);
+  actions.append(restore, dl);
+  top.append(main, actions);
+  item.appendChild(top);
+  // Full-width details under headline + stacked action buttons
+  if (details) item.appendChild(details);
   return item;
 }
 

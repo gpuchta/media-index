@@ -1539,14 +1539,22 @@ input {
 
 .history-item {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.65rem 0.85rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: rgba(0, 0, 0, 0.22);
+}
+
+.history-item-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem 0.85rem;
+  min-width: 0;
 }
 
 .history-item-main {
@@ -1594,7 +1602,11 @@ input {
 }
 
 .history-item-details {
-  margin: 0.15rem 0 0;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   padding: 0.5rem 0.6rem;
   max-height: 12rem;
   overflow: auto;
@@ -1628,15 +1640,21 @@ input {
 
 .history-item-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex-wrap: nowrap;
   gap: 0.4rem;
   flex: 0 0 auto;
-  align-items: center;
+  align-items: stretch;
+  min-width: 6.5rem;
 }
 
 .history-item-actions .btn {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   padding: 0.35rem 0.7rem;
   font-size: 0.82rem;
+  text-align: center;
 }
 
 .history-empty,
