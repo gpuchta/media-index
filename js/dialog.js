@@ -550,7 +550,7 @@ export class MovieDialog {
         </div>
         ${this.pillsRow('Genre', m.genres, 'genre')}
         ${this.pillsRow('Director', m.directors, 'director')}
-        ${this.pillsRow('Actors', m.actors, 'actor')}
+        ${this.pillsRow('Cast', m.actors, 'actor')}
         ${this.pillsRow('Companies', m.production_companies, 'company')}
         ${this.pillsRow('Collection', m.collection, 'collection')}
         <div class="field-row" id="field-keywords">
