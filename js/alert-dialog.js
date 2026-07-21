@@ -4,6 +4,7 @@
  */
 
 import { isPrimaryActionEnter } from './utils.js';
+import { t } from './i18n.js';
 
 /** @type {null | ((value: boolean | void) => void)} */
 let pendingResolve = null;
@@ -77,14 +78,15 @@ function openDialog(opts) {
   }
 
   mode = opts.mode;
-  els.title.textContent = opts.title || (opts.mode === 'confirm' ? 'Confirm' : 'Notice');
+  els.title.textContent =
+    opts.title || (opts.mode === 'confirm' ? t('common.confirm') : t('common.notice'));
   els.message.textContent = String(opts.message || '');
-  els.btnOk.textContent = opts.okLabel || 'OK';
+  els.btnOk.textContent = opts.okLabel || t('common.ok');
 
   if (els.btnCancel) {
     if (opts.mode === 'confirm') {
       els.btnCancel.hidden = false;
-      els.btnCancel.textContent = opts.cancelLabel || 'Cancel';
+      els.btnCancel.textContent = opts.cancelLabel || t('common.cancel');
     } else {
       els.btnCancel.hidden = true;
     }
@@ -159,8 +161,8 @@ export function showAppAlert(message, options = {}) {
   return openDialog({
     mode: 'alert',
     message,
-    title: options.title || 'Notice',
-    okLabel: options.okLabel || 'OK',
+    title: options.title || t('common.notice'),
+    okLabel: options.okLabel || t('common.ok'),
   }).then(() => undefined);
 }
 
@@ -175,9 +177,9 @@ export function showAppConfirm(message, options = {}) {
   return openDialog({
     mode: 'confirm',
     message,
-    title: options.title || 'Confirm',
-    okLabel: options.okLabel || 'OK',
-    cancelLabel: options.cancelLabel || 'Cancel',
+    title: options.title || t('common.confirm'),
+    okLabel: options.okLabel || t('common.ok'),
+    cancelLabel: options.cancelLabel || t('common.cancel'),
   }).then((v) => Boolean(v));
 }
 

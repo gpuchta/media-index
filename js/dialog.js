@@ -1,6 +1,7 @@
 import { CONFIG } from './config.js';
 import { isAppAlertOpen, showAppConfirm } from './alert-dialog.js';
 import { attachPosterHotCorner, posterZoomUrl } from './poster-zoom.js';
+import { t } from './i18n.js';
 import {
   posterUrl,
   formatRuntime,
@@ -376,10 +377,10 @@ export class MovieDialog {
 
   async handleDelete() {
     if (!this.movie || this._metaUpdating) return;
-    const ok = await showAppConfirm('Delete this movie?', {
-      title: 'Delete Movie',
-      okLabel: 'Delete',
-      cancelLabel: 'Cancel',
+    const ok = await showAppConfirm(t('dialog.deleteConfirm'), {
+      title: t('dialog.deleteTitle'),
+      okLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
     });
     if (!ok) return;
     const m = this.movie;
@@ -418,7 +419,9 @@ export class MovieDialog {
     this._metaUpdating = !!busy;
     if (this.btnUpdateMeta) {
       this.btnUpdateMeta.disabled = busy || !this.movie?.tmdb_id;
-      this.btnUpdateMeta.textContent = busy ? 'Updating…' : 'Update';
+      this.btnUpdateMeta.textContent = busy
+        ? t('refresh.refreshingEllipsis')
+        : t('dialog.update');
     }
     if (this.btnDelete) this.btnDelete.disabled = busy;
     if (this.btnTmdb) this.btnTmdb.disabled = busy || !this.movie?.tmdb_id;
@@ -493,8 +496,22 @@ export class MovieDialog {
     if (this.btnUpdateMeta) {
       this.btnUpdateMeta.hidden = !m.tmdb_id;
       this.btnUpdateMeta.disabled = this._metaUpdating || !m.tmdb_id;
-      if (!this._metaUpdating) this.btnUpdateMeta.textContent = 'Update';
+      if (!this._metaUpdating) this.btnUpdateMeta.textContent = t('dialog.update');
     }
+    if (this.btnDelete) this.btnDelete.textContent = t('common.delete');
+    if (this.btnCancel) this.btnCancel.textContent = t('common.cancel');
+    if (this.btnSave) this.btnSave.textContent = t('common.save');
+    if (this.btnTmdb) this.btnTmdb.textContent = t('dialog.tmdb');
+    const headerTitle = document.getElementById('movie-dialog-title');
+    if (headerTitle) headerTitle.textContent = t('dialog.movieDetails');
+
+    const titleForAria = m.title || t('dialog.untitled');
+    const voteAria = t('dialog.voteAria', { avg: avgLabel, count: voteCount });
+    const voteTitle = t('dialog.voteTitle', { avg: avgLabel, count: voteCount });
+    const voteLabel = t('dialog.voteLabel', {
+      avg: avgLabel,
+      count: String(voteCount),
+    });
 
     this.body.innerHTML = `
       <div class="dialog-fields">
@@ -504,65 +521,65 @@ export class MovieDialog {
               type="button"
               class="dialog-poster${url ? '' : ' dialog-poster-empty'}"
               style="${url ? `background-image:url('${escapeHtml(url)}')` : ''}"
-              aria-label="Choose alternate poster for ${escapeHtml(m.title || 'movie')}"
+              aria-label="${escapeHtml(t('dialog.choosePoster', { title: titleForAria }))}"
               id="dialog-poster-btn"
             ></button>
           </div>
           <div class="field-values field-values-hero">
-            <h2 class="dialog-title">${escapeHtml(m.title || 'Untitled')}</h2>
-            <p class="dialog-overview">${escapeHtml(m.overview || 'No description available.')}</p>
+            <h2 class="dialog-title">${escapeHtml(m.title || t('dialog.untitled'))}</h2>
+            <p class="dialog-overview">${escapeHtml(m.overview || t('dialog.noDescription'))}</p>
           </div>
         </div>
         <div class="field-row">
-          <span class="field-label">Runtime</span>
+          <span class="field-label">${escapeHtml(t('dialog.runtime'))}</span>
           <div class="field-values">
             <span class="pill">${escapeHtml(formatRuntime(m.runtime))}</span>
           </div>
         </div>
         <div class="field-row">
-          <span class="field-label">Vote</span>
+          <span class="field-label">${escapeHtml(t('dialog.vote'))}</span>
           <div class="field-values">
             <span
               class="vote-bar"
               role="img"
-              aria-label="Vote average ${avgLabel} out of 10 from ${voteCount} votes"
-              title="${avgLabel} out of 10 · ${voteCount} votes"
+              aria-label="${escapeHtml(voteAria)}"
+              title="${escapeHtml(voteTitle)}"
             >
               <span class="vote-track">
                 <!-- Full red→green gradient = 0–10; gray covers score…10 -->
                 <span class="vote-remainder" style="left:${pct}%"></span>
-                <span class="vote-label-text">Vote Average ${avgLabel} out of 10 (${escapeHtml(String(voteCount))} votes)</span>
+                <span class="vote-label-text">${escapeHtml(voteLabel)}</span>
               </span>
             </span>
           </div>
         </div>
         <div class="field-row" id="field-location">
-          <span class="field-label">Location</span>
+          <span class="field-label">${escapeHtml(t('dialog.location'))}</span>
           <div class="field-values">
             <button type="button" class="pill editable" data-type="location" data-edit="location">${escapeHtml(d.location || '—')}</button>
           </div>
         </div>
         <div class="field-row">
-          <span class="field-label">Released</span>
+          <span class="field-label">${escapeHtml(t('dialog.released'))}</span>
           <div class="field-values">
             <span class="pill" data-type="year">${escapeHtml(m.released || m.year || '—')}</span>
           </div>
         </div>
-        ${this.pillsRow('Genre', m.genres, 'genre')}
-        ${this.pillsRow('Director', m.directors, 'director')}
-        ${this.pillsRow('Cast', m.actors, 'actor')}
-        ${this.pillsRow('Companies', m.production_companies, 'company')}
-        ${this.pillsRow('Collection', m.collection, 'collection')}
+        ${this.pillsRow(t('dialog.genre'), m.genres, 'genre')}
+        ${this.pillsRow(t('dialog.director'), m.directors, 'director')}
+        ${this.pillsRow(t('dialog.cast'), m.actors, 'actor')}
+        ${this.pillsRow(t('dialog.companies'), m.production_companies, 'company')}
+        ${this.pillsRow(t('dialog.collection'), m.collection, 'collection')}
         <div class="field-row" id="field-keywords">
-          <span class="field-label">Keywords</span>
+          <span class="field-label">${escapeHtml(t('dialog.keywords'))}</span>
           <div class="field-values field-values-keywords">
             <span id="keyword-pills"></span>
             <input
               type="text"
               class="keyword-add"
               id="keyword-add"
-              placeholder="Add keyword…"
-              aria-label="Add keyword"
+              placeholder="${escapeHtml(t('dialog.addKeyword'))}"
+              aria-label="${escapeHtml(t('dialog.addKeyword'))}"
             />
           </div>
         </div>
@@ -574,7 +591,7 @@ export class MovieDialog {
             aria-expanded="false"
             aria-controls="json-panel"
           >
-            <span>JSON</span>
+            <span>${escapeHtml(t('dialog.json'))}</span>
             <span class="json-expand-icon" aria-hidden="true">▸</span>
           </button>
           <div class="field-values field-values-json">

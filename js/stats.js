@@ -2,6 +2,8 @@
  * Library statistics: frequency rankings for filterable facets.
  */
 
+import { t } from './i18n.js';
+
 /**
  * @param {object[]} movies
  * @param {(movie: object) => string[]} getNames
@@ -46,11 +48,36 @@ export function buildLibraryStats(movies) {
   const companies = countNameFrequencies(movies, (m) => asList(m.production_companies));
 
   return {
-    directors: { filterType: 'director', label: 'Directors', rows: directors },
-    actors: { filterType: 'actor', label: 'Actors', rows: actors },
-    genres: { filterType: 'genre', label: 'Genres', rows: genres },
-    collections: { filterType: 'collection', label: 'Collections', rows: collections },
-    companies: { filterType: 'company', label: 'Companies', rows: companies },
+    directors: {
+      filterType: 'director',
+      labelKey: 'stats.directors',
+      label: t('stats.directors'),
+      rows: directors,
+    },
+    actors: {
+      filterType: 'actor',
+      labelKey: 'stats.actors',
+      label: t('stats.actors'),
+      rows: actors,
+    },
+    genres: {
+      filterType: 'genre',
+      labelKey: 'stats.genres',
+      label: t('stats.genres'),
+      rows: genres,
+    },
+    collections: {
+      filterType: 'collection',
+      labelKey: 'stats.collections',
+      label: t('stats.collections'),
+      rows: collections,
+    },
+    companies: {
+      filterType: 'company',
+      labelKey: 'stats.companies',
+      label: t('stats.companies'),
+      rows: companies,
+    },
   };
 }
 
@@ -58,13 +85,14 @@ export function buildLibraryStats(movies) {
  * Section heading:
  * - "Top 10 Companies of 47" when truncated
  * - "12 Companies" when ≤ topN or expanded (full list)
- * @param {{ label: string, rows: { name: string, count: number }[] }} section
+ * @param {{ label: string, labelKey?: string, rows: { name: string, count: number }[] }} section
  * @param {number} topN
  * @param {boolean} expanded
  */
 export function statsSectionTitle(section, topN = 10, expanded = false) {
   const n = section.rows.length;
-  if (n === 0) return `No ${section.label}`;
-  if (expanded || n <= topN) return `${n} ${section.label}`;
-  return `Top ${topN} ${section.label} of ${n}`;
+  const label = section.labelKey ? t(section.labelKey) : section.label;
+  if (n === 0) return t('stats.none', { label });
+  if (expanded || n <= topN) return t('stats.countLabel', { n, label });
+  return t('stats.topOf', { n: topN, label, total: n });
 }

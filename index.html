@@ -24,6 +24,7 @@
             aria-haspopup="true"
             aria-expanded="false"
             aria-label="Menu"
+            data-i18n-aria-label="common.menu"
           >
             <span class="dirty-dot" aria-hidden="true"></span>
             <span class="hamburger-lines" aria-hidden="true">
@@ -39,7 +40,7 @@
                 aria-expanded="true"
                 aria-controls="menu-panel-collection"
               >
-                <span class="menu-accordion-label">Collection</span>
+                <span class="menu-accordion-label" data-i18n="menu.collection">Collection</span>
                 <span class="menu-accordion-chevron" aria-hidden="true"></span>
               </button>
               <div class="menu-accordion-panel" id="menu-panel-collection" role="region" aria-labelledby="menu-trigger-collection">
@@ -50,14 +51,14 @@
                     id="tmdb-search-btn"
                     aria-keyshortcuts="Control+K Meta+K"
                   >
-                    <span class="menu-item-label">Add/Update</span>
+                    <span class="menu-item-label" data-i18n="menu.addUpdate">Add/Update</span>
                     <kbd class="menu-shortcut" id="tmdb-search-shortcut-hint" aria-hidden="true">⌘K</kbd>
                   </button>
-                  <button type="button" role="menuitem" id="meta-refresh-btn">Refresh (TMDB)</button>
-                  <button type="button" role="menuitem" id="library-history-btn">Restore (GitHub)</button>
-                  <button type="button" role="menuitem" id="import-btn">Import</button>
-                  <button type="button" role="menuitem" id="stats-btn">Statistics</button>
-                  <button type="button" role="menuitem" id="empty-collection-btn">Clear All</button>
+                  <button type="button" role="menuitem" id="meta-refresh-btn" data-i18n="menu.refreshTmdb">Refresh (TMDB)</button>
+                  <button type="button" role="menuitem" id="library-history-btn" data-i18n="menu.restoreGithub">Restore (GitHub)</button>
+                  <button type="button" role="menuitem" id="import-btn" data-i18n="menu.import">Import</button>
+                  <button type="button" role="menuitem" id="stats-btn" data-i18n="menu.statistics">Statistics</button>
+                  <button type="button" role="menuitem" id="empty-collection-btn" data-i18n="menu.clearAll">Clear All</button>
                 </div>
               </div>
             </div>
@@ -69,15 +70,15 @@
                 aria-expanded="false"
                 aria-controls="menu-panel-sort"
               >
-                <span class="menu-accordion-label">Sort</span>
+                <span class="menu-accordion-label" data-i18n="menu.sort">Sort</span>
                 <span class="menu-accordion-chevron" aria-hidden="true"></span>
               </button>
               <div class="menu-accordion-panel" id="menu-panel-sort" role="region" aria-labelledby="menu-trigger-sort">
                 <div class="menu-accordion-panel-inner">
-                  <button type="button" role="menuitem" data-sort="title-asc">Title (asc)</button>
-                  <button type="button" role="menuitem" data-sort="title-desc">Title (desc)</button>
-                  <button type="button" role="menuitem" data-sort="released-asc">Release Date (asc)</button>
-                  <button type="button" role="menuitem" data-sort="released-desc">Release Date (desc)</button>
+                  <button type="button" role="menuitem" data-sort="title-asc" data-i18n="menu.sortTitleAsc">Title (asc)</button>
+                  <button type="button" role="menuitem" data-sort="title-desc" data-i18n="menu.sortTitleDesc">Title (desc)</button>
+                  <button type="button" role="menuitem" data-sort="released-asc" data-i18n="menu.sortReleasedAsc">Release Date (asc)</button>
+                  <button type="button" role="menuitem" data-sort="released-desc" data-i18n="menu.sortReleasedDesc">Release Date (desc)</button>
                 </div>
               </div>
             </div>
@@ -89,7 +90,7 @@
                 aria-expanded="false"
                 aria-controls="menu-panel-actions"
               >
-                <span class="menu-accordion-label">Save</span>
+                <span class="menu-accordion-label" data-i18n="menu.save">Save</span>
                 <span class="menu-accordion-chevron" aria-hidden="true"></span>
               </button>
               <div class="menu-accordion-panel" id="menu-panel-actions" role="region" aria-labelledby="menu-trigger-actions">
@@ -100,12 +101,12 @@
                     id="save-json-btn"
                     aria-keyshortcuts="Control+S"
                   >
-                    <span class="menu-item-label">Save (GitHub)</span>
+                    <span class="menu-item-label" data-i18n="menu.saveGithub">Save (GitHub)</span>
                     <kbd class="menu-shortcut" id="save-json-shortcut-hint" aria-hidden="true"
                       >Ctrl+S</kbd
                     >
                   </button>
-                  <button type="button" role="menuitem" id="export-btn">Export</button>
+                  <button type="button" role="menuitem" id="export-btn" data-i18n="menu.export">Export</button>
                 </div>
               </div>
             </div>
@@ -117,12 +118,12 @@
                 aria-expanded="false"
                 aria-controls="menu-panel-github"
               >
-                <span class="menu-accordion-label">Releases</span>
+                <span class="menu-accordion-label" data-i18n="menu.releases">Releases</span>
                 <span class="menu-accordion-chevron" aria-hidden="true"></span>
               </button>
               <div class="menu-accordion-panel" id="menu-panel-github" role="region" aria-labelledby="menu-trigger-github">
                 <div class="menu-accordion-panel-inner">
-                  <button type="button" role="menuitem" id="github-deployment-btn">Deployments (GitHub)</button>
+                  <button type="button" role="menuitem" id="github-deployment-btn" data-i18n="menu.deployments">Deployments (GitHub)</button>
                 </div>
               </div>
             </div>
@@ -134,7 +135,7 @@
                 aria-expanded="false"
                 aria-controls="menu-panel-configuration"
               >
-                <span class="menu-accordion-label">Configuration</span>
+                <span class="menu-accordion-label" data-i18n="menu.configuration">Configuration</span>
                 <span class="menu-accordion-chevron" aria-hidden="true"></span>
               </button>
               <div class="menu-accordion-panel" id="menu-panel-configuration" role="region" aria-labelledby="menu-trigger-configuration">
@@ -145,7 +146,7 @@
                     id="settings-btn"
                     aria-keyshortcuts="Control+Period Meta+Period"
                   >
-                    <span class="menu-item-label">Settings</span>
+                    <span class="menu-item-label" data-i18n="menu.settings">Settings</span>
                     <kbd class="menu-shortcut" id="settings-shortcut-hint" aria-hidden="true"
                       >⌘.</kbd
                     >
@@ -157,7 +158,7 @@
         </div>
 
         <div class="search-wrap">
-          <label class="visually-hidden" for="filter-input" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">
+          <label class="visually-hidden" for="filter-input" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)" data-i18n="header.filterLabel">
             Filter movies
           </label>
           <input
@@ -166,6 +167,7 @@
             autocomplete="off"
             spellcheck="false"
             placeholder="Filter… (−name or −type:value = NOT)"
+            data-i18n-placeholder="header.filterPlaceholder"
             aria-autocomplete="list"
             aria-controls="typeahead"
             aria-expanded="false"
@@ -175,23 +177,23 @@
 
         <div class="movie-count" id="movie-count" aria-live="polite">—</div>
       </div>
-      <div class="dirty-banner" id="dirty-banner">Unsaved changes — Save or export collection</div>
-      <div class="header-row filters-row" id="active-filters" aria-label="Active filters"></div>
+      <div class="dirty-banner" id="dirty-banner" data-i18n="header.dirtyBanner">Unsaved changes — Save or export collection</div>
+      <div class="header-row filters-row" id="active-filters" aria-label="Active filters" data-i18n-aria-label="header.activeFilters"></div>
     </header>
 
     <main id="main">
       <div id="status-loading" class="status-panel">
         <div>
           <div class="spinner" aria-hidden="true"></div>
-          <strong>Loading library…</strong>
+          <strong data-i18n="status.loading">Loading library…</strong>
           <span id="loading-path"></span>
         </div>
       </div>
       <div id="status-error" class="status-panel error hidden">
         <div>
-          <strong>Could not load movie data</strong>
+          <strong data-i18n="status.loadError">Could not load movie data</strong>
           <div id="error-detail"></div>
-          <p style="margin-top:0.75rem;font-size:0.9rem">
+          <p style="margin-top:0.75rem;font-size:0.9rem" data-i18n-html="status.fileProtocolHint">
             If you opened <code>index.html</code> via <code>file://</code>, use a local server:<br />
             <code>python3 -m http.server 8080</code>
           </p>
@@ -199,21 +201,21 @@
       </div>
       <div id="status-empty" class="status-panel hidden">
         <div>
-          <strong>No movies match these filters</strong>
-          <span>Try removing a filter or changing the criteria.</span>
+          <strong data-i18n="status.emptyFilters">No movies match these filters</strong>
+          <span data-i18n="status.emptyFiltersHint">Try removing a filter or changing the criteria.</span>
         </div>
       </div>
       <div id="status-new-install" class="status-panel hidden">
         <div>
-          <strong>New Installation</strong>
-          <span>Create your media index by searching and adding movies.</span>
-          <span>When finished, perform an Export of the current data.</span>
-          <span>Remember to add your GitHub and TMDB api keys in settings.</span>
+          <strong data-i18n="status.newInstall">New Installation</strong>
+          <span data-i18n="status.newInstall1">Create your media index by searching and adding movies.</span>
+          <span data-i18n="status.newInstall2">When finished, perform an Export of the current data.</span>
+          <span data-i18n="status.newInstall3">Remember to add your GitHub and TMDB api keys in settings.</span>
         </div>
       </div>
       <div id="grid-viewport">
         <div id="grid-spacer"></div>
-        <div id="grid-window" role="list" aria-label="Movie posters"></div>
+        <div id="grid-window" role="list" aria-label="Movie posters" data-i18n-aria-label="header.moviePosters"></div>
       </div>
     </main>
   </div>
@@ -227,13 +229,14 @@
       id="movie-dialog"
     >
       <div class="dialog-header dialog-header-movie">
-        <h2 class="dialog-header-title" id="movie-dialog-title">Movie Details</h2>
+        <h2 class="dialog-header-title" id="movie-dialog-title" data-i18n="dialog.movieDetails">Movie Details</h2>
         <div class="dialog-header-nav" role="group" aria-label="Browse movies">
           <button
             type="button"
             class="dialog-nav-btn"
             id="dialog-prev"
             aria-label="Previous movie"
+            data-i18n-aria-label="dialog.prev"
           >
             ‹
           </button>
@@ -242,6 +245,7 @@
             class="dialog-nav-btn"
             id="dialog-next"
             aria-label="Next movie"
+            data-i18n-aria-label="dialog.next"
           >
             ›
           </button>
@@ -251,20 +255,21 @@
           class="dialog-close"
           id="dialog-close"
           aria-label="Discard changes and close"
+          data-i18n-aria-label="dialog.discardClose"
         >
           ×
         </button>
       </div>
       <div class="dialog-body" id="dialog-body"></div>
       <div class="dialog-footer">
-        <button type="button" class="btn btn-danger" id="dialog-delete">Delete</button>
+        <button type="button" class="btn btn-danger" id="dialog-delete" data-i18n="common.delete">Delete</button>
         <div class="dialog-footer-actions">
-          <button type="button" class="btn" id="dialog-update-meta" title="Re-fetch metadata from TMDB">
+          <button type="button" class="btn" id="dialog-update-meta" title="Re-fetch metadata from TMDB" data-i18n="dialog.update">
             Update
           </button>
-          <button type="button" class="btn" id="dialog-tmdb">TMDB</button>
-          <button type="button" class="btn" id="dialog-cancel">Cancel</button>
-          <button type="button" class="btn btn-primary" id="dialog-save">Save</button>
+          <button type="button" class="btn" id="dialog-tmdb" data-i18n="dialog.tmdb">TMDB</button>
+          <button type="button" class="btn" id="dialog-cancel" data-i18n="common.cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="dialog-save" data-i18n="common.save">Save</button>
         </div>
       </div>
     </div>
@@ -280,56 +285,55 @@
       id="settings-dialog"
     >
       <div class="dialog-header">
-        <h2 class="dialog-header-title" id="settings-title">Settings</h2>
-        <button type="button" class="dialog-close" id="settings-close" aria-label="Close">
+        <h2 class="dialog-header-title" id="settings-title" data-i18n="settings.title">Settings</h2>
+        <button type="button" class="dialog-close" id="settings-close" aria-label="Close" data-i18n-aria-label="common.close">
           ×
         </button>
       </div>
       <div class="dialog-body">
         <form id="settings-form" class="tmdb-search-form settings-form">
           <div class="settings-section" role="group" aria-labelledby="settings-sec-appearance">
-            <h3 class="settings-section-title" id="settings-sec-appearance">Appearance</h3>
+            <h3 class="settings-section-title" id="settings-sec-appearance" data-i18n="settings.appearance">Appearance</h3>
             <label class="form-field" for="settings-theme">
-              <span class="form-label">Theme</span>
+              <span class="form-label" data-i18n="settings.theme">Theme</span>
               <select
                 id="settings-theme"
                 name="settings-theme"
                 class="form-input form-select"
               >
                 <!-- Options filled from THEME_OPTIONS on open -->
-                <option value="dark">Dark</option>
+                <option value="dark" data-i18n="theme.dark">Dark</option>
               </select>
             </label>
             <div class="form-field theme-colors-section" id="settings-theme-colors-section">
-              <span class="form-label">Customize colors</span>
+              <span class="form-label" data-i18n="settings.customizeColors">Customize colors</span>
               <div id="settings-theme-colors" class="theme-colors"></div>
               <div class="theme-colors-actions">
-                <button type="button" class="btn" id="settings-theme-reset-colors">
+                <button type="button" class="btn" id="settings-theme-reset-colors" data-i18n="settings.resetColors">
                   Reset colors
                 </button>
               </div>
             </div>
             <label class="form-field" for="settings-font-size">
-              <span class="form-label">Font size</span>
+              <span class="form-label" data-i18n="settings.fontSize">Font size</span>
               <select
                 id="settings-font-size"
                 name="settings-font-size"
                 class="form-input form-select"
               >
-                <option value="large" selected>Large</option>
-                <option value="small">Small</option>
+                <option value="large" selected data-i18n="settings.fontLarge">Large</option>
+                <option value="small" data-i18n="settings.fontSmall">Small</option>
               </select>
             </label>
-            <p class="form-hint">
-              Live preview on the grid. Color pickers tweak the selected theme.
-              Font size: Large is the default; Small uses the previous compact text.
+            <p class="form-hint" data-i18n="settings.appearanceHint">
+              Live preview on the grid. Color pickers tweak the selected theme. Font size: Large is the default; Small uses the previous compact text.
             </p>
           </div>
 
           <div class="settings-section" role="group" aria-labelledby="settings-sec-poster">
-            <h3 class="settings-section-title" id="settings-sec-poster">Poster grid</h3>
+            <h3 class="settings-section-title" id="settings-sec-poster" data-i18n="settings.posterGrid">Poster grid</h3>
             <label class="form-field" for="settings-poster-scale">
-              <span class="form-label">Size</span>
+              <span class="form-label" data-i18n="settings.size">Size</span>
               <div class="form-range-row">
                 <span class="form-range-edge" aria-hidden="true">S</span>
                 <input
@@ -356,7 +360,7 @@
               </div>
             </label>
             <label class="form-field" for="settings-poster-gap">
-              <span class="form-label">Spacing</span>
+              <span class="form-label" data-i18n="settings.spacing">Spacing</span>
               <div class="form-range-row">
                 <span class="form-range-edge" aria-hidden="true">0</span>
                 <input
@@ -383,7 +387,7 @@
               </div>
             </label>
             <label class="form-field" for="settings-poster-backlight">
-              <span class="form-label">Lighting</span>
+              <span class="form-label" data-i18n="settings.lighting">Lighting</span>
               <div class="form-range-row">
                 <span class="form-range-edge" aria-hidden="true">0</span>
                 <input
@@ -410,7 +414,7 @@
               </div>
             </label>
             <label class="form-field form-check" for="settings-location-overlay">
-              <span class="form-label">Location</span>
+              <span class="form-label" data-i18n="settings.location">Location</span>
               <span class="form-check-row">
                 <input
                   type="checkbox"
@@ -419,11 +423,11 @@
                   class="form-check-input"
                   checked
                 />
-                <span>Show location on posters</span>
+                <span data-i18n="settings.showLocation">Show location on posters</span>
               </span>
             </label>
             <label class="form-field" for="settings-grayed-locations">
-              <span class="form-label">Grayed locations</span>
+              <span class="form-label" data-i18n="settings.grayedLocations">Grayed locations</span>
               <input
                 type="text"
                 id="settings-grayed-locations"
@@ -435,33 +439,32 @@
               />
             </label>
             <label class="form-field" for="settings-poster-source">
-              <span class="form-label">Poster source</span>
+              <span class="form-label" data-i18n="settings.posterSource">Poster source</span>
               <select
                 id="settings-poster-source"
                 name="settings-poster-source"
                 class="form-input form-select"
               >
-                <option value="tmdb">TMDB (online CDN)</option>
-                <option value="local">Local (posters/w342)</option>
+                <option value="tmdb" data-i18n="settings.posterSourceTmdb">TMDB (online CDN)</option>
+                <option value="local" data-i18n="settings.posterSourceLocal">Local (posters/w342)</option>
               </select>
             </label>
-            <p class="form-hint">
-              Size, gap, glow, location badge, and grayed list. Poster source: TMDB CDN or files from
-              <code>node posters/sync-posters.mjs</code>. Preview updates live.
+            <p class="form-hint" data-i18n="settings.posterHint">
+              Size, gap, glow, location badge, and grayed list. Poster source: TMDB CDN or files from node posters/sync-posters.mjs. Preview updates live.
             </p>
           </div>
 
           <div class="settings-section" role="group" aria-labelledby="settings-sec-binders">
-            <h3 class="settings-section-title" id="settings-sec-binders">Binders</h3>
+            <h3 class="settings-section-title" id="settings-sec-binders" data-i18n="settings.binders">Binders</h3>
             <label class="form-field" for="settings-binder-notation">
-              <span class="form-label">Notation</span>
+              <span class="form-label" data-i18n="settings.notation">Notation</span>
               <select
                 id="settings-binder-notation"
                 name="settings-binder-notation"
                 class="form-input form-select"
               >
                 <!-- Options filled from BINDER_NOTATION_OPTIONS on open -->
-                <option value="letter-page">Letter + page (A1)</option>
+                <option value="letter-page" data-i18n="binder.letterPage">Letter + page (A1)</option>
               </select>
             </label>
             <p class="form-hint" id="settings-binder-notation-desc">
@@ -472,7 +475,7 @@
               id="settings-binder-custom-wrap"
               hidden
             >
-              <label class="form-label" for="settings-binder-custom">Custom patterns</label>
+              <label class="form-label" for="settings-binder-custom" data-i18n="settings.customPatterns">Custom patterns</label>
               <textarea
                 id="settings-binder-custom"
                 name="settings-binder-custom"
@@ -489,7 +492,7 @@
               role="status"
             ></p>
             <label class="form-field" for="settings-binder-test">
-              <span class="form-label">Test location</span>
+              <span class="form-label" data-i18n="settings.testLocation">Test location</span>
               <input
                 type="text"
                 id="settings-binder-test"
@@ -511,9 +514,9 @@
           </div>
 
           <div class="settings-section" role="group" aria-labelledby="settings-sec-language">
-            <h3 class="settings-section-title" id="settings-sec-language">Language</h3>
+            <h3 class="settings-section-title" id="settings-sec-language" data-i18n="settings.language">Language</h3>
             <label class="form-field" for="settings-locale">
-              <span class="form-label">Metadata language</span>
+              <span class="form-label" data-i18n="settings.metadataLanguage">Metadata language</span>
               <select
                 id="settings-locale"
                 name="settings-locale"
@@ -524,15 +527,15 @@
                 <option value="en">English</option>
               </select>
             </label>
-            <p class="form-hint">
-              Preferred language for TMDB titles and metadata.
+            <p class="form-hint" data-i18n="settings.languageHint">
+              Preferred language for TMDB titles and app UI (when translated).
             </p>
           </div>
 
           <div class="settings-section" role="group" aria-labelledby="settings-sec-library">
-            <h3 class="settings-section-title" id="settings-sec-library">Library</h3>
+            <h3 class="settings-section-title" id="settings-sec-library" data-i18n="settings.library">Library</h3>
             <label class="form-field form-check" for="settings-bulk-meta-confirm2">
-              <span class="form-label">Bulk refresh</span>
+              <span class="form-label" data-i18n="settings.bulkRefresh">Bulk refresh</span>
               <span class="form-check-row">
                 <input
                   type="checkbox"
@@ -541,19 +544,18 @@
                   class="form-check-input"
                   checked
                 />
-                <span>Require second confirmation for Refresh (TMDB)</span>
+                <span data-i18n="settings.bulkRefreshConfirm">Require second confirmation for Refresh (TMDB)</span>
               </span>
             </label>
-            <p class="form-hint">
-              Menu → Collection → Refresh (TMDB) re-fetches every movie from TMDB.
-              Location is kept; keywords are merged. A second “are you sure?” step is on by default.
+            <p class="form-hint" data-i18n="settings.bulkRefreshHint">
+              Menu → Collection → Refresh (TMDB) re-fetches every movie from TMDB. Location is kept; keywords are merged. A second “are you sure?” step is on by default.
             </p>
           </div>
 
           <div class="settings-section" role="group" aria-labelledby="settings-sec-connections">
-            <h3 class="settings-section-title" id="settings-sec-connections">Connections</h3>
+            <h3 class="settings-section-title" id="settings-sec-connections" data-i18n="settings.connections">Connections</h3>
             <div class="form-field">
-              <label class="form-label" for="settings-tmdb-api-key">TMDB API key</label>
+              <label class="form-label" for="settings-tmdb-api-key" data-i18n="settings.tmdbKey">TMDB API key</label>
               <div class="form-secret-row">
                 <input
                   type="password"
@@ -571,6 +573,8 @@
                     id="settings-tmdb-api-key-toggle"
                     aria-label="Show key"
                     title="Show key"
+                    data-i18n-aria-label="settings.showKey"
+                    data-i18n-title="settings.showKey"
                     aria-pressed="false"
                     aria-controls="settings-tmdb-api-key"
                   >
@@ -593,6 +597,8 @@
                     data-copy-mode="icon"
                     aria-label="Copy key"
                     title="Copy key"
+                    data-i18n-aria-label="settings.copyKey"
+                    data-i18n-title="settings.copyKey"
                   >
                     <svg class="form-secret-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                       <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
@@ -602,7 +608,7 @@
               </div>
             </div>
             <div class="form-field">
-              <label class="form-label" for="settings-github-api-key">GitHub API key</label>
+              <label class="form-label" for="settings-github-api-key" data-i18n="settings.githubKey">GitHub API key</label>
               <div class="form-secret-row">
                 <input
                   type="password"
@@ -620,6 +626,8 @@
                     id="settings-github-api-key-toggle"
                     aria-label="Show key"
                     title="Show key"
+                    data-i18n-aria-label="settings.showKey"
+                    data-i18n-title="settings.showKey"
                     aria-pressed="false"
                     aria-controls="settings-github-api-key"
                   >
@@ -642,6 +650,8 @@
                     data-copy-mode="icon"
                     aria-label="Copy key"
                     title="Copy key"
+                    data-i18n-aria-label="settings.copyKey"
+                    data-i18n-title="settings.copyKey"
                   >
                     <svg class="form-secret-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                       <path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
@@ -650,7 +660,7 @@
                 </div>
               </div>
             </div>
-            <p class="form-hint">
+            <p class="form-hint" data-i18n="settings.connectionsHint">
               Keys stay in this browser only. TMDB for search and posters; GitHub for library read/write.
             </p>
           </div>
@@ -660,8 +670,8 @@
       </div>
       <div class="dialog-footer">
         <div class="dialog-footer-actions">
-          <button type="button" class="btn" id="settings-cancel">Cancel</button>
-          <button type="submit" form="settings-form" class="btn btn-primary" id="settings-save">
+          <button type="button" class="btn" id="settings-cancel" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" form="settings-form" class="btn btn-primary" id="settings-save" data-i18n="common.save">
             Save
           </button>
         </div>
@@ -679,8 +689,8 @@
       id="stats-dialog"
     >
       <div class="dialog-header">
-        <h2 class="dialog-header-title" id="stats-title">Statistics</h2>
-        <button type="button" class="dialog-close" id="stats-close" aria-label="Close">
+        <h2 class="dialog-header-title" id="stats-title" data-i18n="stats.title">Statistics</h2>
+        <button type="button" class="dialog-close" id="stats-close" aria-label="Close" data-i18n-aria-label="common.close">
           ×
         </button>
       </div>
@@ -689,7 +699,7 @@
       </div>
       <div class="dialog-footer">
         <div class="dialog-footer-actions">
-          <button type="button" class="btn btn-primary" id="stats-close-footer">Close</button>
+          <button type="button" class="btn btn-primary" id="stats-close-footer" data-i18n="common.close">Close</button>
         </div>
       </div>
     </div>
@@ -705,8 +715,8 @@
       id="history-dialog"
     >
       <div class="dialog-header">
-        <h2 class="dialog-header-title" id="history-title">Library history</h2>
-        <button type="button" class="dialog-close" id="history-close" aria-label="Close">
+        <h2 class="dialog-header-title" id="history-title" data-i18n="history.title">Library history</h2>
+        <button type="button" class="dialog-close" id="history-close" aria-label="Close" data-i18n-aria-label="common.close">
           ×
         </button>
       </div>
@@ -720,13 +730,13 @@
           class="history-sentinel"
           aria-hidden="true"
         ></div>
-        <p id="history-load-more" class="history-load-more" hidden>Loading more…</p>
-        <p id="history-end" class="history-end" hidden>End of history</p>
+        <p id="history-load-more" class="history-load-more" hidden data-i18n="history.loadingMore">Loading more…</p>
+        <p id="history-end" class="history-end" hidden data-i18n="history.end">End of history</p>
       </div>
       <div class="dialog-footer">
         <div class="dialog-footer-actions">
-          <button type="button" class="btn" id="history-open-github">Open on GitHub</button>
-          <button type="button" class="btn btn-primary" id="history-close-footer">Close</button>
+          <button type="button" class="btn" id="history-open-github" data-i18n="history.openGithub">Open on GitHub</button>
+          <button type="button" class="btn btn-primary" id="history-close-footer" data-i18n="common.close">Close</button>
         </div>
       </div>
     </div>
@@ -742,12 +752,13 @@
       id="tmdb-search-dialog"
     >
       <div class="dialog-header">
-        <h2 class="dialog-header-title" id="tmdb-search-title">Search Movies</h2>
+        <h2 class="dialog-header-title" id="tmdb-search-title" data-i18n="search.title">Search Movies</h2>
         <button
           type="button"
           class="dialog-close"
           id="tmdb-search-close"
           aria-label="Close"
+          data-i18n-aria-label="common.close"
         >
           ×
         </button>
@@ -755,7 +766,7 @@
       <div class="dialog-body">
         <form id="tmdb-search-form" class="tmdb-search-form" autocomplete="off">
           <label class="form-field">
-            <span class="form-label">Movie title</span>
+            <span class="form-label" data-i18n="search.movieTitle">Movie title</span>
             <input
               type="text"
               id="tmdb-movie-title"
@@ -766,7 +777,7 @@
             />
           </label>
           <label class="form-field">
-            <span class="form-label">Release year <span class="form-optional">(optional)</span></span>
+            <span class="form-label"><span data-i18n="search.year">Release year</span> <span class="form-optional" data-i18n="common.optional">(optional)</span></span>
             <input
               type="text"
               id="tmdb-movie-year"
@@ -784,8 +795,8 @@
       </div>
       <div class="dialog-footer">
         <div class="dialog-footer-actions">
-          <button type="button" class="btn" id="tmdb-search-cancel">Cancel</button>
-          <button type="submit" form="tmdb-search-form" class="btn btn-primary" id="tmdb-search-submit">
+          <button type="button" class="btn" id="tmdb-search-cancel" data-i18n="common.cancel">Cancel</button>
+          <button type="submit" form="tmdb-search-form" class="btn btn-primary" id="tmdb-search-submit" data-i18n="common.search">
             Search
           </button>
         </div>
@@ -803,7 +814,7 @@
       id="tmdb-poster-dialog"
     >
       <div class="dialog-header">
-        <h2 class="dialog-header-title" id="tmdb-poster-title">Choose poster</h2>
+        <h2 class="dialog-header-title" id="tmdb-poster-title" data-i18n="poster.choose">Choose poster</h2>
         <button
           type="button"
           class="dialog-close"
@@ -820,8 +831,8 @@
       </div>
       <div class="dialog-footer">
         <div class="dialog-footer-actions">
-          <button type="button" class="btn" id="tmdb-poster-cancel">Cancel</button>
-          <button type="button" class="btn btn-primary" id="tmdb-poster-save">Ok</button>
+          <button type="button" class="btn" id="tmdb-poster-cancel" data-i18n="common.cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="tmdb-poster-save" data-i18n="poster.ok">Ok</button>
         </div>
       </div>
     </div>
@@ -842,12 +853,13 @@
       id="app-alert-dialog"
     >
       <div class="dialog-header">
-        <h2 class="dialog-header-title" id="app-alert-title">Notice</h2>
+        <h2 class="dialog-header-title" id="app-alert-title" data-i18n="common.notice">Notice</h2>
         <button
           type="button"
           class="dialog-close"
           id="app-alert-close"
           aria-label="Close"
+          data-i18n-aria-label="common.close"
         >
           ×
         </button>
@@ -857,8 +869,8 @@
       </div>
       <div class="dialog-footer">
         <div class="dialog-footer-actions">
-          <button type="button" class="btn" id="app-alert-cancel" hidden>Cancel</button>
-          <button type="button" class="btn btn-primary" id="app-alert-ok">OK</button>
+          <button type="button" class="btn" id="app-alert-cancel" hidden data-i18n="alert.cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="app-alert-ok" data-i18n="alert.ok">OK</button>
         </div>
       </div>
     </div>
@@ -874,12 +886,13 @@
       id="save-progress-dialog"
     >
       <div class="dialog-header">
-        <h2 class="dialog-header-title" id="save-progress-title">Save to GitHub</h2>
+        <h2 class="dialog-header-title" id="save-progress-title" data-i18n="saveProgress.title">Save to GitHub</h2>
         <button
           type="button"
           class="dialog-close"
           id="save-progress-close"
           aria-label="Close"
+          data-i18n-aria-label="common.close"
         >
           ×
         </button>
@@ -895,8 +908,8 @@
       </div>
       <div class="dialog-footer">
         <div class="dialog-footer-actions">
-          <button type="button" class="btn" id="save-progress-copy">Copy</button>
-          <button type="button" class="btn btn-primary" id="save-progress-ok">OK</button>
+          <button type="button" class="btn" id="save-progress-copy" data-i18n="common.copy">Copy</button>
+          <button type="button" class="btn btn-primary" id="save-progress-ok" data-i18n="common.ok">OK</button>
         </div>
       </div>
     </div>
@@ -916,12 +929,13 @@
       id="meta-refresh-dialog"
     >
       <div class="dialog-header">
-        <h2 class="dialog-header-title" id="meta-refresh-title">Refresh (TMDB)</h2>
+        <h2 class="dialog-header-title" id="meta-refresh-title" data-i18n="refresh.title">Refresh (TMDB)</h2>
         <button
           type="button"
           class="dialog-close"
           id="meta-refresh-close-x"
           aria-label="Close"
+          data-i18n-aria-label="common.close"
         >
           ×
         </button>
@@ -944,7 +958,7 @@
             <span id="meta-refresh-pct" class="meta-progress-pct">0%</span>
           </div>
           <p id="meta-refresh-movie" class="meta-progress-movie">—</p>
-          <p id="meta-refresh-status" class="meta-progress-status" role="status">
+          <p id="meta-refresh-status" class="meta-progress-status" role="status" data-i18n="refresh.preparing">
             Preparing…
           </p>
         </div>
@@ -963,19 +977,19 @@
               />
             </svg>
           </div>
-          <h3 class="meta-done-heading" id="meta-refresh-done-heading">Refresh complete</h3>
+          <h3 class="meta-done-heading" id="meta-refresh-done-heading" data-i18n="refresh.complete">Refresh complete</h3>
           <p id="meta-refresh-done-summary" class="meta-done-summary"></p>
           <p id="meta-refresh-done-failed" class="meta-done-failed" hidden></p>
           <div id="meta-refresh-failures" class="meta-failures" hidden>
-            <div class="meta-failures-label">Failed</div>
+            <div class="meta-failures-label" data-i18n="refresh.failedList">Failed</div>
             <ul id="meta-refresh-failure-list" class="meta-failure-list"></ul>
           </div>
         </div>
       </div>
       <div class="dialog-footer">
         <div class="dialog-footer-actions">
-          <button type="button" class="btn" id="meta-refresh-cancel">Cancel</button>
-          <button type="button" class="btn btn-primary" id="meta-refresh-close" disabled>
+          <button type="button" class="btn" id="meta-refresh-cancel" data-i18n="refresh.cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="meta-refresh-close" disabled data-i18n="common.close">
             Close
           </button>
         </div>

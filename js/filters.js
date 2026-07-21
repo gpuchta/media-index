@@ -1,3 +1,4 @@
+import { t } from './i18n.js';
 import {
   BINDER_FILTER_OPTIONS,
   BINDER_NOTATION_OPTIONS,
@@ -183,7 +184,7 @@ export function displayLabel(leaf) {
   }
   if (leaf.type === 'binder') {
     const v = normalizeValue('binder', leaf.value);
-    return v === 'no' ? 'Not in binder' : 'In binder';
+    return v === 'no' ? t('filter.binder.no') : t('filter.binder.yes');
   }
   return leaf.value;
 }

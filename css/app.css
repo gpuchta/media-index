@@ -496,7 +496,7 @@ input {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  min-width: 260px;
+  min-width: 400px;
   white-space: nowrap;
   background: var(--surface);
   border: 1px solid var(--border);

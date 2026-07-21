@@ -110,6 +110,7 @@ import {
 import { isAppAlertOpen, showAppAlert, showAppConfirm } from './alert-dialog.js';
 import { attachPosterHotCorner, isPosterZoomOpen, posterZoomUrl } from './poster-zoom.js';
 import { buildLibraryStats, statsSectionTitle } from './stats.js';
+import { applyDomI18n, syncUiLocaleFromSettings, t } from './i18n.js';
 
 const state = {
   movies: [],
@@ -462,6 +463,7 @@ let draftThemeColors = { ...savedThemeColors };
 let savedFontSize = getStoredFontSize();
 applyTheme(savedThemeId, savedThemeColors);
 applyFontSize(savedFontSize);
+syncUiLocaleFromSettings();
 applyPosterBacklight(savedPosterBacklightPercent);
 applyBinderNotation(savedBinderNotationId, savedBinderCustomPatterns);
 grid.setScale(savedPosterScalePercent / 100);
@@ -1592,14 +1594,14 @@ function createHistoryItem(c) {
     const toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = 'history-item-more';
-    toggle.textContent = 'Show more';
+    toggle.textContent = t('history.showMore');
     toggle.setAttribute('aria-expanded', 'false');
     toggle.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
       const open = details.hidden;
       details.hidden = !open;
-      toggle.textContent = open ? 'Show less' : 'Show more';
+      toggle.textContent = open ? t('history.showLess') : t('history.showMore');
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
 
@@ -1623,16 +1625,16 @@ function createHistoryItem(c) {
   dl.className = 'btn';
   dl.dataset.historyAction = 'download';
   dl.dataset.sha = c.sha;
-  dl.textContent = 'Download';
-  dl.title = 'Download this version as JSON';
+  dl.textContent = t('history.download');
+  dl.title = t('history.downloadTitle');
 
   const restore = document.createElement('button');
   restore.type = 'button';
   restore.className = 'btn btn-primary';
   restore.dataset.historyAction = 'restore';
   restore.dataset.sha = c.sha;
-  restore.textContent = 'Restore';
-  restore.title = 'Replace the current library with this version';
+  restore.textContent = t('history.restore');
+  restore.title = t('history.restoreTitle');
 
   actions.append(dl, restore);
   item.append(main, actions);
@@ -1669,13 +1671,13 @@ function renderHistoryList() {
   host.innerHTML = '';
 
   if (historyState.loading && !historyState.commits.length) {
-    host.innerHTML = `<p class="history-empty">Loading commits…</p>`;
+    host.innerHTML = `<p class="history-empty">${escapeHtml(t('history.loading'))}</p>`;
     syncHistoryScrollHints();
     return;
   }
 
   if (!historyState.commits.length) {
-    host.innerHTML = `<p class="history-empty">No commits found for this file.</p>`;
+    host.innerHTML = `<p class="history-empty">${escapeHtml(t('history.none'))}</p>`;
     syncHistoryScrollHints();
     return;
   }
@@ -1741,11 +1743,14 @@ async function loadLibraryHistoryPage(page, { append = false } = {}) {
 
   if (append) {
     historyState.loadingMore = true;
+    if (els.historyLoadMore) {
+      els.historyLoadMore.textContent = t('history.loadingMore');
+    }
     syncHistoryScrollHints();
   } else {
     historyState.loading = true;
     historyState.page = page;
-    setHistoryStatus('Loading commit history…');
+    setHistoryStatus(t('history.loading'));
     // Only re-render the placeholder when the list is still empty
     if (!historyState.commits.length) renderHistoryList();
   }
@@ -1781,10 +1786,11 @@ async function loadLibraryHistoryPage(page, { append = false } = {}) {
     const n = historyState.commits.length;
     setHistoryStatus(
       n
-        ? `Showing ${n} commit${n === 1 ? '' : 's'}${
-            historyState.hasNextPage ? ' · scroll for more' : ''
-          }.`
-        : 'No commits found for this file.'
+        ? t('history.showing', {
+            n,
+            more: historyState.hasNextPage ? t('history.scrollMore') : '',
+          })
+        : t('history.none')
     );
     // Sentinel may already be visible if the list is short — fill the viewport
     queueMicrotask(() => maybeLoadMoreHistory());
@@ -1838,9 +1844,15 @@ async function openLibraryHistoryDialog() {
   resetDialogScroll(els.historyBackdrop);
   els.historyBackdrop.classList.remove('hidden');
   els.historyBackdrop.setAttribute('aria-hidden', 'false');
-  setHistoryStatus('Loading commit history…');
-  if (els.historyLoadMore) els.historyLoadMore.hidden = true;
-  if (els.historyEnd) els.historyEnd.hidden = true;
+  setHistoryStatus(t('history.loading'));
+  if (els.historyLoadMore) {
+    els.historyLoadMore.hidden = true;
+    els.historyLoadMore.textContent = t('history.loadingMore');
+  }
+  if (els.historyEnd) {
+    els.historyEnd.hidden = true;
+    els.historyEnd.textContent = t('history.end');
+  }
   if (els.historySentinel) els.historySentinel.hidden = true;
   renderHistoryList();
   connectHistorySentinel();
@@ -2073,10 +2085,12 @@ function openMetaRefreshDialog() {
   if (els.metaRefreshProgressbar) {
     els.metaRefreshProgressbar.setAttribute('aria-valuenow', '0');
   }
-  if (els.metaRefreshCount) els.metaRefreshCount.textContent = 'Refreshing 0 of 0';
+  if (els.metaRefreshCount) {
+    els.metaRefreshCount.textContent = t('refresh.refreshing', { index: 0, total: 0 });
+  }
   if (els.metaRefreshPct) els.metaRefreshPct.textContent = '0%';
   if (els.metaRefreshMovie) els.metaRefreshMovie.textContent = '—';
-  if (els.metaRefreshStatus) els.metaRefreshStatus.textContent = 'Preparing…';
+  if (els.metaRefreshStatus) els.metaRefreshStatus.textContent = t('refresh.preparing');
   if (els.metaRefreshDoneFailed) {
     els.metaRefreshDoneFailed.hidden = true;
     els.metaRefreshDoneFailed.textContent = '';
@@ -2119,7 +2133,9 @@ function updateMetaRefreshProgress({ index, total, title, status }) {
   }
   if (els.metaRefreshCount) {
     els.metaRefreshCount.textContent =
-      total > 0 ? `Refreshing ${index} of ${total}` : 'Refreshing…';
+      total > 0
+        ? t('refresh.refreshing', { index, total })
+        : t('refresh.refreshingEllipsis');
   }
   if (els.metaRefreshPct) els.metaRefreshPct.textContent = `${pct}%`;
   if (els.metaRefreshMovie) {
@@ -2152,20 +2168,22 @@ function showMetaRefreshDone(result) {
 
   if (els.metaRefreshDoneHeading) {
     els.metaRefreshDoneHeading.textContent = cancelled
-      ? 'Refresh cancelled'
+      ? t('refresh.cancelled')
       : failed && !ok
-        ? 'Refresh failed'
-        : 'Refresh complete';
+        ? t('refresh.failed')
+        : t('refresh.complete');
   }
   if (els.metaRefreshDoneSummary) {
-    els.metaRefreshDoneSummary.textContent = `Refreshed ${ok} of ${total} movie${
-      total === 1 ? '' : 's'
-    }${cancelled ? ' before cancel' : ''}.`;
+    els.metaRefreshDoneSummary.textContent = t('refresh.summary', {
+      ok,
+      total,
+      cancel: cancelled ? t('refresh.beforeCancel') : '',
+    });
   }
   if (els.metaRefreshDoneFailed) {
     if (failed > 0) {
       els.metaRefreshDoneFailed.hidden = false;
-      els.metaRefreshDoneFailed.textContent = `${failed} failed`;
+      els.metaRefreshDoneFailed.textContent = t('refresh.failedCount', { n: failed });
     } else {
       els.metaRefreshDoneFailed.hidden = true;
       els.metaRefreshDoneFailed.textContent = '';
@@ -2774,10 +2792,18 @@ function populateBinderNotationSelect() {
     els.settingsBinderNotation.value || savedBinderNotationId
   );
   sel.replaceChildren();
+  const binderLabelKey = {
+    'letter-page': 'binder.letterPage',
+    'color-page': 'binder.colorPage',
+    'roman-page': 'binder.romanPage',
+    'emoji-page': 'binder.emojiPage',
+    custom: 'binder.custom',
+  };
   for (const opt of BINDER_NOTATION_OPTIONS) {
     const o = document.createElement('option');
     o.value = opt.id;
-    o.textContent = opt.label;
+    const lk = binderLabelKey[opt.id];
+    o.textContent = lk ? t(lk) : opt.label;
     if (opt.id === current) o.selected = true;
     sel.appendChild(o);
   }
@@ -2871,7 +2897,8 @@ function populateThemeSelect() {
   for (const opt of THEME_OPTIONS) {
     const o = document.createElement('option');
     o.value = opt.id;
-    o.textContent = opt.label;
+    const themeKey = `theme.${opt.id}`;
+    o.textContent = t(themeKey) !== themeKey ? t(themeKey) : opt.label;
     if (opt.id === current) o.selected = true;
     sel.appendChild(o);
   }
@@ -3329,16 +3356,14 @@ function renderStatsBody() {
       const more = document.createElement('button');
       more.type = 'button';
       more.className = 'stats-show-more';
-      more.textContent = expanded ? 'Show less' : 'Show more';
+      more.textContent = expanded ? t('stats.showLess') : t('stats.showMore');
       more.setAttribute(
         'aria-expanded',
         expanded ? 'true' : 'false'
       );
       more.setAttribute(
         'aria-label',
-        expanded
-          ? `Show top ${STATS_TOP_N} ${section.label.toLowerCase()}`
-          : `Show all ${section.rows.length} ${section.label.toLowerCase()}`
+        expanded ? t('stats.showLess') : t('stats.showMore')
       );
       more.addEventListener('click', () => {
         statsSectionExpanded[key] = !expanded;
@@ -3375,6 +3400,10 @@ function saveSettings() {
   const locale = setStoredLocale(els.settingsLocale?.value);
   const localeLabel =
     LOCALE_OPTIONS.find((o) => o.id === locale)?.label || locale;
+  // Re-translate static chrome (menus, settings labels, status panels, …)
+  syncUiLocaleFromSettings();
+  if (dialog.isOpen() && dialog.movie) dialog.open(dialog.movie);
+  recompute({ resetScroll: false });
   const themeId = setStoredTheme(els.settingsTheme?.value);
   savedThemeId = themeId;
   savedThemeColors = setStoredThemeColors(draftThemeColors);
@@ -4341,6 +4370,8 @@ function renderActiveFilters() {
 
 /** Title-case filter type for chip context menu header (e.g. actor → Actor). */
 function filterTypeMenuLabel(type) {
+  const key = type ? `filter.type.${type}` : '';
+  if (key && t(key) !== key) return t(key);
   const raw = FILTER_TYPE_LABELS[type] || type || 'Filter';
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
@@ -4358,7 +4389,7 @@ function createChip(leaf, index) {
   const text = document.createElement('span');
   text.className = 'chip-text';
   const label = displayLabel(leaf);
-  text.textContent = leaf.not ? `NOT ${label}` : label;
+  text.textContent = leaf.not ? `${t('filter.menu.not')} ${label}` : label;
   btn.appendChild(text);
 
   const chev = document.createElement('span');
@@ -4371,10 +4402,10 @@ function createChip(leaf, index) {
   const typeLabel = filterTypeMenuLabel(leaf.type);
   menu.innerHTML = `
     <div class="menu-label">${typeLabel}</div>
-    <button type="button" data-action="toggle">Toggle</button>
-    <button type="button" data-action="remove">Remove</button>
-    <button type="button" data-action="remove-others">Remove Others</button>
-    <button type="button" data-action="remove-all">Remove All</button>
+    <button type="button" data-action="toggle">${t('filter.menu.not')}</button>
+    <button type="button" data-action="remove">${t('filter.menu.remove')}</button>
+    <button type="button" data-action="remove-others">${t('filter.menu.only')}</button>
+    <button type="button" data-action="remove-all">${t('menu.clearAll')}</button>
   `;
 
   btn.addEventListener('click', (e) => {
