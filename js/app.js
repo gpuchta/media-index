@@ -111,6 +111,13 @@ import { isAppAlertOpen, showAppAlert, showAppConfirm } from './alert-dialog.js'
 import { attachPosterHotCorner, isPosterZoomOpen, posterZoomUrl } from './poster-zoom.js';
 import { buildLibraryStats, statsSectionTitle } from './stats.js';
 import { applyDomI18n, syncUiLocaleFromSettings, t } from './i18n.js';
+import {
+  SETTINGS_EXPORT_FILENAME,
+  applySettingsImport,
+  buildSettingsExportObject,
+  clearLocalStorageSession,
+  readEffectiveSettingsSnapshot,
+} from './settings-io.js';
 
 const state = {
   movies: [],
@@ -162,6 +169,10 @@ const els = {
   statsClose: document.getElementById('stats-close'),
   statsCloseFooter: document.getElementById('stats-close-footer'),
   settingsBtn: document.getElementById('settings-btn'),
+  exportSettingsBtn: document.getElementById('export-settings-btn'),
+  importSettingsBtn: document.getElementById('import-settings-btn'),
+  importSettingsFileInput: document.getElementById('import-settings-file-input'),
+  clearSessionBtn: document.getElementById('clear-session-btn'),
   settingsBackdrop: document.getElementById('settings-backdrop'),
   settingsForm: document.getElementById('settings-form'),
   settingsApiKey: document.getElementById('settings-tmdb-api-key'),
@@ -200,6 +211,7 @@ const els = {
   settingsClose: document.getElementById('settings-close'),
   settingsCancel: document.getElementById('settings-cancel'),
   saveProgressBackdrop: document.getElementById('save-progress-backdrop'),
+  saveProgressTitle: document.getElementById('save-progress-title'),
   saveProgressConsole: document.getElementById('save-progress-console'),
   saveProgressClose: document.getElementById('save-progress-close'),
   saveProgressCopy: document.getElementById('save-progress-copy'),
@@ -841,6 +853,27 @@ els.settingsBtn?.addEventListener('click', () => {
   openSettingsDialog();
 });
 
+els.exportSettingsBtn?.addEventListener('click', () => {
+  closeMenu();
+  exportSettings();
+});
+
+els.importSettingsBtn?.addEventListener('click', () => {
+  closeMenu();
+  startSettingsImport();
+});
+
+els.importSettingsFileInput?.addEventListener('change', () => {
+  const file = els.importSettingsFileInput?.files?.[0] || null;
+  if (els.importSettingsFileInput) els.importSettingsFileInput.value = '';
+  if (file) void importSettingsFromFile(file);
+});
+
+els.clearSessionBtn?.addEventListener('click', () => {
+  closeMenu();
+  void clearSession();
+});
+
 // Ctrl+. / ⌘+. — open Settings (skip when another modal owns the UI)
 document.addEventListener(
   'keydown',
@@ -1204,6 +1237,202 @@ window.addEventListener('beforeunload', (e) => {
 function exportData() {
   downloadJson(formatExportFilename(CONFIG.DATA_PATH), state.movies);
   setDirty(false);
+}
+
+/**
+ * Download current non-secret settings as settings.json (API keys excluded).
+ */
+function exportSettings() {
+  downloadJson(SETTINGS_EXPORT_FILENAME, buildSettingsExportObject());
+  showAppToast(t('settingsIo.exportDone'));
+}
+
+/**
+ * Open the system file picker for a settings.json import.
+ */
+function startSettingsImport() {
+  const input = els.importSettingsFileInput;
+  if (!input) {
+    void showAppAlert(t('settingsIo.importUnavailable'), {
+      title: t('menu.importSettings'),
+    });
+    return;
+  }
+  input.click();
+}
+
+/**
+ * Push effective localStorage settings into live UI + in-memory prefs.
+ * Used after Import settings and Clear session.
+ */
+function reapplySettingsFromStorage() {
+  const snap = readEffectiveSettingsSnapshot();
+
+  savedThemeId = snap.theme;
+  savedThemeColors = { ...snap.themeColors };
+  draftThemeColors = { ...snap.themeColors };
+  savedFontSize = snap.fontSize;
+  savedPosterScalePercent = snap.posterScale;
+  savedPosterGapPx = snap.posterGap;
+  savedPosterBacklightPercent = snap.posterBacklight;
+  savedLocationOverlay = snap.locationOverlay;
+  savedGrayedLocationsText = snap.grayedLocations;
+  savedPosterSource = snap.posterSource;
+  savedBulkMetaConfirm2 = snap.bulkMetaConfirm2;
+  savedBinderNotationId = snap.binderNotationId;
+  savedBinderCustomPatterns = snap.binderCustomPatterns;
+
+  setPosterSourceOverride(null);
+  applyTheme(savedThemeId, savedThemeColors);
+  applyFontSize(savedFontSize);
+  syncUiLocaleFromSettings();
+  applyPosterBacklight(savedPosterBacklightPercent);
+  applyBinderNotation(savedBinderNotationId, savedBinderCustomPatterns);
+  grid.setScale(savedPosterScalePercent / 100);
+  grid.setGap(savedPosterGapPx);
+  grid.setLocationOverlay(savedLocationOverlay);
+  grid.setGrayedLocations(parseGrayedLocationsList(savedGrayedLocationsText));
+  grid.render();
+
+  if (dialog.isOpen() && dialog.movie) {
+    dialog.open(dialog.movie);
+  }
+  recompute({ resetScroll: false });
+}
+
+/**
+ * Parse and apply a settings.json file; log results in the progress console.
+ * @param {File} file
+ */
+async function importSettingsFromFile(file) {
+  const name = file?.name || 'settings.json';
+  openSaveProgressDialog({ title: t('settingsIo.importTitle') });
+  appendSaveLog(t('settingsIo.importStarting', { name }));
+
+  let text;
+  try {
+    text = await file.text();
+  } catch (err) {
+    appendSaveLog(
+      t('settingsIo.importReadFailed', {
+        error: err?.message || String(err),
+      }),
+      { level: 'error' }
+    );
+    appendSaveLog(t('settingsIo.finished'));
+    return;
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    appendSaveLog(
+      t('settingsIo.importParseFailed', {
+        error: err?.message || String(err),
+      }),
+      { level: 'error' }
+    );
+    appendSaveLog(t('settingsIo.finished'));
+    return;
+  }
+
+  const result = applySettingsImport(data);
+  if (!result.ok) {
+    appendSaveLog(result.error || t('settingsIo.importFailed'), {
+      level: 'error',
+    });
+    appendSaveLog(t('settingsIo.finished'));
+    return;
+  }
+
+  let applied = 0;
+  let defaults = 0;
+  let invalid = 0;
+  let ignored = 0;
+  for (const line of result.lines) {
+    if (line.status === 'applied') {
+      applied += 1;
+      appendSaveLog(`${line.label}: ${t('settingsIo.statusApplied')}`);
+    } else if (line.status === 'default') {
+      defaults += 1;
+      appendSaveLog(
+        `${line.label}: ${line.detail || t('settingsIo.statusDefault')}`
+      );
+    } else if (line.status === 'invalid') {
+      invalid += 1;
+      appendSaveLog(
+        `${line.label}: ${line.detail || t('settingsIo.statusInvalid')}`,
+        { level: 'warn' }
+      );
+    } else if (line.status === 'ignored') {
+      ignored += 1;
+      appendSaveLog(
+        `${line.key}: ${line.detail || t('settingsIo.statusIgnored')}`
+      );
+    } else if (line.status === 'secret') {
+      appendSaveLog(
+        `${line.label}: ${line.detail || t('settingsIo.statusSecret')}`,
+        { level: 'error' }
+      );
+    }
+  }
+
+  if (result.secretsApplied.length) {
+    appendSaveLog(
+      t('settingsIo.secretWarning', {
+        keys: result.secretsApplied.join(', '),
+      }),
+      { level: 'error' }
+    );
+    appendSaveLog(t('settingsIo.secretClearHint'), { level: 'error' });
+  }
+
+  reapplySettingsFromStorage();
+
+  appendSaveLog(
+    t('settingsIo.importSummary', {
+      applied,
+      defaults,
+      invalid,
+      ignored,
+      secrets: result.secretsApplied.length,
+    }),
+    { level: 'ok' }
+  );
+  appendSaveLog(t('settingsIo.finished'));
+}
+
+/**
+ * Clear all localStorage for this origin after “are you sure?” confirmation.
+ * Then report remaining key count (normally 0) with a simple OK dialog.
+ */
+async function clearSession() {
+  const ok = await showAppConfirm(t('settingsIo.clearConfirm'), {
+    title: t('menu.clearSession'),
+    okLabel: t('settingsIo.clearAction'),
+    cancelLabel: t('common.cancel'),
+  });
+  if (!ok) return;
+
+  // Close Settings if open so it does not re-save stale draft values later
+  if (els.settingsBackdrop && !els.settingsBackdrop.classList.contains('hidden')) {
+    closeSettingsDialog({ revertPreview: false });
+  }
+
+  const { before, after } = clearLocalStorageSession();
+  reapplySettingsFromStorage();
+
+  await showAppAlert(
+    t('settingsIo.clearResult', {
+      before,
+      after,
+    }),
+    {
+      title: t('menu.clearSession'),
+      okLabel: t('common.ok'),
+    }
+  );
 }
 
 /**
@@ -2001,8 +2230,16 @@ async function restoreHistoryCommit(sha, btn) {
 /** Guard against double-clicks while a remote save is in flight. */
 let saveJsonInFlight = false;
 
-function openSaveProgressDialog() {
+/**
+ * Open the shared progress console dialog (Save to GitHub / Import settings).
+ * @param {{ title?: string }} [opts]
+ */
+function openSaveProgressDialog(opts = {}) {
   if (!els.saveProgressBackdrop) return;
+  if (els.saveProgressTitle) {
+    els.saveProgressTitle.textContent =
+      opts.title || t('saveProgress.title');
+  }
   if (els.saveProgressConsole) {
     els.saveProgressConsole.textContent = '';
   }
@@ -2019,6 +2256,10 @@ function closeSaveProgressDialog() {
   if (!els.saveProgressBackdrop) return;
   els.saveProgressBackdrop.classList.add('hidden');
   els.saveProgressBackdrop.setAttribute('aria-hidden', 'true');
+  // Restore default title for next GitHub save
+  if (els.saveProgressTitle) {
+    els.saveProgressTitle.textContent = t('saveProgress.title');
+  }
   focusFilterWhenIdle();
 }
 
@@ -2028,15 +2269,30 @@ function isSaveProgressOpen() {
   );
 }
 
-/** Append a timestamped line to the Save JSON progress console. */
-function appendSaveLog(message) {
+/**
+ * Append a timestamped line to the progress console.
+ * @param {string} message
+ * @param {{ level?: 'normal' | 'error' | 'warn' | 'ok' }} [opts]
+ */
+function appendSaveLog(message, opts = {}) {
   const el = els.saveProgressConsole;
   if (!el) return;
   const now = new Date();
   const pad = (n) => String(n).padStart(2, '0');
   const ts = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  const line = `[${ts}] ${message}`;
-  el.textContent = el.textContent ? `${el.textContent}\n${line}` : line;
+  const line = document.createElement('span');
+  line.className = 'progress-console-line';
+  const level = opts.level || 'normal';
+  if (level === 'error' || level === 'warn') {
+    line.classList.add(level === 'error' ? 'is-error' : 'is-warn');
+  } else if (level === 'ok') {
+    line.classList.add('is-ok');
+  }
+  line.textContent = `[${ts}] ${message}`;
+  if (el.childNodes.length) {
+    el.appendChild(document.createTextNode('\n'));
+  }
+  el.appendChild(line);
   el.scrollTop = el.scrollHeight;
 }
 
@@ -2651,7 +2907,7 @@ async function saveJsonToGithub() {
     appendSaveLog(`Done. ${owner}/${repo}/${path}`);
   } catch (err) {
     const msg = err?.message || String(err);
-    appendSaveLog(`ERROR: ${msg}`);
+    appendSaveLog(`ERROR: ${msg}`, { level: 'error' });
   } finally {
     saveJsonInFlight = false;
     if (els.saveJsonBtn) els.saveJsonBtn.disabled = false;

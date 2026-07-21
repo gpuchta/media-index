@@ -143,6 +143,34 @@ const en = {
   'menu.deployments': 'Deployments (GitHub)',
   'menu.configuration': 'Configuration',
   'menu.settings': 'Settings',
+  'menu.exportSettings': 'Export settings',
+  'menu.importSettings': 'Import settings',
+  'menu.clearSession': 'Clear session',
+
+  'settingsIo.exportDone': 'Settings exported',
+  'settingsIo.importTitle': 'Import settings',
+  'settingsIo.importUnavailable': 'Import settings is not available in this browser.',
+  'settingsIo.importStarting': 'Importing “{name}”…',
+  'settingsIo.importReadFailed': 'Could not read file: {error}',
+  'settingsIo.importParseFailed': 'Invalid JSON: {error}',
+  'settingsIo.importFailed': 'Import failed',
+  'settingsIo.statusApplied': 'applied',
+  'settingsIo.statusDefault': 'missing → default',
+  'settingsIo.statusInvalid': 'invalid → default',
+  'settingsIo.statusIgnored': 'unknown key ignored',
+  'settingsIo.statusSecret': 'applied from import file (sensitive)',
+  'settingsIo.secretWarning':
+    'WARNING: This file contained API key(s): {keys}. They were applied to this browser.',
+  'settingsIo.secretClearHint':
+    'To remove stored secrets and all local settings, use Menu → Configuration → Clear session.',
+  'settingsIo.importSummary':
+    'Done. Applied {applied}, defaults {defaults}, invalid {invalid}, ignored {ignored}, secrets {secrets}.',
+  'settingsIo.finished': 'Finished.',
+  'settingsIo.clearConfirm':
+    'Are you sure?\n\nThis permanently removes all localStorage data for this site in this browser, including settings and API keys.\n\nYour movie library on GitHub is not affected. Unsaved library edits in this tab remain until you leave or reload.',
+  'settingsIo.clearAction': 'Clear session',
+  'settingsIo.clearResult':
+    'Session cleared.\n\nlocalStorage keys before: {before}\nlocalStorage keys remaining: {after}\n\n(Remaining should normally be 0.)',
 
   'header.filterLabel': 'Filter movies',
   'header.filterPlaceholder': 'Filter… (−name or −type:value = NOT)',
@@ -367,6 +395,35 @@ const de = {
   'menu.deployments': 'Deployments (GitHub)',
   'menu.configuration': 'Konfiguration',
   'menu.settings': 'Einstellungen',
+  'menu.exportSettings': 'Einstellungen exportieren',
+  'menu.importSettings': 'Einstellungen importieren',
+  'menu.clearSession': 'Sitzung löschen',
+
+  'settingsIo.exportDone': 'Einstellungen exportiert',
+  'settingsIo.importTitle': 'Einstellungen importieren',
+  'settingsIo.importUnavailable':
+    'Einstellungen importieren ist in diesem Browser nicht verfügbar.',
+  'settingsIo.importStarting': 'Importiere „{name}“…',
+  'settingsIo.importReadFailed': 'Datei konnte nicht gelesen werden: {error}',
+  'settingsIo.importParseFailed': 'Ungültiges JSON: {error}',
+  'settingsIo.importFailed': 'Import fehlgeschlagen',
+  'settingsIo.statusApplied': 'angewendet',
+  'settingsIo.statusDefault': 'fehlend → Standard',
+  'settingsIo.statusInvalid': 'ungültig → Standard',
+  'settingsIo.statusIgnored': 'unbekannter Schlüssel ignoriert',
+  'settingsIo.statusSecret': 'aus Importdatei angewendet (sensibel)',
+  'settingsIo.secretWarning':
+    'WARNUNG: Diese Datei enthielt API-Schlüssel: {keys}. Sie wurden in diesem Browser angewendet.',
+  'settingsIo.secretClearHint':
+    'Um gespeicherte Geheimnisse und alle lokalen Einstellungen zu entfernen: Menü → Konfiguration → Sitzung löschen.',
+  'settingsIo.importSummary':
+    'Fertig. Angewendet {applied}, Standards {defaults}, ungültig {invalid}, ignoriert {ignored}, Geheimnisse {secrets}.',
+  'settingsIo.finished': 'Beendet.',
+  'settingsIo.clearConfirm':
+    'Sind Sie sicher?\n\nDadurch werden alle localStorage-Daten dieser Website in diesem Browser dauerhaft gelöscht, einschließlich Einstellungen und API-Schlüssel.\n\nIhre Filmbibliothek auf GitHub bleibt unberührt. Nicht gespeicherte Bibliotheksänderungen in diesem Tab bleiben bis zum Verlassen oder Neuladen erhalten.',
+  'settingsIo.clearAction': 'Sitzung löschen',
+  'settingsIo.clearResult':
+    'Sitzung gelöscht.\n\nlocalStorage-Schlüssel vorher: {before}\nlocalStorage-Schlüssel verbleibend: {after}\n\n(Verbleibend sollte normalerweise 0 sein.)',
 
   'header.filterLabel': 'Filme filtern',
   'header.filterPlaceholder': 'Filter… (−Name oder −Typ:Wert = NICHT)',
@@ -591,6 +648,35 @@ const es = {
   'menu.deployments': 'Despliegues (GitHub)',
   'menu.configuration': 'Configuración',
   'menu.settings': 'Ajustes',
+  'menu.exportSettings': 'Exportar ajustes',
+  'menu.importSettings': 'Importar ajustes',
+  'menu.clearSession': 'Borrar sesión',
+
+  'settingsIo.exportDone': 'Ajustes exportados',
+  'settingsIo.importTitle': 'Importar ajustes',
+  'settingsIo.importUnavailable':
+    'Importar ajustes no está disponible en este navegador.',
+  'settingsIo.importStarting': 'Importando “{name}”…',
+  'settingsIo.importReadFailed': 'No se pudo leer el archivo: {error}',
+  'settingsIo.importParseFailed': 'JSON no válido: {error}',
+  'settingsIo.importFailed': 'Error al importar',
+  'settingsIo.statusApplied': 'aplicado',
+  'settingsIo.statusDefault': 'faltante → valor predeterminado',
+  'settingsIo.statusInvalid': 'no válido → valor predeterminado',
+  'settingsIo.statusIgnored': 'clave desconocida ignorada',
+  'settingsIo.statusSecret': 'aplicado desde el archivo de importación (sensible)',
+  'settingsIo.secretWarning':
+    'ADVERTENCIA: Este archivo contenía clave(s) API: {keys}. Se aplicaron en este navegador.',
+  'settingsIo.secretClearHint':
+    'Para quitar secretos guardados y todos los ajustes locales, use Menú → Configuración → Borrar sesión.',
+  'settingsIo.importSummary':
+    'Listo. Aplicados {applied}, predeterminados {defaults}, no válidos {invalid}, ignorados {ignored}, secretos {secrets}.',
+  'settingsIo.finished': 'Finalizado.',
+  'settingsIo.clearConfirm':
+    '¿Está seguro?\n\nEsto elimina permanentemente todos los datos de localStorage de este sitio en este navegador, incluidos ajustes y claves API.\n\nSu biblioteca de películas en GitHub no se ve afectada. Los cambios de biblioteca no guardados en esta pestaña permanecen hasta que salga o recargue.',
+  'settingsIo.clearAction': 'Borrar sesión',
+  'settingsIo.clearResult':
+    'Sesión borrada.\n\nClaves de localStorage antes: {before}\nClaves de localStorage restantes: {after}\n\n(Lo restante debería ser normalmente 0.)',
 
   'header.filterLabel': 'Filtrar películas',
   'header.filterPlaceholder': 'Filtro… (−nombre o −tipo:valor = NO)',
@@ -815,6 +901,35 @@ const fr = {
   'menu.deployments': 'Déploiements (GitHub)',
   'menu.configuration': 'Configuration',
   'menu.settings': 'Paramètres',
+  'menu.exportSettings': 'Exporter les paramètres',
+  'menu.importSettings': 'Importer les paramètres',
+  'menu.clearSession': 'Effacer la session',
+
+  'settingsIo.exportDone': 'Paramètres exportés',
+  'settingsIo.importTitle': 'Importer les paramètres',
+  'settingsIo.importUnavailable':
+    'L’import des paramètres n’est pas disponible dans ce navigateur.',
+  'settingsIo.importStarting': 'Import de « {name} »…',
+  'settingsIo.importReadFailed': 'Impossible de lire le fichier : {error}',
+  'settingsIo.importParseFailed': 'JSON invalide : {error}',
+  'settingsIo.importFailed': 'Échec de l’import',
+  'settingsIo.statusApplied': 'appliqué',
+  'settingsIo.statusDefault': 'manquant → valeur par défaut',
+  'settingsIo.statusInvalid': 'invalide → valeur par défaut',
+  'settingsIo.statusIgnored': 'clé inconnue ignorée',
+  'settingsIo.statusSecret': 'appliqué depuis le fichier d’import (sensible)',
+  'settingsIo.secretWarning':
+    'AVERTISSEMENT : ce fichier contenait des clé(s) API : {keys}. Elles ont été appliquées dans ce navigateur.',
+  'settingsIo.secretClearHint':
+    'Pour supprimer les secrets stockés et tous les paramètres locaux : Menu → Configuration → Effacer la session.',
+  'settingsIo.importSummary':
+    'Terminé. Appliqués {applied}, défauts {defaults}, invalides {invalid}, ignorés {ignored}, secrets {secrets}.',
+  'settingsIo.finished': 'Terminé.',
+  'settingsIo.clearConfirm':
+    'Êtes-vous sûr ?\n\nCela supprime définitivement toutes les données localStorage de ce site dans ce navigateur, y compris les paramètres et les clés API.\n\nVotre bibliothèque de films sur GitHub n’est pas affectée. Les modifications non enregistrées de la bibliothèque dans cet onglet restent jusqu’à la fermeture ou le rechargement.',
+  'settingsIo.clearAction': 'Effacer la session',
+  'settingsIo.clearResult':
+    'Session effacée.\n\nClés localStorage avant : {before}\nClés localStorage restantes : {after}\n\n(Le reste devrait normalement être 0.)',
 
   'header.filterLabel': 'Filtrer les films',
   'header.filterPlaceholder': 'Filtre… (−nom ou −type:valeur = NON)',

@@ -1843,9 +1843,26 @@ input {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  white-space: pre-wrap;
-  word-break: break-word;
+  /* One line per entry; long lines scroll horizontally (Save + Import settings). */
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
   color: var(--text);
+}
+
+/* Inline spans + \n keep the same line spacing as plain textContent. */
+.progress-console-line {
+  white-space: pre;
+}
+
+.progress-console-line.is-error,
+.progress-console-line.is-warn {
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.progress-console-line.is-ok {
+  color: #7dcea0;
 }
 
 /* Bulk metadata refresh progress */

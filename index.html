@@ -151,6 +151,15 @@
                       >⌘.</kbd
                     >
                   </button>
+                  <button type="button" role="menuitem" id="export-settings-btn" data-i18n="menu.exportSettings">
+                    Export settings
+                  </button>
+                  <button type="button" role="menuitem" id="import-settings-btn" data-i18n="menu.importSettings">
+                    Import settings
+                  </button>
+                  <button type="button" role="menuitem" id="clear-session-btn" data-i18n="menu.clearSession">
+                    Clear session
+                  </button>
                 </div>
               </div>
             </div>
@@ -1003,6 +1012,12 @@
   <input
     type="file"
     id="import-file-input"
+    accept="application/json,.json"
+    hidden
+  />
+  <input
+    type="file"
+    id="import-settings-file-input"
     accept="application/json,.json"
     hidden
   />
