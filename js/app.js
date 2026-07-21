@@ -2073,7 +2073,7 @@ function openMetaRefreshDialog() {
   if (els.metaRefreshProgressbar) {
     els.metaRefreshProgressbar.setAttribute('aria-valuenow', '0');
   }
-  if (els.metaRefreshCount) els.metaRefreshCount.textContent = 'Updating 0 of 0';
+  if (els.metaRefreshCount) els.metaRefreshCount.textContent = 'Refreshing 0 of 0';
   if (els.metaRefreshPct) els.metaRefreshPct.textContent = '0%';
   if (els.metaRefreshMovie) els.metaRefreshMovie.textContent = '—';
   if (els.metaRefreshStatus) els.metaRefreshStatus.textContent = 'Preparing…';
@@ -2119,7 +2119,7 @@ function updateMetaRefreshProgress({ index, total, title, status }) {
   }
   if (els.metaRefreshCount) {
     els.metaRefreshCount.textContent =
-      total > 0 ? `Updating ${index} of ${total}` : 'Updating…';
+      total > 0 ? `Refreshing ${index} of ${total}` : 'Refreshing…';
   }
   if (els.metaRefreshPct) els.metaRefreshPct.textContent = `${pct}%`;
   if (els.metaRefreshMovie) {
@@ -2152,14 +2152,13 @@ function showMetaRefreshDone(result) {
 
   if (els.metaRefreshDoneHeading) {
     els.metaRefreshDoneHeading.textContent = cancelled
-      ? 'Update cancelled'
+      ? 'Refresh cancelled'
       : failed && !ok
-        ? 'Update failed'
-        : 'Update Complete';
+        ? 'Refresh failed'
+        : 'Refresh complete';
   }
   if (els.metaRefreshDoneSummary) {
-    const verb = cancelled ? 'Updated' : 'Updated';
-    els.metaRefreshDoneSummary.textContent = `${verb} ${ok} of ${total} movie${
+    els.metaRefreshDoneSummary.textContent = `Refreshed ${ok} of ${total} movie${
       total === 1 ? '' : 's'
     }${cancelled ? ' before cancel' : ''}.`;
   }
@@ -2314,14 +2313,14 @@ async function startBulkMetadataRefresh() {
   if (metaRefreshJob.running) return;
   if (!state.dataReady) {
     await showAppAlert('Library is still loading. Try again in a moment.', {
-      title: 'Update metadata',
+      title: 'Refresh (TMDB)',
     });
     return;
   }
   const apiKey = getStoredTmdbApiKey();
   if (!apiKey) {
     await showAppAlert(
-      'Set a TMDB API key in Menu → Settings before updating metadata.',
+      'Set a TMDB API key in Menu → Settings before refreshing from TMDB.',
       { title: 'TMDB API key required' }
     );
     return;
@@ -2329,14 +2328,14 @@ async function startBulkMetadataRefresh() {
 
   const total = state.movies.length;
   if (!total) {
-    await showAppAlert('Your library is empty — nothing to update.', {
-      title: 'Update metadata',
+    await showAppAlert('Your library is empty — nothing to refresh.', {
+      title: 'Refresh (TMDB)',
     });
     return;
   }
 
   const firstOk = await showAppConfirm(
-    `Update metadata for all ${total} movie${total === 1 ? '' : 's'} from TMDB?\n\n` +
+    `Refresh metadata for all ${total} movie${total === 1 ? '' : 's'} from TMDB?\n\n` +
       `This re-fetches title, year, overview, cast, crew, genres, ratings, posters, ` +
       `and related fields for every library entry.\n\n` +
       `Location and keywords will be merged:\n` +
@@ -2345,7 +2344,7 @@ async function startBulkMetadataRefresh() {
       `• Poster — kept if it still appears on TMDB (primary or alternate); otherwise the TMDB default\n\n` +
       `TMDB limits how many updates we can do per second, so this can take a little while.`,
     {
-      title: 'Update metadata',
+      title: 'Refresh (TMDB)',
       okLabel: 'Continue',
       cancelLabel: 'Cancel',
     }
@@ -2354,14 +2353,14 @@ async function startBulkMetadataRefresh() {
 
   if (getStoredBulkMetaConfirm2()) {
     const secondOk = await showAppConfirm(
-      `Are you sure you want to update metadata for all ${total} movie${
+      `Are you sure you want to refresh metadata for all ${total} movie${
         total === 1 ? '' : 's'
       }?\n\n` +
         `This overwrites TMDB-sourced fields in your library. You can still discard unsaved ` +
         `changes by reloading without Save to GitHub, or restore an older data file.`,
       {
-        title: 'Confirm update',
-        okLabel: 'Update all',
+        title: 'Confirm refresh',
+        okLabel: 'Refresh all',
         cancelLabel: 'Cancel',
       }
     );
@@ -2461,13 +2460,13 @@ async function runBulkMetadataRefresh(apiKey) {
 
     if (ok > 0 && !cancelled) {
       showAppToast(
-        `Updated ${ok} movie${ok === 1 ? '' : 's'} from TMDB${
+        `Refreshed ${ok} movie${ok === 1 ? '' : 's'} from TMDB${
           failed ? ` · ${failed} failed` : ''
         }`
       );
     } else if (ok > 0 && cancelled) {
       showAppToast(
-        `Updated ${ok} movie${ok === 1 ? '' : 's'} before cancel${
+        `Refreshed ${ok} movie${ok === 1 ? '' : 's'} before cancel${
           failed ? ` · ${failed} failed` : ''
         }`
       );

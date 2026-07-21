@@ -54,9 +54,9 @@
                     <kbd class="menu-shortcut" id="tmdb-search-shortcut-hint" aria-hidden="true">⌘K</kbd>
                   </button>
                   <button type="button" role="menuitem" id="meta-refresh-btn">Refresh (TMDB)</button>
-                  <button type="button" role="menuitem" id="stats-btn">Statistics</button>
+                  <button type="button" role="menuitem" id="library-history-btn">Restore (GitHub)</button>
                   <button type="button" role="menuitem" id="import-btn">Import</button>
-                  <button type="button" role="menuitem" id="library-history-btn">Restore</button>
+                  <button type="button" role="menuitem" id="stats-btn">Statistics</button>
                   <button type="button" role="menuitem" id="empty-collection-btn">Clear All</button>
                 </div>
               </div>
@@ -100,7 +100,7 @@
                     id="save-json-btn"
                     aria-keyshortcuts="Control+S"
                   >
-                    <span class="menu-item-label">Save to GitHub</span>
+                    <span class="menu-item-label">Save (GitHub)</span>
                     <kbd class="menu-shortcut" id="save-json-shortcut-hint" aria-hidden="true"
                       >Ctrl+S</kbd
                     >
@@ -122,7 +122,7 @@
               </button>
               <div class="menu-accordion-panel" id="menu-panel-github" role="region" aria-labelledby="menu-trigger-github">
                 <div class="menu-accordion-panel-inner">
-                  <button type="button" role="menuitem" id="github-deployment-btn">Deployments</button>
+                  <button type="button" role="menuitem" id="github-deployment-btn">Deployments (GitHub)</button>
                 </div>
               </div>
             </div>
@@ -532,7 +532,7 @@
           <div class="settings-section" role="group" aria-labelledby="settings-sec-library">
             <h3 class="settings-section-title" id="settings-sec-library">Library</h3>
             <label class="form-field form-check" for="settings-bulk-meta-confirm2">
-              <span class="form-label">Bulk update</span>
+              <span class="form-label">Bulk refresh</span>
               <span class="form-check-row">
                 <input
                   type="checkbox"
@@ -541,11 +541,11 @@
                   class="form-check-input"
                   checked
                 />
-                <span>Require second confirmation for Update metadata</span>
+                <span>Require second confirmation for Refresh (TMDB)</span>
               </span>
             </label>
             <p class="form-hint">
-              Menu → Collection → Update metadata re-fetches every movie from TMDB.
+              Menu → Collection → Refresh (TMDB) re-fetches every movie from TMDB.
               Location is kept; keywords are merged. A second “are you sure?” step is on by default.
             </p>
           </div>
@@ -916,7 +916,7 @@
       id="meta-refresh-dialog"
     >
       <div class="dialog-header">
-        <h2 class="dialog-header-title" id="meta-refresh-title">Refresh Library Metadata</h2>
+        <h2 class="dialog-header-title" id="meta-refresh-title">Refresh (TMDB)</h2>
         <button
           type="button"
           class="dialog-close"
@@ -940,7 +940,7 @@
             <div id="meta-refresh-bar" class="meta-progress-fill"></div>
           </div>
           <div class="meta-progress-row">
-            <span id="meta-refresh-count" class="meta-progress-count">Updating 0 of 0</span>
+            <span id="meta-refresh-count" class="meta-progress-count">Refreshing 0 of 0</span>
             <span id="meta-refresh-pct" class="meta-progress-pct">0%</span>
           </div>
           <p id="meta-refresh-movie" class="meta-progress-movie">—</p>
@@ -963,7 +963,7 @@
               />
             </svg>
           </div>
-          <h3 class="meta-done-heading" id="meta-refresh-done-heading">Update Complete</h3>
+          <h3 class="meta-done-heading" id="meta-refresh-done-heading">Refresh complete</h3>
           <p id="meta-refresh-done-summary" class="meta-done-summary"></p>
           <p id="meta-refresh-done-failed" class="meta-done-failed" hidden></p>
           <div id="meta-refresh-failures" class="meta-failures" hidden>
