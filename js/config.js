@@ -164,7 +164,64 @@ export const CONFIG = {
   VIRTUAL_BUFFER_ROWS: 2,
 
   SESSION_SORT_KEY: 'pmi:sort',
+
+  /**
+   * Last-opened hamburger menu accordion section (`data-menu-group`).
+   * Stored in localStorage; restored when the menu opens.
+   */
+  MENU_ACCORDION_STORAGE: 'pmi:menuAccordion',
+  MENU_ACCORDION_DEFAULT: 'collection',
 };
+
+/** Valid `data-menu-group` ids for the main menu accordion. */
+export const MENU_ACCORDION_GROUPS = Object.freeze([
+  'collection',
+  'sort',
+  'actions',
+  'github',
+  'configuration',
+]);
+
+const MENU_ACCORDION_GROUP_SET = new Set(MENU_ACCORDION_GROUPS);
+
+/**
+ * @param {unknown} id
+ * @returns {string}
+ */
+export function normalizeMenuAccordionGroup(id) {
+  const s = String(id || '').trim();
+  if (MENU_ACCORDION_GROUP_SET.has(s)) return s;
+  return CONFIG.MENU_ACCORDION_DEFAULT;
+}
+
+/** @returns {string} menu group id */
+export function getStoredMenuAccordionGroup() {
+  try {
+    const raw = localStorage.getItem(CONFIG.MENU_ACCORDION_STORAGE);
+    if (raw == null || raw === '') return CONFIG.MENU_ACCORDION_DEFAULT;
+    return normalizeMenuAccordionGroup(raw);
+  } catch {
+    return CONFIG.MENU_ACCORDION_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} id
+ * @returns {string} stored group id
+ */
+export function setStoredMenuAccordionGroup(id) {
+  const n = normalizeMenuAccordionGroup(id);
+  try {
+    if (n === CONFIG.MENU_ACCORDION_DEFAULT) {
+      localStorage.removeItem(CONFIG.MENU_ACCORDION_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.MENU_ACCORDION_STORAGE, n);
+    }
+  } catch {
+    /* private mode */
+  }
+  return n;
+}
 
 /**
  * Themes offered in Settings (extend as needed).

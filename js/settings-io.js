@@ -18,6 +18,7 @@ import {
   getStoredGrayedLocationsText,
   getStoredLocale,
   getStoredLocationOverlayEnabled,
+  getStoredMenuAccordionGroup,
   getStoredPosterBacklightPercent,
   getStoredPosterGapPx,
   getStoredPosterScalePercent,
@@ -27,6 +28,7 @@ import {
   normalizeBinderNotationId,
   normalizeFontSize,
   normalizeLocale,
+  normalizeMenuAccordionGroup,
   normalizePosterSource,
   normalizeTheme,
   normalizeThemeColors,
@@ -37,6 +39,7 @@ import {
   setStoredGrayedLocationsText,
   setStoredLocale,
   setStoredLocationOverlayEnabled,
+  setStoredMenuAccordionGroup,
   setStoredPosterBacklightPercent,
   setStoredPosterGapPx,
   setStoredPosterScalePercent,
@@ -450,6 +453,28 @@ const SETTINGS_FIELDS = Object.freeze([
         };
       }
       const v = setStoredBinderCustomPatterns(String(raw ?? ''));
+      return { status: 'applied', value: v };
+    },
+  },
+  {
+    key: CONFIG.MENU_ACCORDION_STORAGE,
+    label: 'menu section',
+    exportValue: () => getStoredMenuAccordionGroup(),
+    apply(raw) {
+      if (raw === undefined) {
+        const v = setStoredMenuAccordionGroup(CONFIG.MENU_ACCORDION_DEFAULT);
+        return { status: 'default', detail: 'missing → default', value: v };
+      }
+      const id = normalizeMenuAccordionGroup(raw);
+      if (String(raw).trim() !== '' && String(raw).trim() !== id) {
+        const v = setStoredMenuAccordionGroup(CONFIG.MENU_ACCORDION_DEFAULT);
+        return {
+          status: 'invalid',
+          detail: `invalid “${String(raw)}” → default`,
+          value: v,
+        };
+      }
+      const v = setStoredMenuAccordionGroup(id);
       return { status: 'applied', value: v };
     },
   },

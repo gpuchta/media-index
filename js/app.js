@@ -23,6 +23,7 @@ import {
   getStoredGrayedLocationsText,
   getStoredLocale,
   getStoredLocationOverlayEnabled,
+  getStoredMenuAccordionGroup,
   getStoredBulkMetaConfirm2,
   getStoredPosterBacklightPercent,
   getStoredPosterGapPx,
@@ -45,6 +46,7 @@ import {
   setStoredGrayedLocationsText,
   setStoredLocale,
   setStoredLocationOverlayEnabled,
+  setStoredMenuAccordionGroup,
   setStoredPosterBacklightPercent,
   setStoredPosterGapPx,
   setStoredPosterScalePercent,
@@ -1229,12 +1231,10 @@ function closeMenu() {
   focusFilterWhenIdle();
 }
 
-/** Default accordion section when the menu opens. */
-const MENU_ACCORDION_DEFAULT = 'collection';
-
 /**
  * Open one accordion group; close any other open group in the same frame
  * so CSS transitions run simultaneously (open + close).
+ * Remembers the section in localStorage for the next menu open.
  */
 function openMenuAccordionGroup(group) {
   if (!group || !els.menuDropdown) return;
@@ -1246,13 +1246,17 @@ function openMenuAccordionGroup(group) {
     const t = g.querySelector('.menu-accordion-trigger');
     if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
   });
+
+  const id = group.dataset.menuGroup;
+  if (id) setStoredMenuAccordionGroup(id);
 }
 
-/** Reset to Sort open (exclusive). */
+/** Restore the last-opened accordion section (exclusive). */
 function resetMenuAccordion() {
   if (!els.menuDropdown) return;
+  const target = getStoredMenuAccordionGroup();
   els.menuDropdown.querySelectorAll('.menu-accordion-group').forEach((g) => {
-    const open = g.dataset.menuGroup === MENU_ACCORDION_DEFAULT;
+    const open = g.dataset.menuGroup === target;
     g.classList.toggle('is-open', open);
     const t = g.querySelector('.menu-accordion-trigger');
     if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
