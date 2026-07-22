@@ -946,6 +946,22 @@ export function initTmdbSearchUi(opts) {
     true
   );
 
+  // Enter → Save poster selection when focus is not on a field/control
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      if (!isPrimaryActionEnter(e)) return;
+      if (isAppAlertOpen()) return;
+      if (!els.tmdbPosterBackdrop || els.tmdbPosterBackdrop.classList.contains('hidden')) {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      saveTmdbPosterSelection();
+    },
+    true
+  );
+
   // Ctrl+K / ⌘K — open Search Movies
   document.addEventListener(
     'keydown',

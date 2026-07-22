@@ -23,7 +23,6 @@ import {
 import { clearHash, hashToLeaves, writeHash } from './hash.js';
 import { PosterGrid } from './grid.js';
 import { MovieDialog } from './dialog.js';
-import { isPrimaryActionEnter } from './utils.js';
 import { isAppAlertOpen } from './alert-dialog.js';
 import { isPosterZoomOpen } from './poster-zoom.js';
 import { t } from './i18n.js';
@@ -720,22 +719,6 @@ initSettingsTransfer({
   clipboardImportRun: els.clipboardImportRun,
   clipboardImportPasteBtn: els.clipboardImportPasteBtn,
 });
-
-// Enter → Ok on poster picker when focus is not on a field/control
-document.addEventListener(
-  'keydown',
-  (e) => {
-    if (!isPrimaryActionEnter(e)) return;
-    if (isAppAlertOpen()) return;
-    if (!els.tmdbPosterBackdrop || els.tmdbPosterBackdrop.classList.contains('hidden')) {
-      return;
-    }
-    e.preventDefault();
-    e.stopPropagation();
-    saveTmdbPosterSelection();
-  },
-  true
-);
 
 document.addEventListener('click', (e) => {
   if (!els.menuDropdown.contains(e.target) && e.target !== els.menuBtn) {
