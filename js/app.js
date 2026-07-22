@@ -23,7 +23,6 @@ import {
   getStoredGrayedLocationsText,
   getStoredLocale,
   getStoredLocationOverlayEnabled,
-  getStoredMenuAccordionGroup,
   getStoredBulkMetaConfirm2,
   getStoredPosterBacklightPercent,
   getStoredPosterGapPx,
@@ -46,7 +45,6 @@ import {
   setStoredGrayedLocationsText,
   setStoredLocale,
   setStoredLocationOverlayEnabled,
-  setStoredMenuAccordionGroup,
   setStoredPosterBacklightPercent,
   setStoredPosterGapPx,
   setStoredPosterScalePercent,
@@ -113,13 +111,13 @@ import { isAppAlertOpen, showAppAlert, showAppConfirm } from './alert-dialog.js'
 import { attachPosterHotCorner, isPosterZoomOpen, posterZoomUrl } from './poster-zoom.js';
 import { buildLibraryStats, statsSectionTitle } from './stats.js';
 import { applyDomI18n, syncUiLocaleFromSettings, t } from './i18n.js';
+import { readEffectiveSettingsSnapshot } from './settings-io.js';
+import { initMenu } from './menu.js';
 import {
-  SETTINGS_EXPORT_FILENAME,
-  applySettingsImport,
-  buildSettingsExportObject,
-  clearLocalStorageSession,
-  readEffectiveSettingsSnapshot,
-} from './settings-io.js';
+  initSaveProgressDialog,
+  resetDialogScroll,
+} from './progress-console.js';
+import { initSettingsTransfer } from './settings-transfer-ui.js';
 
 const state = {
   movies: [],
@@ -586,27 +584,12 @@ function showHeader() {
 }
 
 // —— Menu ——
-els.menuBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  toggleMenu();
-});
-
-els.menuDropdown.addEventListener('click', (e) => {
-  const trigger = e.target.closest('.menu-accordion-trigger');
-  if (trigger) {
-    e.preventDefault();
-    e.stopPropagation();
-    const group = trigger.closest('.menu-accordion-group');
-    if (group) openMenuAccordionGroup(group);
-    return;
-  }
-
-  const btn = e.target.closest('button[data-sort]');
-  if (btn) {
-    setSort(btn.dataset.sort);
-    closeMenu();
-    return;
-  }
+const { closeMenu, syncSortMenuActive } = initMenu({
+  menuBtn: els.menuBtn,
+  menuDropdown: els.menuDropdown,
+  getSortId: () => state.sortId,
+  onSort: setSort,
+  focusFilterWhenIdle,
 });
 
 els.saveJsonBtn?.addEventListener('click', () => {
@@ -670,42 +653,20 @@ document.addEventListener(
   true
 );
 
-els.saveProgressClose?.addEventListener('click', () => closeSaveProgressDialog());
-els.saveProgressOk?.addEventListener('click', () => closeSaveProgressDialog());
-els.saveProgressCopy?.addEventListener('click', () => {
-  copySaveProgressLog();
+const {
+  openSaveProgressDialog,
+  isSaveProgressOpen,
+  appendSaveLog,
+  appendSaveLogMessage,
+} = initSaveProgressDialog({
+  backdrop: els.saveProgressBackdrop,
+  title: els.saveProgressTitle,
+  console: els.saveProgressConsole,
+  closeBtn: els.saveProgressClose,
+  okBtn: els.saveProgressOk,
+  copyBtn: els.saveProgressCopy,
+  focusFilterWhenIdle,
 });
-els.saveProgressBackdrop?.addEventListener('click', (e) => {
-  if (e.target === els.saveProgressBackdrop) closeSaveProgressDialog();
-});
-
-// Escape closes Save progress dialog when open (above other dialogs)
-document.addEventListener(
-  'keydown',
-  (e) => {
-    if (e.key !== 'Escape') return;
-    if (isAppAlertOpen()) return;
-    if (!isSaveProgressOpen()) return;
-    e.preventDefault();
-    e.stopPropagation();
-    closeSaveProgressDialog();
-  },
-  true
-);
-
-// Enter → OK on Save progress when focus is not in a field/button
-document.addEventListener(
-  'keydown',
-  (e) => {
-    if (!isPrimaryActionEnter(e)) return;
-    if (isAppAlertOpen()) return;
-    if (!isSaveProgressOpen()) return;
-    e.preventDefault();
-    e.stopPropagation();
-    closeSaveProgressDialog();
-  },
-  true
-);
 
 els.exportBtn.addEventListener('click', () => {
   closeMenu();
@@ -869,65 +830,31 @@ els.settingsBtn?.addEventListener('click', () => {
   openSettingsDialog();
 });
 
-els.exportSettingsBtn?.addEventListener('click', () => {
-  closeMenu();
-  exportSettings();
-});
-
-els.exportSettingsClipboardBtn?.addEventListener('click', () => {
-  closeMenu();
-  void exportSettingsToClipboard();
-});
-
-els.importSettingsBtn?.addEventListener('click', () => {
-  closeMenu();
-  startSettingsImport();
-});
-
-els.importSettingsFileInput?.addEventListener('change', () => {
-  const file = els.importSettingsFileInput?.files?.[0] || null;
-  if (els.importSettingsFileInput) els.importSettingsFileInput.value = '';
-  if (file) void importSettingsFromFile(file);
-});
-
-els.importSettingsClipboardBtn?.addEventListener('click', () => {
-  closeMenu();
-  openClipboardImportDialog();
-});
-
-els.clipboardImportClose?.addEventListener('click', () => {
-  closeClipboardImportDialog();
-});
-els.clipboardImportCancel?.addEventListener('click', () => {
-  closeClipboardImportDialog();
-});
-els.clipboardImportBackdrop?.addEventListener('click', (e) => {
-  if (e.target === els.clipboardImportBackdrop) closeClipboardImportDialog();
-});
-els.clipboardImportRun?.addEventListener('click', () => {
-  runClipboardSettingsImport();
-});
-els.clipboardImportPasteBtn?.addEventListener('click', () => {
-  void pasteIntoClipboardImport();
-});
-
-// Escape closes clipboard-import dialog when open
-document.addEventListener(
-  'keydown',
-  (e) => {
-    if (e.key !== 'Escape') return;
-    if (isAppAlertOpen()) return;
-    if (!isClipboardImportOpen()) return;
-    e.preventDefault();
-    e.stopPropagation();
-    closeClipboardImportDialog();
-  },
-  true
-);
-
-els.clearSessionBtn?.addEventListener('click', () => {
-  closeMenu();
-  void clearSession();
+initSettingsTransfer({
+  closeMenu,
+  showAppToast,
+  openSaveProgressDialog,
+  appendSaveLog,
+  reapplySettingsFromStorage,
+  closeSettingsDialog,
+  focusFilterWhenIdle,
+  isSettingsOpen: () =>
+    Boolean(
+      els.settingsBackdrop && !els.settingsBackdrop.classList.contains('hidden')
+    ),
+  exportSettingsBtn: els.exportSettingsBtn,
+  exportSettingsClipboardBtn: els.exportSettingsClipboardBtn,
+  importSettingsBtn: els.importSettingsBtn,
+  importSettingsFileInput: els.importSettingsFileInput,
+  importSettingsClipboardBtn: els.importSettingsClipboardBtn,
+  clearSessionBtn: els.clearSessionBtn,
+  clipboardImportBackdrop: els.clipboardImportBackdrop,
+  clipboardImportText: els.clipboardImportText,
+  clipboardImportConsole: els.clipboardImportConsole,
+  clipboardImportClose: els.clipboardImportClose,
+  clipboardImportCancel: els.clipboardImportCancel,
+  clipboardImportRun: els.clipboardImportRun,
+  clipboardImportPasteBtn: els.clipboardImportPasteBtn,
 });
 
 // Ctrl+. / ⌘+. — open Settings (skip when another modal owns the UI)
@@ -1214,61 +1141,6 @@ document.addEventListener('click', (e) => {
   }
 });
 
-function toggleMenu() {
-  const open = els.menuDropdown.classList.toggle('open');
-  els.menuDropdown.hidden = !open;
-  els.menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-  if (open) {
-    resetMenuAccordion();
-    syncSortMenuActive();
-  }
-}
-
-function closeMenu() {
-  els.menuDropdown.classList.remove('open');
-  els.menuDropdown.hidden = true;
-  els.menuBtn.setAttribute('aria-expanded', 'false');
-  focusFilterWhenIdle();
-}
-
-/**
- * Open one accordion group; close any other open group in the same frame
- * so CSS transitions run simultaneously (open + close).
- * Remembers the section in localStorage for the next menu open.
- */
-function openMenuAccordionGroup(group) {
-  if (!group || !els.menuDropdown) return;
-  if (group.classList.contains('is-open')) return;
-
-  els.menuDropdown.querySelectorAll('.menu-accordion-group').forEach((g) => {
-    const open = g === group;
-    g.classList.toggle('is-open', open);
-    const t = g.querySelector('.menu-accordion-trigger');
-    if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-
-  const id = group.dataset.menuGroup;
-  if (id) setStoredMenuAccordionGroup(id);
-}
-
-/** Restore the last-opened accordion section (exclusive). */
-function resetMenuAccordion() {
-  if (!els.menuDropdown) return;
-  const target = getStoredMenuAccordionGroup();
-  els.menuDropdown.querySelectorAll('.menu-accordion-group').forEach((g) => {
-    const open = g.dataset.menuGroup === target;
-    g.classList.toggle('is-open', open);
-    const t = g.querySelector('.menu-accordion-trigger');
-    if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-}
-
-function syncSortMenuActive() {
-  els.menuDropdown.querySelectorAll('[data-sort]').forEach((btn) => {
-    btn.classList.toggle('is-active', btn.dataset.sort === state.sortId);
-  });
-}
-
 function setSort(id) {
   state.sortId = id;
   try {
@@ -1277,6 +1149,7 @@ function setSort(id) {
     /* ignore */
   }
   recompute({ resetScroll: true });
+  syncSortMenuActive();
 }
 
 // —— Dirty ——
@@ -1295,47 +1168,6 @@ window.addEventListener('beforeunload', (e) => {
 function exportData() {
   downloadJson(formatExportFilename(CONFIG.DATA_PATH), state.movies);
   setDirty(false);
-}
-
-/**
- * Download current non-secret settings as settings.json (API keys excluded).
- */
-function exportSettings() {
-  downloadJson(SETTINGS_EXPORT_FILENAME, buildSettingsExportObject());
-  showAppToast(t('settingsIo.exportDone'));
-}
-
-/**
- * Copy current non-secret settings JSON to the system clipboard (API keys excluded).
- * Same payload as Export settings.
- */
-async function exportSettingsToClipboard() {
-  const text = JSON.stringify(buildSettingsExportObject(), null, 2);
-  try {
-    await copyTextToClipboard(text);
-    showAppToast(t('settingsIo.exportClipboardDone'));
-  } catch (err) {
-    await showAppAlert(
-      t('settingsIo.exportClipboardFailed', {
-        error: err?.message || String(err),
-      }),
-      { title: t('menu.exportSettingsClipboard') }
-    );
-  }
-}
-
-/**
- * Open the system file picker for a settings.json import.
- */
-function startSettingsImport() {
-  const input = els.importSettingsFileInput;
-  if (!input) {
-    void showAppAlert(t('settingsIo.importUnavailable'), {
-      title: t('menu.importSettings'),
-    });
-    return;
-  }
-  input.click();
 }
 
 /**
@@ -1375,239 +1207,6 @@ function reapplySettingsFromStorage() {
     dialog.open(dialog.movie);
   }
   recompute({ resetScroll: false });
-}
-
-/**
- * Shared settings import + console logging (file and clipboard).
- * @param {string} text raw JSON text
- * @param {{
- *   sourceLabel: string,
- *   log: (message: string, opts?: { level?: 'normal'|'error'|'warn'|'ok' }) => void,
- * }} opts
- * @returns {boolean} true if settings were applied (including partial defaults)
- */
-function importSettingsFromText(text, { sourceLabel, log }) {
-  const name = String(sourceLabel || 'settings.json').trim() || 'settings.json';
-  log(t('settingsIo.importStarting', { name }));
-
-  const raw = String(text ?? '');
-  if (!raw.trim()) {
-    log(t('settingsIo.importEmpty'), { level: 'error' });
-    log(t('settingsIo.finished'));
-    return false;
-  }
-
-  let data;
-  try {
-    data = JSON.parse(raw);
-  } catch (err) {
-    log(
-      t('settingsIo.importParseFailed', {
-        error: err?.message || String(err),
-      }),
-      { level: 'error' }
-    );
-    log(t('settingsIo.finished'));
-    return false;
-  }
-
-  const result = applySettingsImport(data);
-  if (!result.ok) {
-    log(result.error || t('settingsIo.importFailed'), { level: 'error' });
-    log(t('settingsIo.finished'));
-    return false;
-  }
-
-  let applied = 0;
-  let defaults = 0;
-  let invalid = 0;
-  let ignored = 0;
-  for (const line of result.lines) {
-    if (line.status === 'applied') {
-      applied += 1;
-      log(`${line.label}: ${t('settingsIo.statusApplied')}`);
-    } else if (line.status === 'default') {
-      defaults += 1;
-      log(`${line.label}: ${line.detail || t('settingsIo.statusDefault')}`);
-    } else if (line.status === 'invalid') {
-      invalid += 1;
-      log(`${line.label}: ${line.detail || t('settingsIo.statusInvalid')}`, {
-        level: 'warn',
-      });
-    } else if (line.status === 'ignored') {
-      ignored += 1;
-      log(`${line.key}: ${line.detail || t('settingsIo.statusIgnored')}`);
-    } else if (line.status === 'secret') {
-      log(`${line.label}: ${line.detail || t('settingsIo.statusSecret')}`, {
-        level: 'error',
-      });
-    }
-  }
-
-  if (result.secretsApplied.length) {
-    log(
-      t('settingsIo.secretWarning', {
-        keys: result.secretsApplied.join(', '),
-      }),
-      { level: 'error' }
-    );
-    log(t('settingsIo.secretClearHint'), { level: 'error' });
-  }
-
-  reapplySettingsFromStorage();
-
-  log(
-    t('settingsIo.importSummary', {
-      applied,
-      defaults,
-      invalid,
-      ignored,
-      secrets: result.secretsApplied.length,
-    }),
-    { level: 'ok' }
-  );
-  log(t('settingsIo.finished'));
-  return true;
-}
-
-/**
- * Parse and apply a settings.json file; log results in the progress console.
- * @param {File} file
- */
-async function importSettingsFromFile(file) {
-  const name = file?.name || 'settings.json';
-  openSaveProgressDialog({ title: t('settingsIo.importTitle') });
-
-  let text;
-  try {
-    text = await file.text();
-  } catch (err) {
-    appendSaveLog(
-      t('settingsIo.importReadFailed', {
-        error: err?.message || String(err),
-      }),
-      { level: 'error' }
-    );
-    appendSaveLog(t('settingsIo.finished'));
-    return;
-  }
-
-  importSettingsFromText(text, {
-    sourceLabel: name,
-    log: appendSaveLog,
-  });
-}
-
-function isClipboardImportOpen() {
-  return Boolean(
-    els.clipboardImportBackdrop &&
-      !els.clipboardImportBackdrop.classList.contains('hidden')
-  );
-}
-
-function openClipboardImportDialog() {
-  if (!els.clipboardImportBackdrop) return;
-  if (els.clipboardImportText) els.clipboardImportText.value = '';
-  if (els.clipboardImportConsole) els.clipboardImportConsole.textContent = '';
-  resetDialogScroll(els.clipboardImportBackdrop);
-  els.clipboardImportBackdrop.classList.remove('hidden');
-  els.clipboardImportBackdrop.setAttribute('aria-hidden', 'false');
-  queueMicrotask(() => {
-    resetDialogScroll(els.clipboardImportBackdrop);
-    els.clipboardImportText?.focus();
-  });
-}
-
-function closeClipboardImportDialog() {
-  if (!els.clipboardImportBackdrop) return;
-  els.clipboardImportBackdrop.classList.add('hidden');
-  els.clipboardImportBackdrop.setAttribute('aria-hidden', 'true');
-  focusFilterWhenIdle();
-}
-
-/**
- * Append a line to the clipboard-import dialog console.
- * @param {string} message
- * @param {{ level?: 'normal' | 'error' | 'warn' | 'ok' }} [opts]
- */
-function appendClipboardImportLog(message, opts = {}) {
-  appendProgressLog(els.clipboardImportConsole, message, opts);
-}
-
-/**
- * Read system clipboard into the paste field (best-effort).
- */
-async function pasteIntoClipboardImport() {
-  const ta = els.clipboardImportText;
-  if (!ta) return;
-  try {
-    if (!navigator.clipboard?.readText) {
-      appendClipboardImportLog(t('settingsIo.clipboardPasteUnsupported'), {
-        level: 'warn',
-      });
-      ta.focus();
-      return;
-    }
-    const text = await navigator.clipboard.readText();
-    ta.value = text;
-    ta.focus();
-    ta.setSelectionRange(ta.value.length, ta.value.length);
-    appendClipboardImportLog(
-      t('settingsIo.clipboardPasted', { n: text.length })
-    );
-  } catch (err) {
-    appendClipboardImportLog(
-      t('settingsIo.clipboardPasteFailed', {
-        error: err?.message || String(err),
-      }),
-      { level: 'error' }
-    );
-    ta.focus();
-  }
-}
-
-/** Run settings import from the clipboard dialog textarea. */
-function runClipboardSettingsImport() {
-  const text = els.clipboardImportText?.value ?? '';
-  if (els.clipboardImportConsole) {
-    els.clipboardImportConsole.textContent = '';
-  }
-  importSettingsFromText(text, {
-    sourceLabel: t('settingsIo.clipboardSource'),
-    log: appendClipboardImportLog,
-  });
-}
-
-/**
- * Clear all localStorage for this origin after “are you sure?” confirmation.
- * Then report remaining key count (normally 0) with a simple OK dialog.
- */
-async function clearSession() {
-  const ok = await showAppConfirm(t('settingsIo.clearConfirm'), {
-    title: t('menu.clearSession'),
-    okLabel: t('settingsIo.clearAction'),
-    cancelLabel: t('common.cancel'),
-  });
-  if (!ok) return;
-
-  // Close Settings if open so it does not re-save stale draft values later
-  if (els.settingsBackdrop && !els.settingsBackdrop.classList.contains('hidden')) {
-    closeSettingsDialog({ revertPreview: false });
-  }
-
-  const { before, after } = clearLocalStorageSession();
-  reapplySettingsFromStorage();
-
-  await showAppAlert(
-    t('settingsIo.clearResult', {
-      before,
-      after,
-    }),
-    {
-      title: t('menu.clearSession'),
-      okLabel: t('common.ok'),
-    }
-  );
 }
 
 /**
@@ -2405,83 +2004,6 @@ async function restoreHistoryCommit(sha, btn) {
 /** Guard against double-clicks while a remote save is in flight. */
 let saveJsonInFlight = false;
 
-/**
- * Open the shared progress console dialog (Save to GitHub / Import settings).
- * @param {{ title?: string }} [opts]
- */
-function openSaveProgressDialog(opts = {}) {
-  if (!els.saveProgressBackdrop) return;
-  if (els.saveProgressTitle) {
-    els.saveProgressTitle.textContent =
-      opts.title || t('saveProgress.title');
-  }
-  if (els.saveProgressConsole) {
-    els.saveProgressConsole.textContent = '';
-  }
-  resetDialogScroll(els.saveProgressBackdrop);
-  els.saveProgressBackdrop.classList.remove('hidden');
-  els.saveProgressBackdrop.setAttribute('aria-hidden', 'false');
-  queueMicrotask(() => {
-    resetDialogScroll(els.saveProgressBackdrop);
-    els.saveProgressOk?.focus();
-  });
-}
-
-function closeSaveProgressDialog() {
-  if (!els.saveProgressBackdrop) return;
-  els.saveProgressBackdrop.classList.add('hidden');
-  els.saveProgressBackdrop.setAttribute('aria-hidden', 'true');
-  // Restore default title for next GitHub save
-  if (els.saveProgressTitle) {
-    els.saveProgressTitle.textContent = t('saveProgress.title');
-  }
-  focusFilterWhenIdle();
-}
-
-function isSaveProgressOpen() {
-  return Boolean(
-    els.saveProgressBackdrop && !els.saveProgressBackdrop.classList.contains('hidden')
-  );
-}
-
-/**
- * Append a timestamped line to a progress console element.
- * Shared by Save to GitHub, Import settings (file), and Import from Clipboard.
- * @param {HTMLElement|null|undefined} consoleEl
- * @param {string} message
- * @param {{ level?: 'normal' | 'error' | 'warn' | 'ok' }} [opts]
- */
-function appendProgressLog(consoleEl, message, opts = {}) {
-  const el = consoleEl;
-  if (!el) return;
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  const ts = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  const line = document.createElement('span');
-  line.className = 'progress-console-line';
-  const level = opts.level || 'normal';
-  if (level === 'error' || level === 'warn') {
-    line.classList.add(level === 'error' ? 'is-error' : 'is-warn');
-  } else if (level === 'ok') {
-    line.classList.add('is-ok');
-  }
-  line.textContent = `[${ts}] ${message}`;
-  if (el.childNodes.length) {
-    el.appendChild(document.createTextNode('\n'));
-  }
-  el.appendChild(line);
-  el.scrollTop = el.scrollHeight;
-}
-
-/**
- * Append a timestamped line to the Save / file-import progress console.
- * @param {string} message
- * @param {{ level?: 'normal' | 'error' | 'warn' | 'ok' }} [opts]
- */
-function appendSaveLog(message, opts = {}) {
-  appendProgressLog(els.saveProgressConsole, message, opts);
-}
-
 // —— Bulk metadata refresh (TMDB) ——
 
 /** @type {{ running: boolean, cancelRequested: boolean }} */
@@ -2945,34 +2467,6 @@ async function runBulkMetadataRefresh(apiKey) {
   }
 }
 
-async function copySaveProgressLog() {
-  const btn = els.saveProgressCopy;
-  const text = els.saveProgressConsole?.textContent || '';
-  if (!text) {
-    appendSaveLog('(nothing to copy yet)');
-    return;
-  }
-  try {
-    await copyTextToClipboard(text);
-    flashCopyButton(btn, 'ok');
-  } catch (err) {
-    flashCopyButton(btn, 'fail');
-    appendSaveLog(`Copy failed: ${err?.message || err}`);
-  }
-}
-
-/**
- * Log every line of a multi-line commit-style message to the Save console
- * (full, untruncated change list for the operator).
- * @param {string} text
- */
-function appendSaveLogMessage(text) {
-  const lines = String(text || '').split('\n');
-  for (const line of lines) {
-    appendSaveLog(line === '' ? ' ' : line);
-  }
-}
-
 /**
  * Upsert the full in-memory library to GitHub (Contents API).
  * Target owner/repo/path come from CONFIG.GITHUB_DATA_COMMITS_URL.
@@ -3130,11 +2624,6 @@ function resetTmdbSearchSession() {
 }
 
 /** Reset dialog body scroll so content always opens at the top. */
-function resetDialogScroll(backdrop) {
-  const body = backdrop?.querySelector?.('.dialog-body');
-  if (body) body.scrollTop = 0;
-}
-
 function syncPosterScaleControl(percent) {
   const n = clampPosterScalePercent(percent);
   if (els.settingsPosterScale) {
