@@ -648,7 +648,7 @@ const tmdbSearchApi = initTmdbSearchUi({
   els,
   closeMenu,
   focusFilterWhenIdle,
-  preferDesktopAutoFocus,
+  focusTmdbSearchTitle,
   isAnyModalOpen,
   getMovies: () => state.movies,
   isDataReady: () => state.dataReady,

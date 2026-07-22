@@ -2,6 +2,7 @@
  * TMDB search dialog, poster picker, and add-to-collection flow.
  */
 
+import { CONFIG } from './config.js';
 import {
   getMovieById,
   getStoredTmdbApiKey,
@@ -27,7 +28,7 @@ import { t } from './i18n.js';
  *   els: Record<string, any>,
  *   closeMenu: () => void,
  *   focusFilterWhenIdle: () => void,
- *   preferDesktopAutoFocus: () => boolean,
+ *   focusTmdbSearchTitle: (opts?: { selectAll?: boolean }) => void,
  *   isAnyModalOpen: () => boolean,
  *   getMovies: () => object[],
  *   isDataReady: () => boolean,
@@ -43,7 +44,7 @@ export function initTmdbSearchUi(opts) {
     els,
     closeMenu,
     focusFilterWhenIdle,
-    preferDesktopAutoFocus,
+    focusTmdbSearchTitle,
     isAnyModalOpen,
     getMovies,
     isDataReady,
@@ -986,6 +987,5 @@ export function initTmdbSearchUi(opts) {
     closeTmdbSearchDialog,
     refreshTmdbResultLibraryMarkers,
     openLibraryPosterPicker,
-    focusTmdbSearchTitle: null, // filled below if needed
   };
 }
