@@ -10,7 +10,7 @@ import {
   searchMoviesByTitleAndYear,
   toLibraryMovie,
 } from './tmdb.js';
-import { isAppAlertOpen, showAppAlert } from './alert-dialog.js';
+import { isAppAlertOpen, showAppAlert, showAppConfirm } from './alert-dialog.js';
 import { showAppToast } from './app-toast.js';
 import { attachPosterHotCorner, isPosterZoomOpen, posterZoomUrl } from './poster-zoom.js';
 import { resetDialogScroll } from './progress-console.js';

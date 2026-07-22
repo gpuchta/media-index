@@ -3,7 +3,7 @@
  */
 
 import { CONFIG } from './config.js';
-import { parseLibraryJson } from './library-diff.js';
+import { diffLibraries, parseLibraryJson } from './library-diff.js';
 import { showAppAlert, showAppConfirm } from './alert-dialog.js';
 import { showAppToast } from './app-toast.js';
 import { downloadJson, formatExportFilename } from './utils.js';
