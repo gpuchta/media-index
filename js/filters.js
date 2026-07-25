@@ -328,6 +328,58 @@ export function removeOtherLeaves(leaves, index) {
   return [leaves[index]];
 }
 
+/**
+ * Location filter match (case-insensitive).
+ *
+ * Binder-aware forms (letter + optional page, default notation A1 / F42):
+ * - Binder only:  "A"     → location "A" or "A1"…"A999" (not "Amazon")
+ * - Binder range: "A-C"   → any binder letter in A…C inclusive (OR of binders)
+ * - Binder page:  "A1"    → exact slot "A1" (not "A10")
+ *
+ * Anything else keeps partial substring match (e.g. "Amazon", "Cinema", "12").
+ *
+ * @param {unknown} movieLocation
+ * @param {unknown} filterValue raw leaf value (not necessarily lowercased)
+ * @returns {boolean}
+ */
+export function matchesLocationFilter(movieLocation, filterValue) {
+  const loc = String(movieLocation || '').trim();
+  const val = String(filterValue || '').trim();
+  if (!val || !loc) return false;
+
+  const locLc = loc.toLowerCase();
+  const valLc = val.toLowerCase();
+
+  // Inclusive binder letter range: A-C, c-a (order-insensitive)
+  const rangeM = /^([a-z])-([a-z])$/i.exec(val);
+  if (rangeM) {
+    let a = rangeM[1].toLowerCase().charCodeAt(0);
+    let b = rangeM[2].toLowerCase().charCodeAt(0);
+    if (a > b) {
+      const t = a;
+      a = b;
+      b = t;
+    }
+    const slot = /^([a-z])(?:\d{1,3})?$/i.exec(loc);
+    if (!slot) return false;
+    const letter = slot[1].toLowerCase().charCodeAt(0);
+    return letter >= a && letter <= b;
+  }
+
+  // Single binder letter: A → A, A1, A42 (not Amazon / FandangoNOW)
+  if (/^[a-z]$/i.test(val)) {
+    return new RegExp(`^${valLc}(?:\\d{1,3})?$`, 'i').test(loc);
+  }
+
+  // Full binder slot: A1 / F42 → exact match only
+  if (/^[a-z]\d{1,3}$/i.test(val)) {
+    return locLc === valLc;
+  }
+
+  // Free-form / digital labels: partial substring
+  return locLc.includes(valLc);
+}
+
 function matchesLeaf(movie, leaf) {
   const val = String(leaf.value).toLowerCase();
   let hit = false;
@@ -339,8 +391,7 @@ function matchesLeaf(movie, leaf) {
       break;
     }
     case 'location': {
-      const loc = String(movie.location || '').toLowerCase();
-      hit = loc.includes(val);
+      hit = matchesLocationFilter(movie.location, leaf.value);
       break;
     }
     case 'binder': {
@@ -448,8 +499,22 @@ export function applyFilters(movies, leaves) {
 }
 
 /**
+ * Letter-page binder slot: A1, F42 → binder letter "A" / "F".
+ * Used to surface binder-only typeahead entries (whole binder filter).
+ * @param {unknown} location
+ * @returns {string|null} uppercase binder letter, or null
+ */
+function binderLetterFromLocation(location) {
+  const s = String(location || '').trim();
+  const m = /^([A-Za-z])\d{1,3}$/.exec(s);
+  return m ? m[1].toUpperCase() : null;
+}
+
+/**
  * Build typeahead index from movies: Map type -> sorted unique values.
  * Includes 4-digit release years from `year` / `released`.
+ * Location index also includes binder letters (A, B, C…) derived from
+ * letter+page slots so typeahead can pick a whole binder, not only A1.
  */
 export function buildTypeaheadIndex(movies) {
   const sets = {
@@ -469,7 +534,12 @@ export function buildTypeaheadIndex(movies) {
     for (const g of m.genres || []) if (g) sets.genre.add(String(g));
     const y = movieYear(m);
     if (y >= 1000 && y <= 9999) sets.year.add(String(y));
-    if (m.location) sets.location.add(String(m.location));
+    if (m.location) {
+      const loc = String(m.location);
+      sets.location.add(loc);
+      const letter = binderLetterFromLocation(loc);
+      if (letter) sets.location.add(letter);
+    }
     for (const d of m.directors || []) if (d) sets.director.add(String(d));
     for (const a of m.actors || []) if (a) sets.actor.add(String(a));
     if (m.collection) sets.collection.add(String(m.collection));
@@ -482,6 +552,9 @@ export function buildTypeaheadIndex(movies) {
     if (type === 'year') {
       // Newest first when browsing years
       index[type] = Array.from(set).sort((a, b) => Number(b) - Number(a));
+    } else if (type === 'location') {
+      // Binder letters before their page slots (A, A1, A2…); then other labels
+      index[type] = Array.from(set).sort(compareLocationTypeahead);
     } else {
       index[type] = Array.from(set).sort((a, b) =>
         a.localeCompare(b, undefined, { sensitivity: 'base' })
@@ -491,6 +564,43 @@ export function buildTypeaheadIndex(movies) {
   // Fixed choices (not derived from movie fields)
   index.binder = BINDER_FILTER_OPTIONS.map((o) => o.value);
   return index;
+}
+
+/**
+ * Sort locations so binder-only letters sit immediately before that binder’s
+ * page slots: A, A1, A2, … B, B1, … then free-form labels (Amazon, …).
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+function compareLocationTypeahead(a, b) {
+  const rank = (s) => {
+    const t = String(s);
+    if (/^[A-Za-z]$/.test(t)) {
+      return { kind: 0, letter: t.toUpperCase(), page: -1, raw: t };
+    }
+    const slot = /^([A-Za-z])(\d{1,3})$/.exec(t);
+    if (slot) {
+      return {
+        kind: 0,
+        letter: slot[1].toUpperCase(),
+        page: parseInt(slot[2], 10),
+        raw: t,
+      };
+    }
+    return { kind: 1, letter: '', page: 0, raw: t };
+  };
+  const ra = rank(a);
+  const rb = rank(b);
+  if (ra.kind !== rb.kind) return ra.kind - rb.kind;
+  if (ra.kind === 0) {
+    if (ra.letter !== rb.letter) {
+      return ra.letter.localeCompare(rb.letter, undefined, { sensitivity: 'base' });
+    }
+    // Binder letter (page -1) before A1, A2, …; pages numeric
+    if (ra.page !== rb.page) return ra.page - rb.page;
+  }
+  return ra.raw.localeCompare(rb.raw, undefined, { sensitivity: 'base' });
 }
 
 /**
