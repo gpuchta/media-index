@@ -567,40 +567,55 @@ export function buildTypeaheadIndex(movies) {
 }
 
 /**
- * Sort locations so binder-only letters sit immediately before that binder’s
- * page slots: A, A1, A2, … B, B1, … then free-form labels (Amazon, …).
- * @param {string} a
- * @param {string} b
+ * Rank a location for binder-aware order: A1…An, B1…Bn, then free-form, empty last.
+ * @param {unknown} location
+ * @returns {{ kind: number, letter: string, page: number, raw: string }}
+ */
+function locationSortKey(location) {
+  const t = String(location || '').trim();
+  if (!t) {
+    return { kind: 2, letter: '', page: 0, raw: '' };
+  }
+  if (/^[A-Za-z]$/.test(t)) {
+    return { kind: 0, letter: t.toUpperCase(), page: -1, raw: t };
+  }
+  const slot = /^([A-Za-z])(\d{1,3})$/.exec(t);
+  if (slot) {
+    return {
+      kind: 0,
+      letter: slot[1].toUpperCase(),
+      page: parseInt(slot[2], 10),
+      raw: t,
+    };
+  }
+  // Streaming / free-form labels after physical binders
+  return { kind: 1, letter: '', page: 0, raw: t };
+}
+
+/**
+ * Compare locations: binder slots A1…An, B1…Bn (numeric page), then free-form
+ * labels (Amazon, …), then empty. Case-insensitive letter order.
+ * @param {unknown} a
+ * @param {unknown} b
  * @returns {number}
  */
-function compareLocationTypeahead(a, b) {
-  const rank = (s) => {
-    const t = String(s);
-    if (/^[A-Za-z]$/.test(t)) {
-      return { kind: 0, letter: t.toUpperCase(), page: -1, raw: t };
-    }
-    const slot = /^([A-Za-z])(\d{1,3})$/.exec(t);
-    if (slot) {
-      return {
-        kind: 0,
-        letter: slot[1].toUpperCase(),
-        page: parseInt(slot[2], 10),
-        raw: t,
-      };
-    }
-    return { kind: 1, letter: '', page: 0, raw: t };
-  };
-  const ra = rank(a);
-  const rb = rank(b);
+export function compareLocations(a, b) {
+  const ra = locationSortKey(a);
+  const rb = locationSortKey(b);
   if (ra.kind !== rb.kind) return ra.kind - rb.kind;
   if (ra.kind === 0) {
     if (ra.letter !== rb.letter) {
       return ra.letter.localeCompare(rb.letter, undefined, { sensitivity: 'base' });
     }
-    // Binder letter (page -1) before A1, A2, …; pages numeric
+    // Binder letter alone (page -1) before A1, A2, …; pages numeric
     if (ra.page !== rb.page) return ra.page - rb.page;
   }
   return ra.raw.localeCompare(rb.raw, undefined, { sensitivity: 'base' });
+}
+
+/** Typeahead location list uses the same binder-aware order. */
+function compareLocationTypeahead(a, b) {
+  return compareLocations(a, b);
 }
 
 /**
@@ -707,6 +722,12 @@ export function sortMovies(movies, sortId) {
       break;
     case 'title-desc':
       list.sort((a, b) => cmpTitle(b, a) || movieYear(b) - movieYear(a));
+      break;
+    case 'location-asc':
+      // A1…An, B1…Bn, … then free-form locations, empty last; title as tie-break
+      list.sort(
+        (a, b) => compareLocations(a.location, b.location) || cmpTitle(a, b)
+      );
       break;
     case 'released-asc':
       list.sort((a, b) => {

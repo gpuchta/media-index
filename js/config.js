@@ -1234,6 +1234,7 @@ export const TYPEAHEAD_GROUP_ORDER = [
 export const SORT_OPTIONS = [
   { id: 'title-asc', label: 'Title (asc)', field: 'title', dir: 'asc' },
   { id: 'title-desc', label: 'Title (desc)', field: 'title', dir: 'desc' },
+  { id: 'location-asc', label: 'Location (A1…)', field: 'location', dir: 'asc' },
   { id: 'released-asc', label: 'Release Date (asc)', field: 'released', dir: 'asc' },
   { id: 'released-desc', label: 'Release Date (desc)', field: 'released', dir: 'desc' },
 ];
