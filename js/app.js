@@ -445,21 +445,87 @@ const {
 });
 
 // —— Header hide on scroll down ——
+// Hiding collapses the header flex slot so #main grows and maxScrollTop shrinks.
+// At the bottom the browser clamps scrollTop; that negative delta used to look
+// like “scroll up” and re-show the header → hide/show flicker (especially
+// Android overscroll). Lock out auto toggle after layout and ignore clamp-sized
+// jumps while pinned to the end.
 let lastScroll = 0;
 let headerHidden = false;
+/** performance.now() until which scroll must not toggle the header */
+let headerScrollLockUntil = 0;
+const HEADER_SCROLL_LOCK_MS = 360; // ≥ CSS header transition (0.22s) + reflow
+const HEADER_HIDE_DELTA = 12;
+const HEADER_SHOW_DELTA = 16;
+
+function syncHeaderScrollBaseline() {
+  lastScroll = els.main.scrollTop;
+}
+
+function lockHeaderScrollFromLayout() {
+  headerScrollLockUntil = performance.now() + HEADER_SCROLL_LOCK_MS;
+  syncHeaderScrollBaseline();
+}
+
+function afterHeaderLayoutChange() {
+  lockHeaderScrollFromLayout();
+  // Double rAF: flex reflow + scroll clamp settle before remeasure
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      syncHeaderScrollBaseline();
+      grid.measure();
+      grid.render();
+      lockHeaderScrollFromLayout();
+    });
+  });
+}
+
 els.main.addEventListener(
   'scroll',
   () => {
     const y = els.main.scrollTop;
+    if (performance.now() < headerScrollLockUntil) {
+      lastScroll = y;
+      return;
+    }
+
     const delta = y - lastScroll;
+    lastScroll = y;
+
     if (y < 40) {
       showHeader();
-    } else if (delta > 8 && y > 80) {
+      return;
+    }
+
+    // After hide, max scroll drops by ~header height and scrollTop clamps in one
+    // jump. Ignore clamp-sized upward jumps at the end only (not small finger moves).
+    if (headerHidden && delta < 0) {
+      const maxScroll = Math.max(
+        0,
+        els.main.scrollHeight - els.main.clientHeight
+      );
+      const headerH =
+        parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue(
+            '--header-height'
+          )
+        ) ||
+        els.header?.offsetHeight ||
+        0;
+      const abs = Math.abs(delta);
+      const nearEnd = y >= maxScroll - 8;
+      const clampSized =
+        headerH > 0 && abs >= headerH * 0.4 && abs <= headerH + 40;
+      if (nearEnd && clampSized) {
+        return;
+      }
+    }
+
+    if (delta > HEADER_HIDE_DELTA && y > 80) {
       hideHeader();
-    } else if (delta < -8) {
+    } else if (delta < -HEADER_SHOW_DELTA) {
       showHeader();
     }
-    lastScroll = y;
   },
   { passive: true }
 );
@@ -467,6 +533,8 @@ els.main.addEventListener(
 function hideHeader() {
   if (headerHidden) return;
   headerHidden = true;
+  // Lock before class change so the clamp scroll event is ignored.
+  lockHeaderScrollFromLayout();
   // Capture height before transform so we can collapse the header's layout slot
   // and drop the poster area's top spacing while the bar is off-screen.
   document.documentElement.style.setProperty(
@@ -475,22 +543,16 @@ function hideHeader() {
   );
   els.header.classList.add('is-hidden');
   document.getElementById('app')?.classList.add('header-is-hidden');
-  // Layout height of #main changes; remeasure the virtualized grid.
-  requestAnimationFrame(() => {
-    grid.measure();
-    grid.render();
-  });
+  afterHeaderLayoutChange();
 }
 
 function showHeader() {
   if (!headerHidden) return;
   headerHidden = false;
+  lockHeaderScrollFromLayout();
   els.header.classList.remove('is-hidden');
   document.getElementById('app')?.classList.remove('header-is-hidden');
-  requestAnimationFrame(() => {
-    grid.measure();
-    grid.render();
-  });
+  afterHeaderLayoutChange();
 }
 
 // —— Menu ——
