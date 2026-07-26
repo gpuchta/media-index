@@ -719,7 +719,9 @@ export class MovieDialog {
   pillsRow(label, list, type) {
     const typeAttr = type ? ` data-type="${escapeHtml(type)}"` : '';
     const filterable = type && MovieDialog.FILTERABLE_PILL_TYPES.has(type);
-    const items = this.normalizeNameList(list);
+    const items = this.normalizeNameList(list).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
     if (!items.length) {
       return `
         <div class="field-row">
@@ -777,7 +779,10 @@ export class MovieDialog {
     const host = this.body.querySelector('#keyword-pills');
     if (!host) return;
     host.innerHTML = '';
-    for (const kw of keywords) {
+    const list = (Array.isArray(keywords) ? keywords.slice() : []).sort((a, b) =>
+      String(a).localeCompare(String(b), undefined, { sensitivity: 'base' })
+    );
+    for (const kw of list) {
       const pill = document.createElement('span');
       pill.className = 'pill';
       pill.dataset.type = 'keyword';
