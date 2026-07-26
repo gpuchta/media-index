@@ -270,7 +270,7 @@ export function initTmdbSearchUi(opts) {
           <div class="tmdb-result-actions">
             <button type="button" class="btn tmdb-add-btn${inLib ? ' is-update' : ''}">${escapeHtml(actionLabel)}</button>
             <a
-              class="btn tmdb-open-btn"
+              class="btn btn-tmdb tmdb-open-btn"
               href="${escapeHtml(tmdbHref)}"
               target="_blank"
               rel="noopener noreferrer"

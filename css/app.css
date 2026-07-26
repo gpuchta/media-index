@@ -48,6 +48,15 @@
   --cell-gap: 10px;
   --radius: 8px;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, sans-serif;
+
+  /*
+   * Official TMDB logo gradient (blue_short SVG linearGradient):
+   * #90cea1 → #3cbec9 @56% → #00b3e5
+   */
+  --tmdb-grad-a: #90cea1;
+  --tmdb-grad-b: #3cbec9;
+  --tmdb-grad-c: #00b3e5;
+  --tmdb-text: #0d253f;
 }
 
 /* —— Alternate themes (Settings → Theme) —— */
@@ -2615,6 +2624,43 @@ input {
   outline: 2px solid var(--focus);
   outline-offset: 1px;
   border-color: var(--focus);
+}
+
+/* TMDB brand buttons (search results + movie dialog) */
+.tmdb-result-actions .btn.btn-tmdb,
+.btn.btn-tmdb {
+  background: linear-gradient(
+    90deg,
+    var(--tmdb-grad-a) 0%,
+    var(--tmdb-grad-b) 56%,
+    var(--tmdb-grad-c) 100%
+  );
+  border-color: color-mix(in srgb, var(--tmdb-grad-c) 55%, transparent);
+  color: var(--tmdb-text);
+  font-weight: 600;
+}
+
+.tmdb-result-actions .btn.btn-tmdb:hover,
+.tmdb-result-actions .btn.btn-tmdb:focus-visible,
+.btn.btn-tmdb:hover,
+.btn.btn-tmdb:focus-visible {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--tmdb-grad-a) 88%, #fff) 0%,
+    color-mix(in srgb, var(--tmdb-grad-b) 88%, #fff) 56%,
+    color-mix(in srgb, var(--tmdb-grad-c) 88%, #fff) 100%
+  );
+  border-color: var(--tmdb-grad-c);
+  color: var(--tmdb-text);
+  outline: 2px solid color-mix(in srgb, var(--tmdb-grad-c) 70%, var(--focus));
+  outline-offset: 1px;
+}
+
+.btn.btn-tmdb:disabled,
+.btn.btn-tmdb[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.25);
 }
 
 .tmdb-result-actions .tmdb-add-btn.is-update {
