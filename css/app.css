@@ -2663,11 +2663,6 @@ input {
   filter: grayscale(0.25);
 }
 
-.tmdb-result-actions .tmdb-add-btn.is-update {
-  border-color: color-mix(in srgb, var(--ok) 45%, var(--border));
-  color: var(--ok);
-}
-
 .dialog-tmdb-poster {
   width: min(720px, 100%);
 }

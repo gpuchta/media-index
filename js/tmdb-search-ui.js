@@ -184,6 +184,7 @@ export function initTmdbSearchUi(opts) {
     if (addBtn) {
       addBtn.textContent = inLib ? 'Update' : 'Add to Collection';
       addBtn.classList.toggle('is-update', inLib);
+      addBtn.classList.toggle('btn-tmdb', inLib);
     }
 
     const posterEl = row.querySelector('.tmdb-result-poster');
@@ -268,7 +269,7 @@ export function initTmdbSearchUi(opts) {
           <span class="tmdb-result-meta">Release ${escapeHtml(String(year))}</span>
           ${genrePills}
           <div class="tmdb-result-actions">
-            <button type="button" class="btn tmdb-add-btn${inLib ? ' is-update' : ''}">${escapeHtml(actionLabel)}</button>
+            <button type="button" class="btn tmdb-add-btn${inLib ? ' is-update btn-tmdb' : ''}">${escapeHtml(actionLabel)}</button>
             <a
               class="btn btn-tmdb tmdb-open-btn"
               href="${escapeHtml(tmdbHref)}"
