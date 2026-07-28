@@ -380,10 +380,13 @@ const grid = new PosterGrid({
 let openLibraryPosterPicker = (_movie, _draft) => {};
 /** Filled by initTmdbSearchUi. */
 let refreshTmdbResultLibraryMarkers = () => {};
+/** Filled by initStatsUi — drop cached facet rankings when the library changes. */
+let invalidateStatsCache = () => {};
 
 /** Rebuild typeahead index and re-run filters + grid after library add/remove/edit. */
 function refreshLibraryAfterMutation() {
   state.typeaheadIndex = buildTypeaheadIndex(state.movies);
+  invalidateStatsCache();
   recompute({ resetScroll: false });
   if (isTmdbSearchOpen()) {
     refreshTmdbResultLibraryMarkers();
@@ -688,7 +691,7 @@ initLibraryHistory({
   confirmAndApplyImportedLibrary,
 });
 
-initStatsUi({
+const statsUi = initStatsUi({
   els: {
     statsBtn: els.statsBtn,
     statsBackdrop: els.statsBackdrop,
@@ -705,6 +708,7 @@ initStatsUi({
   },
   recompute,
 });
+invalidateStatsCache = statsUi.invalidateStatsCache;
 
 const tmdbSearchApi = initTmdbSearchUi({
   els,
@@ -819,6 +823,7 @@ function finishLibraryLoad(movies) {
   state.movies = movies;
   state.dataReady = true;
   state.typeaheadIndex = buildTypeaheadIndex(state.movies);
+  invalidateStatsCache();
   els.statusLoading.classList.add('hidden');
   els.statusError.classList.add('hidden');
   loadFiltersFromHash();

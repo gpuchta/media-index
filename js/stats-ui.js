@@ -49,6 +49,24 @@ export function initStatsUi(opts) {
   /** @type {Record<string, boolean>} section key → expanded to show all */
   const statsSectionExpanded = Object.create(null);
 
+  /**
+   * Cached buildLibraryStats result. Built on first dialog render; kept across
+   * reopen and filter/expand toggles. Cleared via invalidateStatsCache when
+   * the collection changes (add/remove/edit/import/load).
+   * @type {ReturnType<typeof buildLibraryStats>|null}
+   */
+  let statsCache = null;
+
+  function invalidateStatsCache() {
+    statsCache = null;
+  }
+
+  function getCachedStats(movies) {
+    if (statsCache) return statsCache;
+    statsCache = buildLibraryStats(movies);
+    return statsCache;
+  }
+
   function openStatsDialog() {
     if (!els.statsBackdrop || !els.statsBody) return;
     for (const key of STATS_SECTION_ORDER) statsSectionExpanded[key] = false;
@@ -81,7 +99,7 @@ export function initStatsUi(opts) {
     const host = els.statsBody;
     if (!host) return;
     const movies = getMovies();
-    const stats = buildLibraryStats(movies);
+    const stats = getCachedStats(movies);
     host.innerHTML = '';
 
     if (!movies.length) {
@@ -229,6 +247,7 @@ export function initStatsUi(opts) {
   return {
     openStatsDialog,
     closeStatsDialog,
+    invalidateStatsCache,
     isStatsOpen: () =>
       Boolean(
         els.statsBackdrop && !els.statsBackdrop.classList.contains('hidden')
