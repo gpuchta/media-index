@@ -28,6 +28,7 @@ import {
   getStoredPosterGapPx,
   getStoredPosterScalePercent,
   getStoredPosterSource,
+  getStoredStatsScope,
   getStoredTheme,
   getStoredThemeColors,
   normalizeBinderNotationId,
@@ -48,6 +49,7 @@ import {
   setStoredPosterGapPx,
   setStoredPosterScalePercent,
   setStoredPosterSource,
+  setStoredStatsScope,
   setStoredTheme,
   setStoredThemeColors,
 } from './config.js';
@@ -102,6 +104,7 @@ export function initSettingsUi(opts) {
   let savedGrayedLocationsText = getStoredGrayedLocationsText();
   let savedPosterSource = getStoredPosterSource();
   let savedBulkMetaConfirm2 = getStoredBulkMetaConfirm2();
+  let savedStatsScope = getStoredStatsScope();
   let savedBinderNotationId = getStoredBinderNotationId();
   let savedBinderCustomPatterns = getStoredBinderCustomPatterns();
   /** Last saved theme prefs; used to revert Settings theme preview on cancel. */
@@ -540,10 +543,14 @@ export function initSettingsUi(opts) {
     savedGrayedLocationsText = getStoredGrayedLocationsText();
     savedPosterSource = getStoredPosterSource();
     savedBulkMetaConfirm2 = getStoredBulkMetaConfirm2();
+    savedStatsScope = getStoredStatsScope();
     savedBinderNotationId = getStoredBinderNotationId();
     savedBinderCustomPatterns = getStoredBinderCustomPatterns();
     if (els.settingsBulkMetaConfirm2) {
       els.settingsBulkMetaConfirm2.checked = savedBulkMetaConfirm2;
+    }
+    if (els.settingsStatsScope) {
+      els.settingsStatsScope.value = savedStatsScope;
     }
     if (els.settingsLocationOverlay) {
       els.settingsLocationOverlay.checked = savedLocationOverlay;
@@ -746,6 +753,10 @@ export function initSettingsUi(opts) {
     if (els.settingsBulkMetaConfirm2) {
       els.settingsBulkMetaConfirm2.checked = savedBulkMetaConfirm2;
     }
+    savedStatsScope = setStoredStatsScope(els.settingsStatsScope?.value);
+    if (els.settingsStatsScope) {
+      els.settingsStatsScope.value = savedStatsScope;
+    }
     savedBinderNotationId = setStoredBinderNotationId(
       els.settingsBinderNotation?.value
     );
@@ -772,6 +783,9 @@ export function initSettingsUi(opts) {
         : 'grayed locations none',
       `poster source ${savedPosterSource === 'local' ? 'local' : 'TMDB'}`,
       `bulk second confirm ${savedBulkMetaConfirm2 ? 'on' : 'off'}`,
+      `statistics ${
+        savedStatsScope === 'library' ? 'entire library' : 'current filters'
+      }`,
       `binder notation ${binderLabel}`,
       `theme ${themeLabel} (${customNote})`,
       `font size ${fontSizeLabel}`,
@@ -806,6 +820,7 @@ export function initSettingsUi(opts) {
     savedGrayedLocationsText = snap.grayedLocations;
     savedPosterSource = snap.posterSource;
     savedBulkMetaConfirm2 = snap.bulkMetaConfirm2;
+    savedStatsScope = snap.statsScope ?? getStoredStatsScope();
     savedBinderNotationId = snap.binderNotationId;
     savedBinderCustomPatterns = snap.binderCustomPatterns;
 

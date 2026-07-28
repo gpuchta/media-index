@@ -281,6 +281,11 @@ const en = {
   'settings.metadataLanguage': 'Metadata language',
   'settings.languageHint': 'Preferred language for TMDB titles and app UI (when translated).',
   'settings.library': 'Library',
+  'settings.statsScope': 'Statistics',
+  'settings.statsScopeFiltered': 'Current filters',
+  'settings.statsScopeLibrary': 'Entire library',
+  'settings.statsScopeHint':
+    'Choose whether the Statistics dialog ranks directors, actors, genres, and so on over the movies matching your current filters, or over the full collection.',
   'settings.bulkRefresh': 'Bulk refresh',
   'settings.bulkRefreshConfirm': 'Require second confirmation for Refresh (TMDB)',
   'settings.bulkRefreshHint':
@@ -317,6 +322,11 @@ const en = {
   'stats.topOf': 'Top {n} {label} of {total}',
   'stats.countLabel': '{n} {label}',
   'stats.none': 'No {label}',
+  'stats.scopeFiltered': 'Based on current filters · {n} of {total} movies',
+  'stats.scopeFilteredAll': 'Based on current filters · {n} movies (no filters active)',
+  'stats.scopeLibrary': 'Based on entire library · {n} movies',
+  'stats.emptyLibrary': 'No movies in the collection yet.',
+  'stats.emptyFiltered': 'No movies match the current filters.',
 
   'search.title': 'Search Movies',
   'search.movieTitle': 'Movie title',
@@ -555,6 +565,11 @@ const de = {
   'settings.metadataLanguage': 'Metadatensprache',
   'settings.languageHint': 'Bevorzugte Sprache für TMDB-Titel und die App-Oberfläche (wenn übersetzt).',
   'settings.library': 'Bibliothek',
+  'settings.statsScope': 'Statistik',
+  'settings.statsScopeFiltered': 'Aktuelle Filter',
+  'settings.statsScopeLibrary': 'Gesamte Bibliothek',
+  'settings.statsScopeHint':
+    'Legt fest, ob der Statistik-Dialog Regisseure, Schauspieler, Genres usw. über die Filme der aktuellen Filter oder über die gesamte Sammlung zählt.',
   'settings.bulkRefresh': 'Massenaktualisierung',
   'settings.bulkRefreshConfirm': 'Zweite Bestätigung für Aktualisieren (TMDB) verlangen',
   'settings.bulkRefreshHint':
@@ -591,6 +606,11 @@ const de = {
   'stats.topOf': 'Top {n} {label} von {total}',
   'stats.countLabel': '{n} {label}',
   'stats.none': 'Keine {label}',
+  'stats.scopeFiltered': 'Basierend auf aktuellen Filtern · {n} von {total} Filmen',
+  'stats.scopeFilteredAll': 'Basierend auf aktuellen Filtern · {n} Filme (keine Filter aktiv)',
+  'stats.scopeLibrary': 'Basierend auf gesamter Bibliothek · {n} Filme',
+  'stats.emptyLibrary': 'Noch keine Filme in der Sammlung.',
+  'stats.emptyFiltered': 'Keine Filme entsprechen den aktuellen Filtern.',
 
   'search.title': 'Filme suchen',
   'search.movieTitle': 'Filmtitel',
@@ -829,6 +849,11 @@ const es = {
   'settings.metadataLanguage': 'Idioma de metadatos',
   'settings.languageHint': 'Idioma preferido para títulos de TMDB y la interfaz (si está traducida).',
   'settings.library': 'Biblioteca',
+  'settings.statsScope': 'Estadísticas',
+  'settings.statsScopeFiltered': 'Filtros actuales',
+  'settings.statsScopeLibrary': 'Biblioteca completa',
+  'settings.statsScopeHint':
+    'Elija si el diálogo de Estadísticas clasifica directores, actores, géneros, etc. sobre las películas de los filtros actuales o sobre toda la colección.',
   'settings.bulkRefresh': 'Actualización masiva',
   'settings.bulkRefreshConfirm': 'Pedir segunda confirmación para Actualizar (TMDB)',
   'settings.bulkRefreshHint':
@@ -865,6 +890,11 @@ const es = {
   'stats.topOf': 'Top {n} {label} de {total}',
   'stats.countLabel': '{n} {label}',
   'stats.none': 'Sin {label}',
+  'stats.scopeFiltered': 'Según los filtros actuales · {n} de {total} películas',
+  'stats.scopeFilteredAll': 'Según los filtros actuales · {n} películas (sin filtros activos)',
+  'stats.scopeLibrary': 'Según la biblioteca completa · {n} películas',
+  'stats.emptyLibrary': 'Aún no hay películas en la colección.',
+  'stats.emptyFiltered': 'Ninguna película coincide con los filtros actuales.',
 
   'search.title': 'Buscar películas',
   'search.movieTitle': 'Título',
@@ -1104,6 +1134,11 @@ const fr = {
   'settings.metadataLanguage': 'Langue des métadonnées',
   'settings.languageHint': 'Langue préférée pour les titres TMDB et l’interface (si traduite).',
   'settings.library': 'Bibliothèque',
+  'settings.statsScope': 'Statistiques',
+  'settings.statsScopeFiltered': 'Filtres actuels',
+  'settings.statsScopeLibrary': 'Bibliothèque entière',
+  'settings.statsScopeHint':
+    'Choisissez si le dialogue Statistiques classe réalisateurs, acteurs, genres, etc. sur les films des filtres actuels ou sur toute la collection.',
   'settings.bulkRefresh': 'Actualisation en masse',
   'settings.bulkRefreshConfirm': 'Exiger une seconde confirmation pour Actualiser (TMDB)',
   'settings.bulkRefreshHint':
@@ -1140,6 +1175,11 @@ const fr = {
   'stats.topOf': 'Top {n} {label} sur {total}',
   'stats.countLabel': '{n} {label}',
   'stats.none': 'Aucun(e) {label}',
+  'stats.scopeFiltered': 'Selon les filtres actuels · {n} sur {total} films',
+  'stats.scopeFilteredAll': 'Selon les filtres actuels · {n} films (aucun filtre actif)',
+  'stats.scopeLibrary': 'Selon toute la bibliothèque · {n} films',
+  'stats.emptyLibrary': 'Aucun film dans la collection pour l’instant.',
+  'stats.emptyFiltered': 'Aucun film ne correspond aux filtres actuels.',
 
   'search.title': 'Rechercher des films',
   'search.movieTitle': 'Titre du film',

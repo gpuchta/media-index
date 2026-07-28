@@ -560,6 +560,20 @@
 
           <div class="settings-section" role="group" aria-labelledby="settings-sec-library">
             <h3 class="settings-section-title" id="settings-sec-library" data-i18n="settings.library">Library</h3>
+            <label class="form-field" for="settings-stats-scope">
+              <span class="form-label" data-i18n="settings.statsScope">Statistics</span>
+              <select
+                id="settings-stats-scope"
+                name="settings-stats-scope"
+                class="form-input form-select"
+              >
+                <option value="filtered" data-i18n="settings.statsScopeFiltered">Current filters</option>
+                <option value="library" data-i18n="settings.statsScopeLibrary">Entire library</option>
+              </select>
+            </label>
+            <p class="form-hint" data-i18n="settings.statsScopeHint">
+              Choose whether the Statistics dialog ranks directors, actors, genres, and so on over the movies matching your current filters, or over the full collection.
+            </p>
             <label class="form-field form-check" for="settings-bulk-meta-confirm2">
               <span class="form-label" data-i18n="settings.bulkRefresh">Bulk refresh</span>
               <span class="form-check-row">

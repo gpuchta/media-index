@@ -2,6 +2,7 @@
  * Statistics dialog: facet chips that set filters on the library.
  */
 
+import { getStoredStatsScope } from './config.js';
 import { addLeaf } from './filters.js';
 import { isAppAlertOpen } from './alert-dialog.js';
 import { t } from './i18n.js';
@@ -30,6 +31,7 @@ const STATS_SECTION_ORDER = [
  *   closeMenu: () => void,
  *   focusFilterWhenIdle: () => void,
  *   getMovies: () => object[],
+ *   getFilteredMovies: () => object[],
  *   getLeaves: () => object[],
  *   setLeaves: (leaves: object[]) => void,
  *   recompute: (opts?: { resetScroll?: boolean }) => void,
@@ -41,6 +43,7 @@ export function initStatsUi(opts) {
     closeMenu,
     focusFilterWhenIdle,
     getMovies,
+    getFilteredMovies,
     getLeaves,
     setLeaves,
     recompute,
@@ -50,20 +53,45 @@ export function initStatsUi(opts) {
   const statsSectionExpanded = Object.create(null);
 
   /**
-   * Cached buildLibraryStats result. Built on first dialog render; kept across
-   * reopen and filter/expand toggles. Cleared via invalidateStatsCache when
-   * the collection changes (add/remove/edit/import/load).
+   * Cached buildLibraryStats result. Valid while scope + source list reference
+   * stay the same. Cleared via invalidateStatsCache on collection mutation, and
+   * auto-misses when scope changes or the filtered list is replaced (recompute).
    * @type {ReturnType<typeof buildLibraryStats>|null}
    */
   let statsCache = null;
+  /** @type {'filtered'|'library'|null} */
+  let statsCacheScope = null;
+  /** @type {object[]|null} source array used to build statsCache */
+  let statsCacheSource = null;
 
   function invalidateStatsCache() {
     statsCache = null;
+    statsCacheScope = null;
+    statsCacheSource = null;
   }
 
-  function getCachedStats(movies) {
-    if (statsCache) return statsCache;
+  /**
+   * Movies the Statistics dialog ranks over (setting: filtered vs full library).
+   * @returns {{ scope: 'filtered'|'library', movies: object[] }}
+   */
+  function resolveStatsSource() {
+    const scope = getStoredStatsScope();
+    const movies =
+      scope === 'library' ? getMovies() || [] : getFilteredMovies() || [];
+    return { scope, movies };
+  }
+
+  function getCachedStats(scope, movies) {
+    if (
+      statsCache &&
+      statsCacheScope === scope &&
+      statsCacheSource === movies
+    ) {
+      return statsCache;
+    }
     statsCache = buildLibraryStats(movies);
+    statsCacheScope = scope;
+    statsCacheSource = movies;
     return statsCache;
   }
 
@@ -98,14 +126,32 @@ export function initStatsUi(opts) {
   function renderStatsBody() {
     const host = els.statsBody;
     if (!host) return;
-    const movies = getMovies();
-    const stats = getCachedStats(movies);
+    const { scope, movies } = resolveStatsSource();
+    const stats = getCachedStats(scope, movies);
+    const libraryCount = (getMovies() || []).length;
     host.innerHTML = '';
+
+    const scopeNote = document.createElement('p');
+    scopeNote.className = 'stats-scope-note';
+    if (scope === 'library') {
+      scopeNote.textContent = t('stats.scopeLibrary', { n: movies.length });
+    } else if (getLeaves().length) {
+      scopeNote.textContent = t('stats.scopeFiltered', {
+        n: movies.length,
+        total: libraryCount,
+      });
+    } else {
+      scopeNote.textContent = t('stats.scopeFilteredAll', { n: movies.length });
+    }
+    host.appendChild(scopeNote);
 
     if (!movies.length) {
       const p = document.createElement('p');
       p.className = 'stats-empty';
-      p.textContent = 'No movies in the collection yet.';
+      p.textContent =
+        scope === 'filtered' && libraryCount > 0
+          ? t('stats.emptyFiltered')
+          : t('stats.emptyLibrary');
       host.appendChild(p);
       return;
     }
@@ -133,7 +179,9 @@ export function initStatsUi(opts) {
       if (!section.rows.length) {
         const empty = document.createElement('p');
         empty.className = 'stats-empty';
-        empty.textContent = `No ${section.label.toLowerCase()} in the library.`;
+        empty.textContent = t('stats.none', {
+          label: section.labelKey ? t(section.labelKey) : section.label,
+        });
         wrap.appendChild(empty);
         host.appendChild(wrap);
         continue;

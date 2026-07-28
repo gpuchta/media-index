@@ -23,6 +23,7 @@ import {
   getStoredPosterGapPx,
   getStoredPosterScalePercent,
   getStoredPosterSource,
+  getStoredStatsScope,
   getStoredTheme,
   getStoredThemeColors,
   normalizeBinderNotationId,
@@ -44,6 +45,7 @@ import {
   setStoredPosterGapPx,
   setStoredPosterScalePercent,
   setStoredPosterSource,
+  setStoredStatsScope,
   setStoredTheme,
   setStoredThemeColors,
 } from './config.js';
@@ -410,6 +412,30 @@ const SETTINGS_FIELDS = Object.freeze([
     },
   },
   {
+    key: CONFIG.STATS_SCOPE_STORAGE,
+    label: 'statistics scope',
+    exportValue: () => getStoredStatsScope(),
+    apply(raw) {
+      if (raw === undefined) {
+        const v = setStoredStatsScope(CONFIG.STATS_SCOPE_DEFAULT);
+        return { status: 'default', detail: 'missing → default', value: v };
+      }
+      const rawLc = String(raw ?? '')
+        .trim()
+        .toLowerCase();
+      if (rawLc !== 'filtered' && rawLc !== 'library') {
+        const v = setStoredStatsScope(CONFIG.STATS_SCOPE_DEFAULT);
+        return {
+          status: 'invalid',
+          detail: `invalid “${String(raw)}” → default`,
+          value: v,
+        };
+      }
+      const v = setStoredStatsScope(rawLc);
+      return { status: 'applied', value: v };
+    },
+  },
+  {
     key: CONFIG.BINDER_NOTATION_STORAGE,
     label: 'binder notation',
     exportValue: () => getStoredBinderNotationId(),
@@ -648,6 +674,7 @@ export function clearLocalStorageSession() {
  *   grayedLocations: string,
  *   posterSource: 'tmdb'|'local',
  *   bulkMetaConfirm2: boolean,
+ *   statsScope: 'filtered'|'library',
  *   binderNotationId: string,
  *   binderCustomPatterns: string,
  *   tmdbApiKey: string,
@@ -667,6 +694,7 @@ export function readEffectiveSettingsSnapshot() {
     grayedLocations: getStoredGrayedLocationsText(),
     posterSource: getStoredPosterSource(),
     bulkMetaConfirm2: getStoredBulkMetaConfirm2(),
+    statsScope: getStoredStatsScope(),
     binderNotationId: getStoredBinderNotationId(),
     binderCustomPatterns: getStoredBinderCustomPatterns(),
     tmdbApiKey: getStoredTmdbApiKey(),

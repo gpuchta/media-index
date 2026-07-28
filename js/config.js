@@ -66,6 +66,15 @@ export const CONFIG = {
   BULK_META_CONFIRM2_STORAGE: 'pmi:bulkMetaConfirm2',
   BULK_META_CONFIRM2_DEFAULT: true,
 
+  /**
+   * Statistics dialog movie source.
+   * - "filtered": current search/filter result (matches the poster grid)
+   * - "library": entire loaded collection
+   * Default: filtered (no active filters → same as full library).
+   */
+  STATS_SCOPE_STORAGE: 'pmi:statsScope',
+  STATS_SCOPE_DEFAULT: 'filtered',
+
   /** Design cell size (px) at comfortable desktop widths. */
   // CELL_WIDTH: 256,
   // CELL_HEIGHT: 388,
@@ -408,6 +417,46 @@ export function setStoredBulkMetaConfirm2(enabled) {
     /* private mode */
   }
   return on;
+}
+
+/**
+ * @param {unknown} id
+ * @returns {'filtered'|'library'}
+ */
+export function normalizeStatsScope(id) {
+  const s = String(id || '')
+    .trim()
+    .toLowerCase();
+  return s === 'library' ? 'library' : 'filtered';
+}
+
+/** @returns {'filtered'|'library'} */
+export function getStoredStatsScope() {
+  try {
+    const raw = localStorage.getItem(CONFIG.STATS_SCOPE_STORAGE);
+    if (raw == null || raw === '') return CONFIG.STATS_SCOPE_DEFAULT;
+    return normalizeStatsScope(raw);
+  } catch {
+    return CONFIG.STATS_SCOPE_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} id
+ * @returns {'filtered'|'library'}
+ */
+export function setStoredStatsScope(id) {
+  const n = normalizeStatsScope(id);
+  try {
+    if (n === CONFIG.STATS_SCOPE_DEFAULT) {
+      localStorage.removeItem(CONFIG.STATS_SCOPE_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.STATS_SCOPE_STORAGE, n);
+    }
+  } catch {
+    /* private mode */
+  }
+  return n;
 }
 
 /**

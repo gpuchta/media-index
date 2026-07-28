@@ -103,6 +103,7 @@ const els = {
   settingsGithubApiKeyCopy: document.getElementById('settings-github-api-key-copy'),
   settingsLocale: document.getElementById('settings-locale'),
   settingsBulkMetaConfirm2: document.getElementById('settings-bulk-meta-confirm2'),
+  settingsStatsScope: document.getElementById('settings-stats-scope'),
   settingsPosterScale: document.getElementById('settings-poster-scale'),
   settingsPosterScaleValue: document.getElementById('settings-poster-scale-value'),
   settingsPosterGap: document.getElementById('settings-poster-gap'),
@@ -702,6 +703,7 @@ const statsUi = initStatsUi({
   closeMenu,
   focusFilterWhenIdle,
   getMovies: () => state.movies,
+  getFilteredMovies: () => state.filtered,
   getLeaves: () => state.leaves,
   setLeaves: (leaves) => {
     state.leaves = leaves;
