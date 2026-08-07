@@ -719,9 +719,13 @@ export class MovieDialog {
   pillsRow(label, list, type) {
     const typeAttr = type ? ` data-type="${escapeHtml(type)}"` : '';
     const filterable = type && MovieDialog.FILTERABLE_PILL_TYPES.has(type);
-    const items = this.normalizeNameList(list).sort((a, b) =>
-      a.localeCompare(b, undefined, { sensitivity: 'base' })
-    );
+    // Keep cast in source order (e.g. TMDB billing); sort other name lists A–Z.
+    const names = this.normalizeNameList(list);
+    const items =
+      type === 'actor'
+        ? names
+        : names.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
     if (!items.length) {
       return `
         <div class="field-row">
