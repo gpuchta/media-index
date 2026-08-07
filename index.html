@@ -804,16 +804,17 @@
         </button>
       </div>
       <div class="dialog-body">
-        <form id="tmdb-search-form" class="tmdb-search-form" autocomplete="off">
+        <form id="tmdb-search-form" class="tmdb-search-form">
           <label class="form-field">
             <span class="form-label" data-i18n="search.movieTitle">Movie title</span>
             <input
-              type="text"
+              type="search"
               id="tmdb-movie-title"
               name="tmdb-movie-title"
               class="form-input"
               required
               placeholder="Title"
+              autocomplete="on"
             />
           </label>
           <label class="form-field">
@@ -827,6 +828,7 @@
               pattern="[0-9]{4}"
               maxlength="4"
               placeholder="YYYY"
+              autocomplete="off"
             />
           </label>
           <p id="tmdb-search-status" class="tmdb-search-status" role="status" hidden></p>
