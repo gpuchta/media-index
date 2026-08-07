@@ -3077,32 +3077,61 @@ input {
   background: rgba(255, 193, 7, 0.1);
 }
 
+/* Movie dialog location pill: same size in display and edit modes */
+#movie-dialog .pill[data-type='location'],
+#movie-dialog .pill.location-edit-wrap {
+  box-sizing: border-box;
+  font-size: 1.1rem;
+  line-height: 1.25;
+  padding: 0.4rem 0.85rem;
+  min-width: 8rem;
+  min-height: 2.1rem;
+  gap: 0.4rem;
+}
+
+/* Pen icon: affordance that location is editable */
+#movie-dialog .location-edit-icon {
+  flex-shrink: 0;
+  width: 0.95em;
+  height: 0.95em;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+#movie-dialog .pill.editable[data-type='location']:hover .location-edit-icon,
+#movie-dialog .pill.location-edit-wrap .location-edit-icon {
+  opacity: 1;
+}
+
 /* Location edit: span wrap (not button) so Space types a character */
 .pill.location-edit-wrap {
   display: inline-flex;
   align-items: center;
-  padding: 0.15rem 0.45rem;
-  min-width: 6rem;
   cursor: text;
   border-color: var(--loc);
   color: var(--loc);
   background: rgba(255, 193, 7, 0.1);
 }
 
-.pill.location-edit-input,
+/* Input fills the text slot only — no extra padding/min-width (wrap owns chrome) */
+#movie-dialog .location-edit-input,
+.pill .location-edit-input,
 .pill input {
   border: 0;
   background: transparent;
   color: inherit;
   outline: none;
-  min-width: 6rem;
+  min-width: 0;
+  flex: 1 1 auto;
   width: 100%;
   font: inherit;
+  line-height: inherit;
   padding: 0;
   margin: 0;
 }
 
-.pill.location-edit-input:focus {
+#movie-dialog .location-edit-input:focus,
+.pill .location-edit-input:focus {
   outline: none;
 }
 

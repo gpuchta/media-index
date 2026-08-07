@@ -11,6 +11,13 @@ import {
   isPrimaryActionEnter,
 } from './utils.js';
 
+/** Pen affordance for the editable location pill (display + edit). */
+const LOCATION_PEN_ICON_HTML =
+  '<svg class="location-edit-icon" viewBox="0 0 24 24" width="1em" height="1em" fill="none" aria-hidden="true" focusable="false">' +
+  '<path stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" ' +
+  'd="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 0 1 3.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>' +
+  '</svg>';
+
 /**
  * Movie detail dialog with draft edits.
  * Save / Escape — commit draft to the movie (mark dirty if changed) and close.
@@ -445,7 +452,12 @@ export class MovieDialog {
     btn.className = 'pill editable';
     btn.dataset.type = 'location';
     btn.dataset.edit = 'location';
-    btn.textContent = String(this.draft?.location || '').trim() || '—';
+    btn.setAttribute('title', t('dialog.location'));
+    const label = document.createElement('span');
+    label.className = 'location-pill-text';
+    label.textContent = String(this.draft?.location || '').trim() || '—';
+    btn.appendChild(label);
+    btn.insertAdjacentHTML('beforeend', LOCATION_PEN_ICON_HTML);
     return btn;
   }
 
@@ -556,7 +568,7 @@ export class MovieDialog {
         <div class="field-row" id="field-location">
           <span class="field-label">${escapeHtml(t('dialog.location'))}</span>
           <div class="field-values">
-            <button type="button" class="pill editable" data-type="location" data-edit="location">${escapeHtml(d.location || '—')}</button>
+            <button type="button" class="pill editable" data-type="location" data-edit="location" title="${escapeHtml(t('dialog.location'))}"><span class="location-pill-text">${escapeHtml(d.location || '—')}</span>${LOCATION_PEN_ICON_HTML}</button>
           </div>
         </div>
         <div class="field-row">
@@ -836,9 +848,9 @@ export class MovieDialog {
     const input = document.createElement('input');
     input.type = 'text';
     input.value = prev;
-    input.className = 'pill location-edit-input';
+    // Not a .pill — wrap owns size/chrome so edit matches display mode
+    input.className = 'location-edit-input';
     input.setAttribute('aria-label', 'Location');
-    input.dataset.type = 'location';
     input.dataset.edit = 'location';
 
     // Do not nest <input> inside <button> (invalid HTML): Space would activate
@@ -848,6 +860,7 @@ export class MovieDialog {
     wrap.dataset.type = 'location';
     wrap.dataset.edit = 'location';
     wrap.appendChild(input);
+    wrap.insertAdjacentHTML('beforeend', LOCATION_PEN_ICON_HTML);
     target.replaceWith(wrap);
     input.focus();
     input.select();
