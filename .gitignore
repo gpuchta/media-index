@@ -3,4 +3,5 @@ posters/w342/*
 prompt/*
 secret/*
 **/*.bak
-
+**/@eaDir/*
+**/.DS_Store
