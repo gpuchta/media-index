@@ -1,8 +1,9 @@
 /**
  * Settings import / export / clear-session helpers.
  *
- * Known localStorage keys under pmi:*. API keys are excluded from export;
- * if present in an import file they are still applied, with a red warning.
+ * Known localStorage keys under pmi:*. API keys are excluded from export
+ * unless Settings → Include API keys is on; if present in an import file they
+ * are still applied, with a red warning.
  */
 
 import {
@@ -14,6 +15,7 @@ import {
   getStoredBinderCustomPatterns,
   getStoredBinderNotationId,
   getStoredBulkMetaConfirm2,
+  getStoredExportApiKeys,
   getStoredFontSize,
   getStoredGrayedLocationsText,
   getStoredLocale,
@@ -36,6 +38,7 @@ import {
   setStoredBinderCustomPatterns,
   setStoredBinderNotationId,
   setStoredBulkMetaConfirm2,
+  setStoredExportApiKeys,
   setStoredFontSize,
   setStoredGrayedLocationsText,
   setStoredLocale,
@@ -412,6 +415,28 @@ const SETTINGS_FIELDS = Object.freeze([
     },
   },
   {
+    key: CONFIG.EXPORT_API_KEYS_STORAGE,
+    label: 'export API keys',
+    exportValue: () => getStoredExportApiKeys(),
+    apply(raw) {
+      if (raw === undefined) {
+        const v = setStoredExportApiKeys(CONFIG.EXPORT_API_KEYS_DEFAULT);
+        return { status: 'default', detail: 'missing → default', value: v };
+      }
+      const b = parseBool(raw);
+      if (b == null) {
+        const v = setStoredExportApiKeys(CONFIG.EXPORT_API_KEYS_DEFAULT);
+        return {
+          status: 'invalid',
+          detail: `invalid “${String(raw)}” → default`,
+          value: v,
+        };
+      }
+      const v = setStoredExportApiKeys(b);
+      return { status: 'applied', value: v };
+    },
+  },
+  {
     key: CONFIG.STATS_SCOPE_STORAGE,
     label: 'statistics scope',
     exportValue: () => getStoredStatsScope(),
@@ -512,8 +537,8 @@ const KNOWN_KEY_SET = new Set([
 ]);
 
 /**
- * Build a plain object of current non-secret settings (export payload).
- * API keys are never included.
+ * Build a plain object of current settings (export payload).
+ * API keys are included only when Settings → Include API keys is on.
  * @returns {Record<string, unknown>}
  */
 export function buildSettingsExportObject() {
@@ -522,7 +547,16 @@ export function buildSettingsExportObject() {
   for (const field of SETTINGS_FIELDS) {
     out[field.key] = field.exportValue();
   }
+  if (getStoredExportApiKeys()) {
+    out[TMDB_API_KEY_STORAGE] = getStoredTmdbApiKey();
+    out[GITHUB_TOKEN_STORAGE] = getStoredGithubToken();
+  }
   return out;
+}
+
+/** @returns {boolean} true when the current export payload will include API keys */
+export function settingsExportIncludesApiKeys() {
+  return getStoredExportApiKeys();
 }
 
 /**
@@ -674,6 +708,7 @@ export function clearLocalStorageSession() {
  *   grayedLocations: string,
  *   posterSource: 'tmdb'|'local',
  *   bulkMetaConfirm2: boolean,
+ *   exportApiKeys: boolean,
  *   statsScope: 'filtered'|'library',
  *   binderNotationId: string,
  *   binderCustomPatterns: string,
@@ -694,6 +729,7 @@ export function readEffectiveSettingsSnapshot() {
     grayedLocations: getStoredGrayedLocationsText(),
     posterSource: getStoredPosterSource(),
     bulkMetaConfirm2: getStoredBulkMetaConfirm2(),
+    exportApiKeys: getStoredExportApiKeys(),
     statsScope: getStoredStatsScope(),
     binderNotationId: getStoredBinderNotationId(),
     binderCustomPatterns: getStoredBinderCustomPatterns(),

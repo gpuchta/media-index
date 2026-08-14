@@ -19,6 +19,7 @@ import {
   getStoredBinderCustomPatterns,
   getStoredBinderNotationId,
   getStoredBulkMetaConfirm2,
+  getStoredExportApiKeys,
   getStoredFontSize,
   getStoredGrayedLocationsSet,
   getStoredGrayedLocationsText,
@@ -41,6 +42,7 @@ import {
   setStoredBinderCustomPatterns,
   setStoredBinderNotationId,
   setStoredBulkMetaConfirm2,
+  setStoredExportApiKeys,
   setStoredFontSize,
   setStoredGrayedLocationsText,
   setStoredLocale,
@@ -104,6 +106,7 @@ export function initSettingsUi(opts) {
   let savedGrayedLocationsText = getStoredGrayedLocationsText();
   let savedPosterSource = getStoredPosterSource();
   let savedBulkMetaConfirm2 = getStoredBulkMetaConfirm2();
+  let savedExportApiKeys = getStoredExportApiKeys();
   let savedStatsScope = getStoredStatsScope();
   let savedBinderNotationId = getStoredBinderNotationId();
   let savedBinderCustomPatterns = getStoredBinderCustomPatterns();
@@ -543,11 +546,15 @@ export function initSettingsUi(opts) {
     savedGrayedLocationsText = getStoredGrayedLocationsText();
     savedPosterSource = getStoredPosterSource();
     savedBulkMetaConfirm2 = getStoredBulkMetaConfirm2();
+    savedExportApiKeys = getStoredExportApiKeys();
     savedStatsScope = getStoredStatsScope();
     savedBinderNotationId = getStoredBinderNotationId();
     savedBinderCustomPatterns = getStoredBinderCustomPatterns();
     if (els.settingsBulkMetaConfirm2) {
       els.settingsBulkMetaConfirm2.checked = savedBulkMetaConfirm2;
+    }
+    if (els.settingsExportApiKeys) {
+      els.settingsExportApiKeys.checked = savedExportApiKeys;
     }
     if (els.settingsStatsScope) {
       els.settingsStatsScope.value = savedStatsScope;
@@ -753,6 +760,12 @@ export function initSettingsUi(opts) {
     if (els.settingsBulkMetaConfirm2) {
       els.settingsBulkMetaConfirm2.checked = savedBulkMetaConfirm2;
     }
+    savedExportApiKeys = setStoredExportApiKeys(
+      !!els.settingsExportApiKeys?.checked
+    );
+    if (els.settingsExportApiKeys) {
+      els.settingsExportApiKeys.checked = savedExportApiKeys;
+    }
     savedStatsScope = setStoredStatsScope(els.settingsStatsScope?.value);
     if (els.settingsStatsScope) {
       els.settingsStatsScope.value = savedStatsScope;
@@ -783,6 +796,7 @@ export function initSettingsUi(opts) {
         : 'grayed locations none',
       `poster source ${savedPosterSource === 'local' ? 'local' : 'TMDB'}`,
       `bulk second confirm ${savedBulkMetaConfirm2 ? 'on' : 'off'}`,
+      `export API keys ${savedExportApiKeys ? 'on' : 'off'}`,
       `statistics ${
         savedStatsScope === 'library' ? 'entire library' : 'current filters'
       }`,
@@ -820,6 +834,7 @@ export function initSettingsUi(opts) {
     savedGrayedLocationsText = snap.grayedLocations;
     savedPosterSource = snap.posterSource;
     savedBulkMetaConfirm2 = snap.bulkMetaConfirm2;
+    savedExportApiKeys = snap.exportApiKeys ?? getStoredExportApiKeys();
     savedStatsScope = snap.statsScope ?? getStoredStatsScope();
     savedBinderNotationId = snap.binderNotationId;
     savedBinderCustomPatterns = snap.binderCustomPatterns;

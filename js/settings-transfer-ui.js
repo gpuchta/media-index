@@ -10,6 +10,7 @@ import {
   applySettingsImport,
   buildSettingsExportObject,
   clearLocalStorageSession,
+  settingsExportIncludesApiKeys,
 } from './settings-io.js';
 import {
   appendProgressLog,
@@ -164,16 +165,28 @@ export function initSettingsTransfer(opts) {
     clipboardImportPasteBtn,
   } = opts;
 
+  function exportDoneMessage() {
+    return settingsExportIncludesApiKeys()
+      ? t('settingsIo.exportDoneWithKeys')
+      : t('settingsIo.exportDone');
+  }
+
+  function exportClipboardDoneMessage() {
+    return settingsExportIncludesApiKeys()
+      ? t('settingsIo.exportClipboardDoneWithKeys')
+      : t('settingsIo.exportClipboardDone');
+  }
+
   function exportSettings() {
     downloadJson(SETTINGS_EXPORT_FILENAME, buildSettingsExportObject());
-    showAppToast(t('settingsIo.exportDone'));
+    showAppToast(exportDoneMessage());
   }
 
   async function exportSettingsToClipboard() {
     const text = JSON.stringify(buildSettingsExportObject(), null, 2);
     try {
       await copyTextToClipboard(text);
-      showAppToast(t('settingsIo.exportClipboardDone'));
+      showAppToast(exportClipboardDoneMessage());
     } catch (err) {
       await showAppAlert(
         t('settingsIo.exportClipboardFailed', {

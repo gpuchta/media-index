@@ -103,6 +103,7 @@ const els = {
   settingsGithubApiKeyCopy: document.getElementById('settings-github-api-key-copy'),
   settingsLocale: document.getElementById('settings-locale'),
   settingsBulkMetaConfirm2: document.getElementById('settings-bulk-meta-confirm2'),
+  settingsExportApiKeys: document.getElementById('settings-export-api-keys'),
   settingsStatsScope: document.getElementById('settings-stats-scope'),
   settingsPosterScale: document.getElementById('settings-poster-scale'),
   settingsPosterScaleValue: document.getElementById('settings-poster-scale-value'),

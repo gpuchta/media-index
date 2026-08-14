@@ -700,6 +700,21 @@
                 </div>
               </div>
             </div>
+            <label class="form-field form-check" for="settings-export-api-keys">
+              <span class="form-label" data-i18n="settings.exportApiKeys">Settings export</span>
+              <span class="form-check-row">
+                <input
+                  type="checkbox"
+                  id="settings-export-api-keys"
+                  name="settings-export-api-keys"
+                  class="form-check-input"
+                />
+                <span data-i18n="settings.exportApiKeysConfirm">Include TMDB and GitHub API keys in settings export</span>
+              </span>
+            </label>
+            <p class="form-hint" data-i18n="settings.exportApiKeysHint">
+              Off by default. When on, Export settings and Copy settings include both keys. Treat that file or clipboard as a secret — do not commit it.
+            </p>
             <p class="form-hint" data-i18n="settings.connectionsHint">
               Keys stay in this browser only. TMDB for search and posters; GitHub for library read/write.
             </p>

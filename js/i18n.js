@@ -151,7 +151,10 @@ const en = {
   'menu.clearSession': 'Clear session',
 
   'settingsIo.exportDone': 'Settings exported',
+  'settingsIo.exportDoneWithKeys': 'Settings exported (includes API keys)',
   'settingsIo.exportClipboardDone': 'Settings copied to clipboard',
+  'settingsIo.exportClipboardDoneWithKeys':
+    'Settings copied to clipboard (includes API keys)',
   'settingsIo.exportClipboardFailed': 'Could not copy settings: {error}',
   'settingsIo.importTitle': 'Import settings',
   'settingsIo.importUnavailable': 'Import settings is not available in this browser.',
@@ -293,6 +296,11 @@ const en = {
   'settings.connections': 'Connections',
   'settings.tmdbKey': 'TMDB API key',
   'settings.githubKey': 'GitHub API key',
+  'settings.exportApiKeys': 'Settings export',
+  'settings.exportApiKeysConfirm':
+    'Include TMDB and GitHub API keys in settings export',
+  'settings.exportApiKeysHint':
+    'Off by default. When on, Export settings and Copy settings include both keys. Treat that file or clipboard as a secret — do not commit it.',
   'settings.connectionsHint':
     'Keys stay in this browser only. TMDB for search and posters; GitHub for library read/write.',
   'settings.showKey': 'Show key',
@@ -430,7 +438,11 @@ const de = {
   'menu.clearSession': 'Sitzung löschen',
 
   'settingsIo.exportDone': 'Einstellungen exportiert',
+  'settingsIo.exportDoneWithKeys':
+    'Einstellungen exportiert (enthält API-Schlüssel)',
   'settingsIo.exportClipboardDone': 'Einstellungen in Zwischenablage kopiert',
+  'settingsIo.exportClipboardDoneWithKeys':
+    'Einstellungen in Zwischenablage kopiert (enthält API-Schlüssel)',
   'settingsIo.exportClipboardFailed':
     'Einstellungen konnten nicht kopiert werden: {error}',
   'settingsIo.importTitle': 'Einstellungen importieren',
@@ -577,6 +589,11 @@ const de = {
   'settings.connections': 'Verbindungen',
   'settings.tmdbKey': 'TMDB-API-Schlüssel',
   'settings.githubKey': 'GitHub-API-Schlüssel',
+  'settings.exportApiKeys': 'Einstellungen exportieren',
+  'settings.exportApiKeysConfirm':
+    'TMDB- und GitHub-API-Schlüssel im Einstellungs-Export einschließen',
+  'settings.exportApiKeysHint':
+    'Standardmäßig aus. Wenn aktiv, enthalten „Einstellungen exportieren“ und das Kopieren in die Zwischenablage beide Schlüssel. Behandeln Sie Datei oder Zwischenablage als Geheimnis — nicht committen.',
   'settings.connectionsHint':
     'Schlüssel bleiben nur in diesem Browser. TMDB für Suche und Poster; GitHub für Bibliothek lesen/schreiben.',
   'settings.showKey': 'Schlüssel anzeigen',
@@ -714,7 +731,10 @@ const es = {
   'menu.clearSession': 'Borrar sesión',
 
   'settingsIo.exportDone': 'Ajustes exportados',
+  'settingsIo.exportDoneWithKeys': 'Ajustes exportados (incluye claves API)',
   'settingsIo.exportClipboardDone': 'Ajustes copiados al portapapeles',
+  'settingsIo.exportClipboardDoneWithKeys':
+    'Ajustes copiados al portapapeles (incluye claves API)',
   'settingsIo.exportClipboardFailed':
     'No se pudieron copiar los ajustes: {error}',
   'settingsIo.importTitle': 'Importar ajustes',
@@ -861,6 +881,11 @@ const es = {
   'settings.connections': 'Conexiones',
   'settings.tmdbKey': 'Clave API de TMDB',
   'settings.githubKey': 'Clave API de GitHub',
+  'settings.exportApiKeys': 'Exportar ajustes',
+  'settings.exportApiKeysConfirm':
+    'Incluir las claves API de TMDB y GitHub al exportar ajustes',
+  'settings.exportApiKeysHint':
+    'Desactivado por defecto. Si está activado, Exportar ajustes y Copiar ajustes incluyen ambas claves. Trate ese archivo o portapapeles como un secreto: no lo suba al repositorio.',
   'settings.connectionsHint':
     'Las claves solo se guardan en este navegador. TMDB para búsqueda y pósters; GitHub para leer/escribir la biblioteca.',
   'settings.showKey': 'Mostrar clave',
@@ -998,7 +1023,11 @@ const fr = {
   'menu.clearSession': 'Effacer la session',
 
   'settingsIo.exportDone': 'Paramètres exportés',
+  'settingsIo.exportDoneWithKeys':
+    'Paramètres exportés (inclut les clés API)',
   'settingsIo.exportClipboardDone': 'Paramètres copiés dans le presse-papiers',
+  'settingsIo.exportClipboardDoneWithKeys':
+    'Paramètres copiés dans le presse-papiers (inclut les clés API)',
   'settingsIo.exportClipboardFailed':
     'Impossible de copier les paramètres : {error}',
   'settingsIo.importTitle': 'Importer les paramètres',
@@ -1146,6 +1175,11 @@ const fr = {
   'settings.connections': 'Connexions',
   'settings.tmdbKey': 'Clé API TMDB',
   'settings.githubKey': 'Clé API GitHub',
+  'settings.exportApiKeys': 'Export des paramètres',
+  'settings.exportApiKeysConfirm':
+    'Inclure les clés API TMDB et GitHub dans l’export des paramètres',
+  'settings.exportApiKeysHint':
+    'Désactivé par défaut. Si activé, Exporter les paramètres et Copier les paramètres incluent les deux clés. Traitez ce fichier ou ce presse-papiers comme un secret — ne le commitez pas.',
   'settings.connectionsHint':
     'Les clés restent dans ce navigateur uniquement. TMDB pour la recherche et les affiches ; GitHub pour lire/écrire la bibliothèque.',
   'settings.showKey': 'Afficher la clé',

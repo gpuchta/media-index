@@ -67,6 +67,13 @@ export const CONFIG = {
   BULK_META_CONFIRM2_DEFAULT: true,
 
   /**
+   * Include TMDB + GitHub API keys in settings export (file and clipboard).
+   * Stored in localStorage as "1" / "0". Default: off (safer).
+   */
+  EXPORT_API_KEYS_STORAGE: 'pmi:exportApiKeys',
+  EXPORT_API_KEYS_DEFAULT: false,
+
+  /**
    * Statistics dialog movie source.
    * - "filtered": current search/filter result (matches the poster grid)
    * - "library": entire loaded collection
@@ -412,6 +419,37 @@ export function setStoredBulkMetaConfirm2(enabled) {
       localStorage.removeItem(CONFIG.BULK_META_CONFIRM2_STORAGE);
     } else {
       localStorage.setItem(CONFIG.BULK_META_CONFIRM2_STORAGE, on ? '1' : '0');
+    }
+  } catch {
+    /* private mode */
+  }
+  return on;
+}
+
+/** @returns {boolean} */
+export function getStoredExportApiKeys() {
+  try {
+    const raw = localStorage.getItem(CONFIG.EXPORT_API_KEYS_STORAGE);
+    if (raw == null || raw === '') return CONFIG.EXPORT_API_KEYS_DEFAULT;
+    if (raw === '0' || raw === 'false') return false;
+    if (raw === '1' || raw === 'true') return true;
+    return CONFIG.EXPORT_API_KEYS_DEFAULT;
+  } catch {
+    return CONFIG.EXPORT_API_KEYS_DEFAULT;
+  }
+}
+
+/**
+ * @param {unknown} enabled
+ * @returns {boolean}
+ */
+export function setStoredExportApiKeys(enabled) {
+  const on = !!enabled;
+  try {
+    if (on === CONFIG.EXPORT_API_KEYS_DEFAULT) {
+      localStorage.removeItem(CONFIG.EXPORT_API_KEYS_STORAGE);
+    } else {
+      localStorage.setItem(CONFIG.EXPORT_API_KEYS_STORAGE, on ? '1' : '0');
     }
   } catch {
     /* private mode */
