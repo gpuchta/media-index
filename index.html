@@ -155,24 +155,8 @@
                   <button type="button" role="menuitem" id="export-settings-btn" data-i18n="menu.exportSettings">
                     Export settings
                   </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    id="export-settings-clipboard-btn"
-                    data-i18n="menu.exportSettingsClipboard"
-                  >
-                    Export to Clipboard
-                  </button>
                   <button type="button" role="menuitem" id="import-settings-btn" data-i18n="menu.importSettings">
                     Import settings
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    id="import-settings-clipboard-btn"
-                    data-i18n="menu.importSettingsClipboard"
-                  >
-                    Import from Clipboard
                   </button>
                   <button type="button" role="menuitem" id="clear-session-btn" data-i18n="menu.clearSession">
                     Clear session
@@ -713,7 +697,7 @@
               </span>
             </label>
             <p class="form-hint" data-i18n="settings.exportApiKeysHint">
-              Off by default. When on, Export settings and Copy settings include both keys. Treat that file or clipboard as a secret — do not commit it.
+              Off by default. When on, Export settings (file or clipboard) includes both keys. Treat that as a secret — do not commit it.
             </p>
             <p class="form-hint" data-i18n="settings.connectionsHint">
               Keys stay in this browser only. TMDB for search and posters; GitHub for library read/write.
@@ -972,7 +956,60 @@
     </div>
   </div>
 
-  <!-- Import settings from clipboard -->
+  <!-- Export settings: download file or copy JSON -->
+  <div
+    id="settings-export-backdrop"
+    class="dialog-backdrop hidden"
+    aria-hidden="true"
+  >
+    <div
+      class="dialog dialog-settings-export"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-export-title"
+      aria-describedby="settings-export-hint"
+      id="settings-export-dialog"
+    >
+      <div class="dialog-header">
+        <h2 class="dialog-header-title" id="settings-export-title" data-i18n="settingsIo.exportTitle">
+          Export settings
+        </h2>
+        <button
+          type="button"
+          class="dialog-close"
+          id="settings-export-close"
+          aria-label="Close"
+          data-i18n-aria-label="common.close"
+        >
+          ×
+        </button>
+      </div>
+      <div class="dialog-body">
+        <p id="settings-export-hint" class="settings-export-hint" data-i18n="settingsIo.exportHint">
+          Download a file or copy JSON to the clipboard.
+        </p>
+        <p
+          id="settings-export-keys-note"
+          class="settings-export-keys-note"
+          hidden
+          data-i18n="settingsIo.exportKeysNote"
+        >
+          This export includes your TMDB and GitHub API keys. Treat the file or clipboard as a secret.
+        </p>
+      </div>
+      <div class="dialog-footer">
+        <div class="dialog-footer-actions">
+          <button type="button" class="btn" id="settings-export-cancel" data-i18n="common.cancel">Cancel</button>
+          <button type="button" class="btn" id="settings-export-copy" data-i18n="settingsIo.exportCopy">Copy</button>
+          <button type="button" class="btn btn-primary" id="settings-export-download" data-i18n="settingsIo.exportDownload">
+            Download
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import settings: file or paste -->
   <div
     id="clipboard-import-backdrop"
     class="dialog-backdrop hidden"
@@ -987,7 +1024,7 @@
     >
       <div class="dialog-header">
         <h2 class="dialog-header-title" id="clipboard-import-title" data-i18n="settingsIo.clipboardTitle">
-          Import from Clipboard
+          Import settings
         </h2>
         <button
           type="button"
@@ -1003,11 +1040,16 @@
         <section class="clipboard-import-section" aria-labelledby="clipboard-import-paste-label">
           <div class="clipboard-import-section-head">
             <label class="clipboard-import-label" id="clipboard-import-paste-label" for="clipboard-import-text" data-i18n="settingsIo.clipboardPasteLabel">
-              Paste settings JSON
+              Settings JSON
             </label>
-            <button type="button" class="btn btn-sm" id="clipboard-import-paste-btn" data-i18n="settingsIo.clipboardPasteBtn">
-              Paste
-            </button>
+            <div class="clipboard-import-actions">
+              <button type="button" class="btn btn-sm" id="clipboard-import-file-btn" data-i18n="settingsIo.importFileBtn">
+                Choose file…
+              </button>
+              <button type="button" class="btn btn-sm" id="clipboard-import-paste-btn" data-i18n="settingsIo.clipboardPasteBtn">
+                Paste
+              </button>
+            </div>
           </div>
           <textarea
             id="clipboard-import-text"

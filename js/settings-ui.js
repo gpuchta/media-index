@@ -975,6 +975,12 @@ export function initSettingsUi(opts) {
       if (els.statsBackdrop && !els.statsBackdrop.classList.contains('hidden')) {
         return;
       }
+      if (els.settingsExportBackdrop && !els.settingsExportBackdrop.classList.contains('hidden')) {
+        return;
+      }
+      if (els.clipboardImportBackdrop && !els.clipboardImportBackdrop.classList.contains('hidden')) {
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       closeSettingsDialog({ revertPreview: true });
@@ -994,6 +1000,12 @@ export function initSettingsUi(opts) {
         return;
       }
       if (els.statsBackdrop && !els.statsBackdrop.classList.contains('hidden')) {
+        return;
+      }
+      if (els.settingsExportBackdrop && !els.settingsExportBackdrop.classList.contains('hidden')) {
+        return;
+      }
+      if (els.clipboardImportBackdrop && !els.clipboardImportBackdrop.classList.contains('hidden')) {
         return;
       }
       e.preventDefault();

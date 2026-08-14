@@ -16,7 +16,11 @@ import {
   appendProgressLog,
   resetDialogScroll,
 } from './progress-console.js';
-import { copyTextToClipboard, downloadJson } from './utils.js';
+import {
+  copyTextToClipboard,
+  downloadJson,
+  isPrimaryActionEnter,
+} from './utils.js';
 
 /**
  * Shared settings import + console logging (file and clipboard).
@@ -119,18 +123,20 @@ export function importSettingsFromText(
  * @param {{
  *   closeMenu: () => void,
  *   showAppToast: (message: string, opts?: { error?: boolean, ms?: number }) => void,
- *   openSaveProgressDialog: (opts?: { title?: string }) => void,
- *   appendSaveLog: (message: string, opts?: { level?: string }) => void,
  *   reapplySettingsFromStorage: () => void,
  *   closeSettingsDialog: (opts?: { revertPreview?: boolean }) => void,
  *   focusFilterWhenIdle: () => void,
  *   isSettingsOpen: () => boolean,
  *   exportSettingsBtn: HTMLElement|null,
- *   exportSettingsClipboardBtn: HTMLElement|null,
  *   importSettingsBtn: HTMLElement|null,
  *   importSettingsFileInput: HTMLInputElement|null,
- *   importSettingsClipboardBtn: HTMLElement|null,
  *   clearSessionBtn: HTMLElement|null,
+ *   settingsExportBackdrop: HTMLElement|null,
+ *   settingsExportClose: HTMLElement|null,
+ *   settingsExportCancel: HTMLElement|null,
+ *   settingsExportCopy: HTMLElement|null,
+ *   settingsExportDownload: HTMLElement|null,
+ *   settingsExportKeysNote: HTMLElement|null,
  *   clipboardImportBackdrop: HTMLElement|null,
  *   clipboardImportText: HTMLTextAreaElement|null,
  *   clipboardImportConsole: HTMLElement|null,
@@ -138,24 +144,27 @@ export function importSettingsFromText(
  *   clipboardImportCancel: HTMLElement|null,
  *   clipboardImportRun: HTMLElement|null,
  *   clipboardImportPasteBtn: HTMLElement|null,
+ *   clipboardImportFileBtn: HTMLElement|null,
  * }} opts
  */
 export function initSettingsTransfer(opts) {
   const {
     closeMenu,
     showAppToast,
-    openSaveProgressDialog,
-    appendSaveLog,
     reapplySettingsFromStorage,
     closeSettingsDialog,
     focusFilterWhenIdle,
     isSettingsOpen,
     exportSettingsBtn,
-    exportSettingsClipboardBtn,
     importSettingsBtn,
     importSettingsFileInput,
-    importSettingsClipboardBtn,
     clearSessionBtn,
+    settingsExportBackdrop,
+    settingsExportClose,
+    settingsExportCancel,
+    settingsExportCopy,
+    settingsExportDownload,
+    settingsExportKeysNote,
     clipboardImportBackdrop,
     clipboardImportText,
     clipboardImportConsole,
@@ -163,7 +172,11 @@ export function initSettingsTransfer(opts) {
     clipboardImportCancel,
     clipboardImportRun,
     clipboardImportPasteBtn,
+    clipboardImportFileBtn,
   } = opts;
+
+  /** Last file name or “clipboard” shown in the import log. */
+  let lastImportSource = '';
 
   function exportDoneMessage() {
     return settingsExportIncludesApiKeys()
@@ -177,8 +190,41 @@ export function initSettingsTransfer(opts) {
       : t('settingsIo.exportClipboardDone');
   }
 
+  function isSettingsExportOpen() {
+    return Boolean(
+      settingsExportBackdrop &&
+        !settingsExportBackdrop.classList.contains('hidden')
+    );
+  }
+
+  function syncExportKeysNote() {
+    if (!settingsExportKeysNote) return;
+    const on = settingsExportIncludesApiKeys();
+    settingsExportKeysNote.hidden = !on;
+  }
+
+  function openSettingsExportDialog() {
+    if (!settingsExportBackdrop) return;
+    syncExportKeysNote();
+    resetDialogScroll(settingsExportBackdrop);
+    settingsExportBackdrop.classList.remove('hidden');
+    settingsExportBackdrop.setAttribute('aria-hidden', 'false');
+    queueMicrotask(() => {
+      resetDialogScroll(settingsExportBackdrop);
+      settingsExportDownload?.focus();
+    });
+  }
+
+  function closeSettingsExportDialog() {
+    if (!settingsExportBackdrop) return;
+    settingsExportBackdrop.classList.add('hidden');
+    settingsExportBackdrop.setAttribute('aria-hidden', 'true');
+    focusFilterWhenIdle();
+  }
+
   function exportSettings() {
     downloadJson(SETTINGS_EXPORT_FILENAME, buildSettingsExportObject());
+    closeSettingsExportDialog();
     showAppToast(exportDoneMessage());
   }
 
@@ -186,65 +232,28 @@ export function initSettingsTransfer(opts) {
     const text = JSON.stringify(buildSettingsExportObject(), null, 2);
     try {
       await copyTextToClipboard(text);
+      closeSettingsExportDialog();
       showAppToast(exportClipboardDoneMessage());
     } catch (err) {
       await showAppAlert(
         t('settingsIo.exportClipboardFailed', {
           error: err?.message || String(err),
         }),
-        { title: t('menu.exportSettingsClipboard') }
+        { title: t('menu.exportSettings') }
       );
     }
   }
 
-  function startSettingsImport() {
-    const input = importSettingsFileInput;
-    if (!input) {
-      void showAppAlert(t('settingsIo.importUnavailable'), {
-        title: t('menu.importSettings'),
-      });
-      return;
-    }
-    input.click();
-  }
-
-  /**
-   * @param {File} file
-   */
-  async function importSettingsFromFile(file) {
-    const name = file?.name || 'settings.json';
-    openSaveProgressDialog({ title: t('settingsIo.importTitle') });
-
-    let text;
-    try {
-      text = await file.text();
-    } catch (err) {
-      appendSaveLog(
-        t('settingsIo.importReadFailed', {
-          error: err?.message || String(err),
-        }),
-        { level: 'error' }
-      );
-      appendSaveLog(t('settingsIo.finished'));
-      return;
-    }
-
-    importSettingsFromText(text, {
-      sourceLabel: name,
-      log: appendSaveLog,
-      reapplySettingsFromStorage,
-    });
-  }
-
-  function isClipboardImportOpen() {
+  function isSettingsImportOpen() {
     return Boolean(
       clipboardImportBackdrop &&
         !clipboardImportBackdrop.classList.contains('hidden')
     );
   }
 
-  function openClipboardImportDialog() {
+  function openSettingsImportDialog() {
     if (!clipboardImportBackdrop) return;
+    lastImportSource = '';
     if (clipboardImportText) clipboardImportText.value = '';
     if (clipboardImportConsole) clipboardImportConsole.textContent = '';
     resetDialogScroll(clipboardImportBackdrop);
@@ -256,7 +265,7 @@ export function initSettingsTransfer(opts) {
     });
   }
 
-  function closeClipboardImportDialog() {
+  function closeSettingsImportDialog() {
     if (!clipboardImportBackdrop) return;
     clipboardImportBackdrop.classList.add('hidden');
     clipboardImportBackdrop.setAttribute('aria-hidden', 'true');
@@ -267,16 +276,16 @@ export function initSettingsTransfer(opts) {
    * @param {string} message
    * @param {{ level?: 'normal' | 'error' | 'warn' | 'ok' }} [logOpts]
    */
-  function appendClipboardImportLog(message, logOpts = {}) {
+  function appendImportLog(message, logOpts = {}) {
     appendProgressLog(clipboardImportConsole, message, logOpts);
   }
 
-  async function pasteIntoClipboardImport() {
+  async function pasteIntoImport() {
     const ta = clipboardImportText;
     if (!ta) return;
     try {
       if (!navigator.clipboard?.readText) {
-        appendClipboardImportLog(t('settingsIo.clipboardPasteUnsupported'), {
+        appendImportLog(t('settingsIo.clipboardPasteUnsupported'), {
           level: 'warn',
         });
         ta.focus();
@@ -284,13 +293,12 @@ export function initSettingsTransfer(opts) {
       }
       const text = await navigator.clipboard.readText();
       ta.value = text;
+      lastImportSource = t('settingsIo.clipboardSource');
       ta.focus();
       ta.setSelectionRange(ta.value.length, ta.value.length);
-      appendClipboardImportLog(
-        t('settingsIo.clipboardPasted', { n: text.length })
-      );
+      appendImportLog(t('settingsIo.clipboardPasted', { n: text.length }));
     } catch (err) {
-      appendClipboardImportLog(
+      appendImportLog(
         t('settingsIo.clipboardPasteFailed', {
           error: err?.message || String(err),
         }),
@@ -300,14 +308,51 @@ export function initSettingsTransfer(opts) {
     }
   }
 
-  function runClipboardSettingsImport() {
+  /**
+   * Load a picked file into the import editor (does not apply yet).
+   * @param {File} file
+   */
+  async function loadSettingsFileIntoEditor(file) {
+    const name = file?.name || 'settings.json';
+    const ta = clipboardImportText;
+    try {
+      const text = await file.text();
+      if (ta) {
+        ta.value = text;
+        ta.focus();
+        ta.setSelectionRange(0, 0);
+      }
+      lastImportSource = name;
+      appendImportLog(
+        t('settingsIo.importFileLoaded', { n: text.length, name })
+      );
+    } catch (err) {
+      appendImportLog(
+        t('settingsIo.importReadFailed', {
+          error: err?.message || String(err),
+        }),
+        { level: 'error' }
+      );
+    }
+  }
+
+  function startSettingsFilePick() {
+    const input = importSettingsFileInput;
+    if (!input) {
+      appendImportLog(t('settingsIo.importUnavailable'), { level: 'error' });
+      return;
+    }
+    input.click();
+  }
+
+  function runSettingsImport() {
     const text = clipboardImportText?.value ?? '';
     if (clipboardImportConsole) {
       clipboardImportConsole.textContent = '';
     }
     importSettingsFromText(text, {
-      sourceLabel: t('settingsIo.clipboardSource'),
-      log: appendClipboardImportLog,
+      sourceLabel: lastImportSource || t('settingsIo.importTitle'),
+      log: appendImportLog,
       reapplySettingsFromStorage,
     });
   }
@@ -323,6 +368,8 @@ export function initSettingsTransfer(opts) {
     if (isSettingsOpen()) {
       closeSettingsDialog({ revertPreview: false });
     }
+    if (isSettingsExportOpen()) closeSettingsExportDialog();
+    if (isSettingsImportOpen()) closeSettingsImportDialog();
 
     const { before, after } = clearLocalStorageSession();
     reapplySettingsFromStorage();
@@ -341,44 +388,55 @@ export function initSettingsTransfer(opts) {
 
   exportSettingsBtn?.addEventListener('click', () => {
     closeMenu();
-    exportSettings();
-  });
-
-  exportSettingsClipboardBtn?.addEventListener('click', () => {
-    closeMenu();
-    void exportSettingsToClipboard();
+    openSettingsExportDialog();
   });
 
   importSettingsBtn?.addEventListener('click', () => {
     closeMenu();
-    startSettingsImport();
+    openSettingsImportDialog();
   });
 
   importSettingsFileInput?.addEventListener('change', () => {
     const file = importSettingsFileInput?.files?.[0] || null;
     if (importSettingsFileInput) importSettingsFileInput.value = '';
-    if (file) void importSettingsFromFile(file);
+    if (!file) return;
+    if (!isSettingsImportOpen()) openSettingsImportDialog();
+    void loadSettingsFileIntoEditor(file);
   });
 
-  importSettingsClipboardBtn?.addEventListener('click', () => {
-    closeMenu();
-    openClipboardImportDialog();
+  settingsExportClose?.addEventListener('click', () => {
+    closeSettingsExportDialog();
+  });
+  settingsExportCancel?.addEventListener('click', () => {
+    closeSettingsExportDialog();
+  });
+  settingsExportBackdrop?.addEventListener('click', (e) => {
+    if (e.target === settingsExportBackdrop) closeSettingsExportDialog();
+  });
+  settingsExportDownload?.addEventListener('click', () => {
+    exportSettings();
+  });
+  settingsExportCopy?.addEventListener('click', () => {
+    void exportSettingsToClipboard();
   });
 
   clipboardImportClose?.addEventListener('click', () => {
-    closeClipboardImportDialog();
+    closeSettingsImportDialog();
   });
   clipboardImportCancel?.addEventListener('click', () => {
-    closeClipboardImportDialog();
+    closeSettingsImportDialog();
   });
   clipboardImportBackdrop?.addEventListener('click', (e) => {
-    if (e.target === clipboardImportBackdrop) closeClipboardImportDialog();
+    if (e.target === clipboardImportBackdrop) closeSettingsImportDialog();
   });
   clipboardImportRun?.addEventListener('click', () => {
-    runClipboardSettingsImport();
+    runSettingsImport();
   });
   clipboardImportPasteBtn?.addEventListener('click', () => {
-    void pasteIntoClipboardImport();
+    void pasteIntoImport();
+  });
+  clipboardImportFileBtn?.addEventListener('click', () => {
+    startSettingsFilePick();
   });
 
   document.addEventListener(
@@ -386,10 +444,29 @@ export function initSettingsTransfer(opts) {
     (e) => {
       if (e.key !== 'Escape') return;
       if (isAppAlertOpen()) return;
-      if (!isClipboardImportOpen()) return;
+      if (isSettingsExportOpen()) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeSettingsExportDialog();
+        return;
+      }
+      if (!isSettingsImportOpen()) return;
       e.preventDefault();
       e.stopPropagation();
-      closeClipboardImportDialog();
+      closeSettingsImportDialog();
+    },
+    true
+  );
+
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      if (!isPrimaryActionEnter(e)) return;
+      if (isAppAlertOpen()) return;
+      if (!isSettingsExportOpen()) return;
+      e.preventDefault();
+      e.stopPropagation();
+      exportSettings();
     },
     true
   );
@@ -400,12 +477,14 @@ export function initSettingsTransfer(opts) {
   });
 
   return {
-    isClipboardImportOpen,
+    isSettingsExportOpen,
+    isSettingsImportOpen,
     exportSettings,
     exportSettingsToClipboard,
-    startSettingsImport,
+    openSettingsExportDialog,
+    closeSettingsExportDialog,
+    openSettingsImportDialog,
+    closeSettingsImportDialog,
     clearSession,
-    openClipboardImportDialog,
-    closeClipboardImportDialog,
   };
 }

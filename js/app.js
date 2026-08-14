@@ -77,15 +77,15 @@ const els = {
   statsCloseFooter: document.getElementById('stats-close-footer'),
   settingsBtn: document.getElementById('settings-btn'),
   exportSettingsBtn: document.getElementById('export-settings-btn'),
-  exportSettingsClipboardBtn: document.getElementById(
-    'export-settings-clipboard-btn'
-  ),
   importSettingsBtn: document.getElementById('import-settings-btn'),
   importSettingsFileInput: document.getElementById('import-settings-file-input'),
-  importSettingsClipboardBtn: document.getElementById(
-    'import-settings-clipboard-btn'
-  ),
   clearSessionBtn: document.getElementById('clear-session-btn'),
+  settingsExportBackdrop: document.getElementById('settings-export-backdrop'),
+  settingsExportClose: document.getElementById('settings-export-close'),
+  settingsExportCancel: document.getElementById('settings-export-cancel'),
+  settingsExportCopy: document.getElementById('settings-export-copy'),
+  settingsExportDownload: document.getElementById('settings-export-download'),
+  settingsExportKeysNote: document.getElementById('settings-export-keys-note'),
   clipboardImportBackdrop: document.getElementById('clipboard-import-backdrop'),
   clipboardImportText: document.getElementById('clipboard-import-text'),
   clipboardImportConsole: document.getElementById('clipboard-import-console'),
@@ -93,6 +93,7 @@ const els = {
   clipboardImportCancel: document.getElementById('clipboard-import-cancel'),
   clipboardImportRun: document.getElementById('clipboard-import-run'),
   clipboardImportPasteBtn: document.getElementById('clipboard-import-paste-btn'),
+  clipboardImportFileBtn: document.getElementById('clipboard-import-file-btn'),
   settingsBackdrop: document.getElementById('settings-backdrop'),
   settingsForm: document.getElementById('settings-form'),
   settingsApiKey: document.getElementById('settings-tmdb-api-key'),
@@ -217,6 +218,7 @@ function isAnyModalOpen() {
     shown(els.tmdbBackdrop) ||
     shown(els.tmdbPosterBackdrop) ||
     shown(els.saveProgressBackdrop) ||
+    shown(els.settingsExportBackdrop) ||
     shown(els.clipboardImportBackdrop) ||
     shown(els.metaRefreshBackdrop) ||
     shown(els.historyBackdrop)
@@ -763,18 +765,20 @@ document.addEventListener(
 initSettingsTransfer({
   closeMenu,
   showAppToast,
-  openSaveProgressDialog,
-  appendSaveLog,
   reapplySettingsFromStorage,
   closeSettingsDialog,
   focusFilterWhenIdle,
   isSettingsOpen,
   exportSettingsBtn: els.exportSettingsBtn,
-  exportSettingsClipboardBtn: els.exportSettingsClipboardBtn,
   importSettingsBtn: els.importSettingsBtn,
   importSettingsFileInput: els.importSettingsFileInput,
-  importSettingsClipboardBtn: els.importSettingsClipboardBtn,
   clearSessionBtn: els.clearSessionBtn,
+  settingsExportBackdrop: els.settingsExportBackdrop,
+  settingsExportClose: els.settingsExportClose,
+  settingsExportCancel: els.settingsExportCancel,
+  settingsExportCopy: els.settingsExportCopy,
+  settingsExportDownload: els.settingsExportDownload,
+  settingsExportKeysNote: els.settingsExportKeysNote,
   clipboardImportBackdrop: els.clipboardImportBackdrop,
   clipboardImportText: els.clipboardImportText,
   clipboardImportConsole: els.clipboardImportConsole,
@@ -782,6 +786,7 @@ initSettingsTransfer({
   clipboardImportCancel: els.clipboardImportCancel,
   clipboardImportRun: els.clipboardImportRun,
   clipboardImportPasteBtn: els.clipboardImportPasteBtn,
+  clipboardImportFileBtn: els.clipboardImportFileBtn,
 });
 
 document.addEventListener('click', (e) => {
