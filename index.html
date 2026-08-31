@@ -301,7 +301,7 @@
         </button>
       </div>
       <div class="dialog-body">
-        <form id="settings-form" class="tmdb-search-form settings-form">
+        <form id="settings-form" class="tmdb-search-form settings-form" autocomplete="off">
           <div class="settings-section" role="group" aria-labelledby="settings-sec-appearance">
             <h3 class="settings-section-title" id="settings-sec-appearance" data-i18n="settings.appearance">Appearance</h3>
             <label class="form-field" for="settings-theme">
@@ -582,12 +582,18 @@
               <label class="form-label" for="settings-tmdb-api-key" data-i18n="settings.tmdbKey">TMDB API key</label>
               <div class="form-secret-row">
                 <input
-                  type="password"
+                  type="text"
                   id="settings-tmdb-api-key"
                   name="settings-tmdb-api-key"
-                  class="form-input"
+                  class="form-input is-secret-masked"
                   spellcheck="false"
-                  autocomplete="off"
+                  autocomplete="tmdb-api-key"
+                  autocapitalize="none"
+                  autocorrect="off"
+                  data-1p-ignore="true"
+                  data-lpignore="true"
+                  data-form-type="other"
+                  readonly
                   placeholder="API key from themoviedb.org"
                 />
                 <div class="form-secret-actions">
@@ -635,12 +641,18 @@
               <label class="form-label" for="settings-github-api-key" data-i18n="settings.githubKey">GitHub API key</label>
               <div class="form-secret-row">
                 <input
-                  type="password"
+                  type="text"
                   id="settings-github-api-key"
                   name="settings-github-api-key"
-                  class="form-input"
+                  class="form-input is-secret-masked"
                   spellcheck="false"
-                  autocomplete="off"
+                  autocomplete="github-token"
+                  autocapitalize="none"
+                  autocorrect="off"
+                  data-1p-ignore="true"
+                  data-lpignore="true"
+                  data-form-type="other"
+                  readonly
                   placeholder="Personal access token (github.com)"
                 />
                 <div class="form-secret-actions">

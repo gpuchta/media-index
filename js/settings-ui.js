@@ -484,7 +484,18 @@ export function initSettingsUi(opts) {
   }
 
   /**
-   * Show/hide + copy controls for a password-style settings field.
+   * Chrome/Safari mask secrets via CSS. Firefox may not; fall back to type=password
+   * only in that case (its password manager does not copy one value into both fields).
+   */
+  const secretMaskingUsesCss =
+    typeof CSS !== 'undefined' &&
+    typeof CSS.supports === 'function' &&
+    CSS.supports('-webkit-text-security', 'disc');
+
+  /**
+   * Show/hide + copy controls for a settings secret field.
+   * Keep type="text" when CSS masking works so the browser password manager
+   * cannot treat TMDB + GitHub as one login and overwrite one key with the other.
    * @param {HTMLInputElement|null} input
    * @param {HTMLButtonElement|null} toggleBtn
    * @param {HTMLButtonElement|null} copyBtn
@@ -492,8 +503,16 @@ export function initSettingsUi(opts) {
   function wireSecretFieldControls(input, toggleBtn, copyBtn) {
     if (!input) return;
 
+    const isHidden = () =>
+      input.classList.contains('is-secret-masked') || input.type === 'password';
+
     const setVisible = (visible) => {
-      input.type = visible ? 'text' : 'password';
+      input.classList.toggle('is-secret-masked', !visible);
+      if (secretMaskingUsesCss) {
+        input.type = 'text';
+      } else {
+        input.type = visible ? 'text' : 'password';
+      }
       if (!toggleBtn) return;
       toggleBtn.setAttribute('aria-pressed', visible ? 'true' : 'false');
       const label = visible ? 'Hide key' : 'Show key';
@@ -506,10 +525,21 @@ export function initSettingsUi(opts) {
     };
 
     // Reset helper used when opening Settings
-    input._resetSecretVisibility = () => setVisible(false);
+    input._resetSecretVisibility = () => {
+      setVisible(false);
+      input.setAttribute('readonly', '');
+    };
+
+    // readonly until focus blocks delayed password-manager autofill
+    input.addEventListener('focus', () => {
+      input.removeAttribute('readonly');
+    });
+    input.addEventListener('blur', () => {
+      input.setAttribute('readonly', '');
+    });
 
     toggleBtn?.addEventListener('click', () => {
-      setVisible(input.type === 'password');
+      setVisible(isHidden());
     });
 
     copyBtn?.addEventListener('click', async () => {
@@ -529,15 +559,30 @@ export function initSettingsUi(opts) {
     els.settingsGithubApiKey?._resetSecretVisibility?.();
   }
 
-  function openSettingsDialog() {
-    if (!els.settingsBackdrop) return;
+  function fillApiKeyFieldsFromStorage() {
     if (els.settingsApiKey) {
       els.settingsApiKey.value = getStoredTmdbApiKey();
     }
     if (els.settingsGithubApiKey) {
       els.settingsGithubApiKey.value = getStoredGithubToken();
     }
+  }
+
+  function openSettingsDialog() {
+    if (!els.settingsBackdrop) return;
+    fillApiKeyFieldsFromStorage();
     resetSettingsSecretVisibility();
+    // Password managers sometimes fill after the dialog is shown; restore ours
+    // unless the user is already editing a key field.
+    const restoreKeysIfIdle = () => {
+      const active = document.activeElement;
+      if (active === els.settingsApiKey || active === els.settingsGithubApiKey) {
+        return;
+      }
+      fillApiKeyFieldsFromStorage();
+    };
+    window.setTimeout(restoreKeysIfIdle, 0);
+    window.setTimeout(restoreKeysIfIdle, 100);
     populateLocaleSelect();
     savedPosterScalePercent = getStoredPosterScalePercent();
     savedPosterGapPx = getStoredPosterGapPx();

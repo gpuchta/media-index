@@ -2288,6 +2288,15 @@ input {
   min-width: 0;
 }
 
+/*
+ * Mask API keys without type="password". Chrome's password manager ignores
+ * autocomplete=off on password fields and copies one saved secret into every
+ * password input in the form (TMDB key becoming the GitHub token).
+ */
+.form-input.is-secret-masked {
+  -webkit-text-security: disc;
+}
+
 .form-secret-actions {
   display: flex;
   flex: 0 0 auto;
