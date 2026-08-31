@@ -256,7 +256,7 @@ New movies from TMDB start with an empty location until you set one.
 Format is a user-only set of tags for how you have the movie (disc, stream, rip). It is **not** filled from TMDB.
 
 1. Open the movie from the grid.
-2. In the **Format** row (between Location and Released), type and press **Enter** to add a value, or pick from the typeahead list (Stream, Digital, DVD, Blu-Ray, 4K Blu-Ray, 3D Blu-Ray, HD DVD, VHS, LaserDisc, Ripped, Ripped (1Gb MKV), plus values already used in your library).
+2. In the **Format** row (between Location and Released), type and press **Enter** to add a value, or pick from the typeahead list (Stream, Digital, DVD, Blu-Ray, 4K Blu-Ray, 3D Blu-Ray, HD DVD, VHS, LaserDisc, Ripped, Ripped (MKV), plus values already used in your library).
 3. Click **×** on a format pill to remove it.
 4. **Save** the dialog, then **Export** or **Save to GitHub** (menu).
 

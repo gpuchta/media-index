@@ -1125,7 +1125,8 @@ export const FORMAT_PRESETS = Object.freeze([
   'VHS',
   'LaserDisc',
   'Ripped',
-  'Ripped (1Gb MKV)',
+  'Ripped (MP4)',
+  'Ripped (MKV)',
 ]);
 
 /**
