@@ -18,6 +18,7 @@ import {
   escapeHtml,
   isPrimaryActionEnter,
   mergePosterLists,
+  normalizeFormatList,
   posterUrl,
   promotePosterSelection,
 } from './utils.js';
@@ -786,6 +787,7 @@ export function initTmdbSearchUi(opts) {
       );
       let preservedLocation = '';
       let preservedKeywords = [];
+      let preservedFormat = [];
       if (existing) {
         const ok = await showAppConfirm(
           `“${detail.title}” is already in your collection. Replace it with this TMDB version?`,
@@ -801,14 +803,16 @@ export function initTmdbSearchUi(opts) {
         preservedKeywords = Array.isArray(existing.keywords)
           ? existing.keywords.map((k) => String(k)).filter(Boolean)
           : [];
+        preservedFormat = normalizeFormatList(existing.format);
         const i = getMovies().indexOf(existing);
         if (i >= 0) getMovies().splice(i, 1);
       }
 
       const record = toLibraryMovie(detail, { posterPath });
-      // Keep local location when overriding an existing library entry
+      // Keep local location/format when overriding an existing library entry
       if (existing) {
         record.location = preservedLocation;
+        record.format = preservedFormat;
         // Keep old keywords that TMDB no longer returns (merge, no duplicates)
         record.keywords = mergeKeywords(preservedKeywords, record.keywords);
       }

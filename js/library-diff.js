@@ -13,6 +13,7 @@ export const LIBRARY_DIFF_MAX_PER_SECTION = 15;
  */
 const CHANGE_GROUPS = [
   { label: 'location', keys: ['location'] },
+  { label: 'format', keys: ['format'] },
   { label: 'poster', keys: ['poster_path', 'posters'] },
   { label: 'keywords', keys: ['keywords'] },
   { label: 'title', keys: ['title'] },

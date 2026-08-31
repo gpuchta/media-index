@@ -233,7 +233,7 @@ export function initMetaRefresh(opts) {
 
   /**
    * Update one library movie from TMDB (single confirmation).
-   * Prefer open-dialog draft location/keywords/poster when merging.
+   * Prefer open-dialog draft location/format/keywords/poster when merging.
    * @param {object} movie
    */
   async function startSingleMovieMetadataRefresh(movie) {
@@ -266,8 +266,9 @@ export function initMetaRefresh(opts) {
       `Update metadata for “${title}” from TMDB?\n\n` +
         `This re-fetches title, year, overview, cast, crew, genres, ratings, posters, ` +
         `and related fields.\n\n` +
-        `Location and keywords will be merged:\n` +
+        `Location, format, and keywords will be merged:\n` +
         `• Location — kept as-is (never overwritten)\n` +
+        `• Format — kept as-is (never overwritten)\n` +
         `• Keywords — TMDB tags combined with yours (duplicates skipped)\n` +
         `• Poster — kept if it still appears on TMDB (primary or alternate); otherwise the TMDB default`,
       {
@@ -307,7 +308,7 @@ export function initMetaRefresh(opts) {
 
   /**
    * Confirm (optionally twice) then refresh every library movie from TMDB.
-   * Location kept; keywords merged; poster kept if still on TMDB.
+   * Location and format kept; keywords merged; poster kept if still on TMDB.
    */
   async function startBulkMetadataRefresh() {
     if (metaRefreshJob.running) return;
@@ -338,8 +339,9 @@ export function initMetaRefresh(opts) {
       `Refresh metadata for all ${total} movie${total === 1 ? '' : 's'} from TMDB?\n\n` +
         `This re-fetches title, year, overview, cast, crew, genres, ratings, posters, ` +
         `and related fields for every library entry.\n\n` +
-        `Location and keywords will be merged:\n` +
+        `Location, format, and keywords will be merged:\n` +
         `• Location — kept as-is (never overwritten)\n` +
+        `• Format — kept as-is (never overwritten)\n` +
         `• Keywords — TMDB tags combined with yours (duplicates skipped)\n` +
         `• Poster — kept if it still appears on TMDB (primary or alternate); otherwise the TMDB default\n\n` +
         `TMDB limits how many updates we can do per second, so this can take a little while.`,

@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { CONFIG, FORMAT_PRESETS } from './config.js';
 import { isAppAlertOpen, showAppConfirm } from './alert-dialog.js';
 import { attachPosterHotCorner, posterZoomUrl } from './poster-zoom.js';
 import { t } from './i18n.js';
@@ -9,6 +9,7 @@ import {
   flashCopyButton,
   copyTextToClipboard,
   isPrimaryActionEnter,
+  normalizeFormatList,
 } from './utils.js';
 
 /** Pen affordance for the editable location pill (display + edit). */
@@ -46,6 +47,8 @@ export class MovieDialog {
     isFilterActive,
     /** @type {() => object[]} current visible list (filtered + sorted) */
     getMovieList,
+    /** @type {() => object[]} full library (format typeahead) */
+    getMovies,
   }) {
     this.backdrop = backdrop;
     this.body = body;
@@ -66,6 +69,11 @@ export class MovieDialog {
     this.isFilterActive =
       typeof isFilterActive === 'function' ? isFilterActive : () => false;
     this.getMovieList = typeof getMovieList === 'function' ? getMovieList : () => [];
+    this.getMovies = typeof getMovies === 'function' ? getMovies : () => [];
+    /** @type {string[]} */
+    this._formatSuggestions = [];
+    this._formatTypeaheadActive = -1;
+    this._formatTypeaheadMoved = false;
 
     /** @type {object|null} Live movie object in the collection */
     this.movie = null;
@@ -103,12 +111,7 @@ export class MovieDialog {
   open(movie, returnFocus) {
     const wasOpen = this.isOpen();
     this.movie = movie;
-    this.draft = {
-      location: movie.location ?? '',
-      keywords: Array.isArray(movie.keywords) ? [...movie.keywords] : [],
-      poster_path: movie.poster_path ?? '',
-      posters: Array.isArray(movie.posters) ? [...movie.posters] : [],
-    };
+    this.draft = this.draftFromMovie(movie);
     if (returnFocus !== undefined) {
       this.returnFocus = returnFocus || document.activeElement;
     } else if (!wasOpen) {
@@ -162,12 +165,7 @@ export class MovieDialog {
 
     this.commitOpenLocationEdit();
     if (this.draftChanged()) {
-      this.movie.location = this.draft.location;
-      this.movie.keywords = [...this.draft.keywords];
-      this.movie.poster_path = this.draft.poster_path ?? '';
-      this.movie.posters = Array.isArray(this.draft.posters)
-        ? [...this.draft.posters]
-        : [];
+      this.commitDraftToMovie();
       if (typeof this.onChange === 'function') this.onChange(this.movie);
     }
 
@@ -187,12 +185,7 @@ export class MovieDialog {
     if (!next || next === this.movie) {
       // Single-item list or same reference after wrap — still refresh draft state
       if (next === this.movie) {
-        this.draft = {
-          location: this.movie.location ?? '',
-          keywords: Array.isArray(this.movie.keywords) ? [...this.movie.keywords] : [],
-          poster_path: this.movie.poster_path ?? '',
-          posters: Array.isArray(this.movie.posters) ? [...this.movie.posters] : [],
-        };
+        this.draft = this.draftFromMovie(this.movie);
         this.render();
         this.body.scrollTop = 0;
       }
@@ -267,9 +260,9 @@ export class MovieDialog {
       return;
     }
 
-    // Location / keyword fields own Enter & Escape while focused
+    // Location / keyword / format fields own Enter & Escape while focused
     const fieldEdit = e.target?.closest?.(
-      '.location-edit-wrap, input[data-edit="location"], #keyword-add, .keyword-add'
+      '.location-edit-wrap, input[data-edit="location"], #keyword-add, .keyword-add, #format-add, .format-add, .format-typeahead'
     );
     if (fieldEdit && (e.key === 'Enter' || e.key === 'Escape')) {
       return;
@@ -293,7 +286,7 @@ export class MovieDialog {
 
     // ← / → browse the current list (same as header prev/next)
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      // Don't steal arrows while typing in location / keyword fields
+      // Don't steal arrows while typing in location / keyword / format fields
       const t = e.target;
       if (
         t &&
@@ -331,26 +324,56 @@ export class MovieDialog {
     }
   }
 
+  /** @param {object} movie */
+  draftFromMovie(movie) {
+    return {
+      location: movie.location ?? '',
+      keywords: Array.isArray(movie.keywords) ? [...movie.keywords] : [],
+      format: normalizeFormatList(movie.format),
+      poster_path: movie.poster_path ?? '',
+      posters: Array.isArray(movie.posters) ? [...movie.posters] : [],
+    };
+  }
+
+  /** Write draft fields onto the live movie (caller marks dirty). */
+  commitDraftToMovie() {
+    if (!this.movie || !this.draft) return;
+    this.movie.location = this.draft.location;
+    this.movie.keywords = [...this.draft.keywords];
+    this.movie.format = [...this.draft.format];
+    this.movie.poster_path = this.draft.poster_path ?? '';
+    this.movie.posters = Array.isArray(this.draft.posters)
+      ? [...this.draft.posters]
+      : [];
+  }
+
+  /** @param {unknown[]} a @param {unknown[]} b */
+  stringListsDiffer(a, b) {
+    const left = Array.isArray(a) ? a : [];
+    const right = Array.isArray(b) ? b : [];
+    if (left.length !== right.length) return true;
+    for (let i = 0; i < left.length; i += 1) {
+      if (String(left[i]) !== String(right[i])) return true;
+    }
+    return false;
+  }
+
   draftChanged() {
     if (!this.movie || !this.draft) return false;
     const origLoc = this.movie.location ?? '';
     const draftLoc = this.draft.location ?? '';
     if (origLoc !== draftLoc) return true;
-    const origKw = Array.isArray(this.movie.keywords) ? this.movie.keywords : [];
-    const draftKw = this.draft.keywords || [];
-    if (origKw.length !== draftKw.length) return true;
-    for (let i = 0; i < origKw.length; i += 1) {
-      if (String(origKw[i]) !== String(draftKw[i])) return true;
+    if (this.stringListsDiffer(this.movie.keywords, this.draft.keywords)) return true;
+    if (this.stringListsDiffer(
+      normalizeFormatList(this.movie.format),
+      this.draft.format
+    )) {
+      return true;
     }
     const origPoster = this.movie.poster_path ?? '';
     const draftPoster = this.draft.poster_path ?? '';
     if (String(origPoster) !== String(draftPoster)) return true;
-    const origPosters = Array.isArray(this.movie.posters) ? this.movie.posters : [];
-    const draftPosters = Array.isArray(this.draft.posters) ? this.draft.posters : [];
-    if (origPosters.length !== draftPosters.length) return true;
-    for (let i = 0; i < origPosters.length; i += 1) {
-      if (String(origPosters[i]) !== String(draftPosters[i])) return true;
-    }
+    if (this.stringListsDiffer(this.movie.posters, this.draft.posters)) return true;
     return false;
   }
 
@@ -365,12 +388,7 @@ export class MovieDialog {
     this.commitOpenLocationEdit();
     const changed = this.draftChanged();
     if (changed) {
-      this.movie.location = this.draft.location;
-      this.movie.keywords = [...this.draft.keywords];
-      this.movie.poster_path = this.draft.poster_path ?? '';
-      this.movie.posters = Array.isArray(this.draft.posters)
-        ? [...this.draft.posters]
-        : [];
+      this.commitDraftToMovie();
       this.onChange(this.movie);
     }
     this.close();
@@ -402,20 +420,13 @@ export class MovieDialog {
   }
 
   /**
-   * Apply current draft location / keywords / poster onto the live movie so a
-   * TMDB refresh can preserve unsaved local edits during merge.
+   * Apply current draft location / format / keywords / poster onto the live
+   * movie so a TMDB refresh can preserve unsaved local edits during merge.
    */
   applyDraftPreserveFieldsToMovie() {
     if (!this.movie || !this.draft) return;
     this.commitOpenLocationEdit();
-    this.movie.location = this.draft.location ?? '';
-    this.movie.keywords = Array.isArray(this.draft.keywords)
-      ? [...this.draft.keywords]
-      : [];
-    this.movie.poster_path = this.draft.poster_path ?? '';
-    this.movie.posters = Array.isArray(this.draft.posters)
-      ? [...this.draft.posters]
-      : [];
+    this.commitDraftToMovie();
   }
 
   /**
@@ -571,6 +582,31 @@ export class MovieDialog {
             <button type="button" class="pill editable" data-type="location" data-edit="location" title="${escapeHtml(t('dialog.location'))}"><span class="location-pill-text">${escapeHtml(d.location || '—')}</span>${LOCATION_PEN_ICON_HTML}</button>
           </div>
         </div>
+        <div class="field-row" id="field-format">
+          <span class="field-label">${escapeHtml(t('dialog.format'))}</span>
+          <div class="field-values field-values-keywords field-values-format">
+            <span id="format-pills"></span>
+            <div class="format-add-wrap">
+              <input
+                type="text"
+                class="keyword-add format-add"
+                id="format-add"
+                placeholder="${escapeHtml(t('dialog.addFormat'))}"
+                aria-label="${escapeHtml(t('dialog.addFormat'))}"
+                autocomplete="off"
+                aria-autocomplete="list"
+                aria-controls="format-typeahead"
+                aria-expanded="false"
+              />
+              <div
+                class="format-typeahead"
+                id="format-typeahead"
+                role="listbox"
+                hidden
+              ></div>
+            </div>
+          </div>
+        </div>
         <div class="field-row">
           <span class="field-label">${escapeHtml(t('dialog.released'))}</span>
           <div class="field-values">
@@ -617,6 +653,7 @@ export class MovieDialog {
     `;
 
     this.renderKeywords(d.keywords);
+    this.renderFormats(d.format);
 
     const posterBtn = this.body.querySelector('#dialog-poster-btn');
     posterBtn?.addEventListener('click', () => {
@@ -653,6 +690,8 @@ export class MovieDialog {
       }
     });
 
+    this.wireFormatAdd();
+
     const jsonToggle = this.body.querySelector('#json-toggle');
     const jsonPanel = this.body.querySelector('#json-panel');
     const jsonActions = this.body.querySelector('#json-actions');
@@ -662,10 +701,11 @@ export class MovieDialog {
       if (!jsonPanel || !this.movie) return;
       const open = jsonPanel.hidden;
       if (open) {
-        // Snapshot includes draft location/keywords so open panel matches edit state
+        // Snapshot includes draft location/format/keywords so open panel matches edit state
         const snapshot = {
           ...this.movie,
           location: this.draft?.location ?? this.movie.location,
+          format: this.draft?.format ?? this.movie.format,
           keywords: this.draft?.keywords ?? this.movie.keywords,
           poster_path: this.draft?.poster_path ?? this.movie.poster_path,
           posters: this.draft?.posters ?? this.movie.posters,
@@ -816,6 +856,220 @@ export class MovieDialog {
       pill.appendChild(x);
       host.appendChild(pill);
     }
+  }
+
+  renderFormats(formats) {
+    const host = this.body.querySelector('#format-pills');
+    if (!host) return;
+    host.innerHTML = '';
+    const list = normalizeFormatList(formats);
+    for (const fmt of list) {
+      const pill = document.createElement('span');
+      pill.className = 'pill';
+      pill.dataset.type = 'format';
+      pill.appendChild(document.createTextNode(fmt));
+      const x = document.createElement('button');
+      x.type = 'button';
+      x.className = 'x';
+      x.setAttribute('aria-label', `Remove format ${fmt}`);
+      x.textContent = '×';
+      x.addEventListener('click', () => {
+        if (!this.draft) return;
+        this.draft.format = this.draft.format.filter((k) => k !== fmt);
+        this.renderFormats(this.draft.format);
+        this.refreshFormatTypeahead();
+      });
+      pill.appendChild(x);
+      host.appendChild(pill);
+    }
+  }
+
+  /**
+   * Presets first (declared order), then unused library values A–Z.
+   * Excludes values already on the open movie.
+   * @param {string} query
+   * @returns {string[]}
+   */
+  collectFormatSuggestions(query) {
+    const q = String(query || '').trim().toLowerCase();
+    const used = new Set(
+      (this.draft?.format || []).map((v) => String(v).toLowerCase())
+    );
+    const seen = new Set();
+    /** @type {string[]} */
+    const presets = [];
+    /** @type {string[]} */
+    const custom = [];
+    const consider = (raw, bucket) => {
+      const s = String(raw || '').trim();
+      if (!s) return;
+      const key = s.toLowerCase();
+      if (used.has(key) || seen.has(key)) return;
+      if (q && !key.includes(q)) return;
+      seen.add(key);
+      bucket.push(s);
+    };
+    for (const p of FORMAT_PRESETS) consider(p, presets);
+    const movies = this.getMovies() || [];
+    for (const m of movies) {
+      for (const f of m.format || []) consider(f, custom);
+    }
+    custom.sort((a, b) =>
+      String(a).localeCompare(String(b), undefined, { sensitivity: 'base' })
+    );
+    return [...presets, ...custom];
+  }
+
+  /** @param {string} value */
+  addFormatValue(value) {
+    const v = String(value || '').trim();
+    if (!v || !this.draft) return false;
+    const exists = this.draft.format.some(
+      (k) => String(k).toLowerCase() === v.toLowerCase()
+    );
+    if (exists) return false;
+    this.draft.format.push(v);
+    this.renderFormats(this.draft.format);
+    return true;
+  }
+
+  hideFormatTypeahead() {
+    const list = this.body?.querySelector('#format-typeahead');
+    const input = this.body?.querySelector('#format-add');
+    if (list) {
+      list.hidden = true;
+      list.classList.remove('open');
+      list.innerHTML = '';
+    }
+    input?.setAttribute('aria-expanded', 'false');
+    this._formatSuggestions = [];
+    this._formatTypeaheadActive = -1;
+    this._formatTypeaheadMoved = false;
+  }
+
+  refreshFormatTypeahead() {
+    const input = this.body?.querySelector('#format-add');
+    if (!input || this.body?.contains(document.activeElement) === false) {
+      this.hideFormatTypeahead();
+      return;
+    }
+    if (document.activeElement !== input) {
+      this.hideFormatTypeahead();
+      return;
+    }
+    const items = this.collectFormatSuggestions(input.value);
+    this._formatSuggestions = items;
+    this._formatTypeaheadActive = items.length ? 0 : -1;
+    this._formatTypeaheadMoved = false;
+    const list = this.body.querySelector('#format-typeahead');
+    if (!list) return;
+    if (!items.length) {
+      this.hideFormatTypeahead();
+      return;
+    }
+    list.innerHTML = '';
+    items.forEach((value, i) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className =
+        'typeahead-item' + (i === this._formatTypeaheadActive ? ' is-active' : '');
+      btn.setAttribute('role', 'option');
+      btn.id = `format-opt-${i}`;
+      btn.textContent = value;
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+      });
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.addFormatValue(value);
+        input.value = '';
+        input.focus();
+        this.refreshFormatTypeahead();
+      });
+      list.appendChild(btn);
+    });
+    list.hidden = false;
+    list.classList.add('open');
+    input.setAttribute('aria-expanded', 'true');
+    input.setAttribute(
+      'aria-activedescendant',
+      this._formatTypeaheadActive >= 0
+        ? `format-opt-${this._formatTypeaheadActive}`
+        : ''
+    );
+  }
+
+  moveFormatTypeahead(delta) {
+    const n = this._formatSuggestions.length;
+    if (!n) return;
+    this._formatTypeaheadActive =
+      (this._formatTypeaheadActive + delta + n) % n;
+    this._formatTypeaheadMoved = true;
+    const list = this.body.querySelector('#format-typeahead');
+    list?.querySelectorAll('.typeahead-item').forEach((el, i) => {
+      el.classList.toggle('is-active', i === this._formatTypeaheadActive);
+      if (i === this._formatTypeaheadActive) {
+        el.scrollIntoView({ block: 'nearest' });
+      }
+    });
+    const input = this.body.querySelector('#format-add');
+    input?.setAttribute(
+      'aria-activedescendant',
+      `format-opt-${this._formatTypeaheadActive}`
+    );
+  }
+
+  wireFormatAdd() {
+    const input = this.body.querySelector('#format-add');
+    if (!input) return;
+
+    input.addEventListener('focus', () => this.refreshFormatTypeahead());
+    input.addEventListener('input', () => this.refreshFormatTypeahead());
+    input.addEventListener('blur', () => {
+      queueMicrotask(() => {
+        if (document.activeElement !== input) this.hideFormatTypeahead();
+      });
+    });
+    input.addEventListener('keydown', (e) => {
+      const open = this._formatSuggestions.length > 0;
+      if (e.key === 'ArrowDown' && open) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.moveFormatTypeahead(1);
+        return;
+      }
+      if (e.key === 'ArrowUp' && open) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.moveFormatTypeahead(-1);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (open) {
+          this.hideFormatTypeahead();
+          return;
+        }
+        input.value = '';
+        return;
+      }
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      e.stopPropagation();
+      const typed = input.value.trim();
+      const useHighlight =
+        open &&
+        this._formatTypeaheadActive >= 0 &&
+        (typed || this._formatTypeaheadMoved);
+      const picked = useHighlight
+        ? this._formatSuggestions[this._formatTypeaheadActive]
+        : typed;
+      if (!picked) return;
+      this.addFormatValue(picked);
+      input.value = '';
+      this.refreshFormatTypeahead();
+    });
   }
 
   beginEditLocation(btn) {

@@ -1,5 +1,26 @@
 import { getPosterImageBase } from './config.js';
 
+/**
+ * Deduped, trimmed string list for movie.format (and similar user sets).
+ * @param {unknown} list
+ * @returns {string[]}
+ */
+export function normalizeFormatList(list) {
+  if (!Array.isArray(list)) return [];
+  /** @type {string[]} */
+  const out = [];
+  const seen = new Set();
+  for (const raw of list) {
+    const s = String(raw ?? '').trim();
+    if (!s) continue;
+    const key = s.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(s);
+  }
+  return out;
+}
+
 export function posterUrl(posterPath) {
   if (!posterPath) return '';
   if (posterPath.startsWith('http')) return posterPath;

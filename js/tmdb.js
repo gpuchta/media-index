@@ -5,7 +5,7 @@
  */
 
 import { localeToTmdbLanguage } from './config.js';
-import { promotePosterSelection } from './utils.js';
+import { normalizeFormatList, promotePosterSelection } from './utils.js';
 
 export const TMDB_API_BASE = 'https://api.themoviedb.org/3';
 export const TMDB_API_KEY_STORAGE = 'pmi:tmdbApiKey';
@@ -322,6 +322,7 @@ export function toLibraryMovie(detail, opts = {}) {
     production_companies: detail.productionCompanies || [],
     collection: detail.collection || '',
     location: '',
+    format: [],
   };
 }
 
@@ -352,7 +353,7 @@ export function mergeKeywords(existing, incoming) {
 /**
  * Build an updated library movie from a fresh TMDB detail while preserving local data:
  * 1) Keep existing poster if still present as poster_path or in alternate posters
- * 2) Keep location as-is
+ * 2) Keep location and format as-is (user-only; never from TMDB)
  * 3) Merge keywords (no duplicates)
  *
  * @param {object} existing — current library movie
@@ -375,6 +376,7 @@ export function mergeLibraryMovieFromTmdb(existing, detail) {
   const fresh = toLibraryMovie(detail, { posterPath: selectedPoster });
   fresh.location =
     existing?.location != null ? String(existing.location) : '';
+  fresh.format = normalizeFormatList(existing?.format);
   fresh.keywords = mergeKeywords(existing?.keywords, fresh.keywords);
   return fresh;
 }

@@ -1083,6 +1083,7 @@ if (GITHUB_TARGET?.path) {
 export const FILTER_TYPES = [
   'title',
   'location',
+  'format',
   'binder',
   'director',
   'actor',
@@ -1097,6 +1098,7 @@ export const FILTER_TYPES = [
 export const FILTER_TYPE_LABELS = {
   title: 'title',
   location: 'location',
+  format: 'format',
   binder: 'binder',
   director: 'director',
   actor: 'actor',
@@ -1107,6 +1109,24 @@ export const FILTER_TYPE_LABELS = {
   genre: 'genre',
   vote: 'vote',
 };
+
+/**
+ * Suggested media formats for the movie-dialog typeahead.
+ * Stored as these exact strings; users may also add custom values.
+ */
+export const FORMAT_PRESETS = Object.freeze([
+  'Stream',
+  'Digital',
+  'DVD',
+  'Blu-Ray',
+  '4K Blu-Ray',
+  '3D Blu-Ray',
+  'HD DVD',
+  'VHS',
+  'LaserDisc',
+  'Ripped',
+  'Ripped (1Gb MKV)',
+]);
 
 /**
  * Typeahead choices for the binder filter (stored as yes/no after normalize).
@@ -1311,6 +1331,7 @@ export const TYPEAHEAD_GROUP_ORDER = [
   'year',
   'binder',
   'location',
+  'format',
   'director',
   'actor',
   'collection',

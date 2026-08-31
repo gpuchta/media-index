@@ -2,7 +2,7 @@
 
 This guide is for first-time users of **Personal Media Index**—a small web app for cataloging physical (and digital) movies so you can stop living out of plastic disc cases.
 
-**Primary use case:** move discs into **binders with page slots** (e.g. location `A1`, `F42` for binder letter + page) instead of bulky jewel/keep cases. The app is the index for that system: each movie’s **location** records where the disc sits, so you can search and filter by title, people, genres, keywords, and location instead of flipping cases or guessing which binder holds what. That makes finding a title fast, and it helps you **optimize binder usage**—fill pages densely and reorganize without losing track.
+**Primary use case:** move discs into **binders with page slots** (e.g. location `A1`, `F42` for binder letter + page) instead of bulky jewel/keep cases. The app is the index for that system: each movie’s **location** records where the disc sits, so you can search and filter by title, people, genres, keywords, format, and location instead of flipping cases or guessing which binder holds what. That makes finding a title fast, and it helps you **optimize binder usage**—fill pages densely and reorganize without losing track.
 
 <div style="text-align: center">
   <img src="README/storage-binder.jpg" alt="Disk Storage Binder" width="70%">
@@ -27,7 +27,7 @@ The sections below walk through forking and configuration, API keys, deployment,
 3. **Push** the config change. Enable **GitHub Pages** (site root = repo root).
 4. **Serve locally** (optional): `python3 -m http.server 8080` → http://localhost:8080/
 5. **Settings** (☰ → Configuration → Settings): add **TMDB API key** and **GitHub PAT** (Contents read/write). Save. Keys stay in the browser only — never commit them.
-6. **Use the app:** Search Movies → add titles → set location/keywords → **Save to GitHub** (or **Export** for a local backup).
+6. **Use the app:** Search Movies → add titles → set location/format/keywords → **Save to GitHub** (or **Export** for a local backup).
 
 | Need | Where |
 |------|--------|
@@ -206,7 +206,7 @@ Use **Export** for a quick local backup. Use **Save to GitHub** when you want th
 3. Click **Search**. Scroll the results list to load more pages.
 4. On a result:
    - **Add to Collection** — fetches full TMDB details and adds the movie to your library.
-   - If that TMDB id is already in the library, you will be asked to confirm a replace. Location is kept; keywords are merged carefully.
+   - If that TMDB id is already in the library, you will be asked to confirm a replace. Location and format are kept; keywords are merged carefully.
 5. The library is marked dirty—**Export** or **Save to GitHub** when you want to persist the add.
 
 ### Set an alternate poster
@@ -250,6 +250,17 @@ There is no fixed schema—type whatever helps you find the disc or service late
 4. **Export** or **Save to GitHub** (menu) to persist.
 
 New movies from TMDB start with an empty location until you set one.
+
+### Set format
+
+Format is a user-only set of tags for how you have the movie (disc, stream, rip). It is **not** filled from TMDB.
+
+1. Open the movie from the grid.
+2. In the **Format** row (between Location and Released), type and press **Enter** to add a value, or pick from the typeahead list (Stream, Digital, DVD, Blu-Ray, 4K Blu-Ray, 3D Blu-Ray, HD DVD, VHS, LaserDisc, Ripped, Ripped (1Gb MKV), plus values already used in your library).
+3. Click **×** on a format pill to remove it.
+4. **Save** the dialog, then **Export** or **Save to GitHub** (menu).
+
+You can filter with `format:DVD` in the search box.
 
 ### Add keywords
 

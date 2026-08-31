@@ -424,6 +424,11 @@ function matchesLeaf(movie, leaf) {
       hit = list.some((k) => String(k).toLowerCase().includes(val));
       break;
     }
+    case 'format': {
+      const list = movie.format || [];
+      hit = list.some((f) => String(f).toLowerCase() === val);
+      break;
+    }
     case 'genre': {
       const list = movie.genres || [];
       hit = list.some((g) => String(g).toLowerCase() === val);
@@ -581,6 +586,7 @@ function collectTypeaheadSets(movies) {
     collection: new Set(),
     company: new Set(),
     keyword: new Set(),
+    format: new Set(),
   };
 
   for (const m of movies) {
@@ -599,6 +605,7 @@ function collectTypeaheadSets(movies) {
     if (m.collection) sets.collection.add(String(m.collection));
     for (const c of m.production_companies || []) if (c) sets.company.add(String(c));
     for (const k of m.keywords || []) if (k) sets.keyword.add(String(k));
+    for (const f of m.format || []) if (f) sets.format.add(String(f));
   }
   return sets;
 }

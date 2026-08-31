@@ -27,6 +27,7 @@
   --col: #c75dda;
   --com: #63beae;
   --kw: #6c757d;
+  --fmt: #fb923c;
   --year: #17a2b8;
   --genre: #28a745;
   --title: #adb5bd;
@@ -85,6 +86,7 @@
   --col: #9333ea;
   --com: #0d9488;
   --kw: #64748b;
+  --fmt: #ea580c;
   --year: #0891b2;
   --genre: #16a34a;
   --title: #475569;
@@ -116,6 +118,7 @@
   --col: #a78bfa;
   --com: #2dd4bf;
   --kw: #64748b;
+  --fmt: #fb923c;
   --year: #22d3ee;
   --genre: #4ade80;
   --title: #94a3b8;
@@ -147,6 +150,7 @@
   --col: #e879f9;
   --com: #2dd4bf;
   --kw: #78716c;
+  --fmt: #fb923c;
   --year: #f59e0b;
   --genre: #a3e635;
   --title: #a8a29e;
@@ -178,6 +182,7 @@
   --col: #c084fc;
   --com: #2dd4bf;
   --kw: #64748b;
+  --fmt: #fb923c;
   --year: #34d399;
   --genre: #4ade80;
   --title: #94a3b8;
@@ -209,6 +214,7 @@
   --col: #e879f9;
   --com: #2dd4bf;
   --kw: #6b7280;
+  --fmt: #fb923c;
   --year: #22d3ee;
   --genre: #4ade80;
   --title: #a1a1aa;
@@ -240,6 +246,7 @@
   --col: #e879f9;
   --com: #2dd4bf;
   --kw: #78716c;
+  --fmt: #fb923c;
   --year: #f9a8d4;
   --genre: #4ade80;
   --title: #a8a29e;
@@ -271,6 +278,7 @@
   --col: #c084fc;
   --com: #2dd4bf;
   --kw: #64748b;
+  --fmt: #fb923c;
   --year: #38bdf8;
   --genre: #4ade80;
   --title: #94a3b8;
@@ -302,6 +310,7 @@
   --col: #9333ea;
   --com: #0f766e;
   --kw: #78716c;
+  --fmt: #ea580c;
   --year: #0e7490;
   --genre: #15803d;
   --title: #57534e;
@@ -333,6 +342,7 @@
   --col: #9333ea;
   --com: #0d9488;
   --kw: #64748b;
+  --fmt: #ea580c;
   --year: #0891b2;
   --genre: #16a34a;
   --title: #57534e;
@@ -803,6 +813,7 @@ input {
 .type-pill[data-type='collection'] { background: var(--col); color: #fff; }
 .type-pill[data-type='company'] { background: var(--com); color: #111; }
 .type-pill[data-type='keyword'] { background: var(--kw); color: #fff; }
+.type-pill[data-type='format'] { background: var(--fmt); color: #111; }
 .type-pill[data-type='year'] { background: var(--year); color: #fff; }
 .type-pill[data-type='genre'],
 .type-pill[data-type='vote'] { background: var(--genre); color: #fff; }
@@ -854,6 +865,8 @@ input {
 .pill[data-type='company'] { border-color: var(--com); color: var(--com); }
 .filter-chip[data-type='keyword'],
 .pill[data-type='keyword'] { border-color: var(--kw); color: #c0c4cc; }
+.filter-chip[data-type='format'],
+.pill[data-type='format'] { border-color: var(--fmt); color: var(--fmt); }
 .filter-chip[data-type='year'],
 .pill[data-type='year'] { border-color: var(--year); color: #5bc0de; }
 .filter-chip[data-type='genre'],
@@ -2985,14 +2998,45 @@ input {
   align-items: center;
 }
 
-/* Keyword pills live inside .field-values */
-#keyword-pills {
+/* Keyword / format pills live inside .field-values */
+#keyword-pills,
+#format-pills {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
   flex: 0 1 auto;
   min-width: 0;
+}
+
+.format-add-wrap {
+  position: relative;
+  flex: 1 1 8rem;
+  min-width: 8rem;
+  max-width: 18rem;
+}
+
+.format-add-wrap .format-add {
+  width: 100%;
+}
+
+.format-typeahead {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  max-height: min(40vh, 16rem);
+  overflow: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  z-index: 20;
+}
+
+.format-typeahead.open {
+  display: block;
 }
 
 /* Wide dialog: two-column table (label | values) */

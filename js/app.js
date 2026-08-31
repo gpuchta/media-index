@@ -443,6 +443,7 @@ const dialog = new MovieDialog({
   btnSave: els.dialogSave,
   btnCancel: els.dialogCancel,
   getMovieList: () => state.filtered,
+  getMovies: () => state.movies,
   onChange: () => {
     setDirty(true);
     refreshLibraryAfterMutation();
