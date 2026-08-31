@@ -96,6 +96,7 @@
               </button>
               <div class="menu-accordion-panel" id="menu-panel-actions" role="region" aria-labelledby="menu-trigger-actions">
                 <div class="menu-accordion-panel-inner">
+                  <button type="button" role="menuitem" id="unsaved-changes-btn" data-i18n="menu.unsavedChanges">Unsaved Changes</button>
                   <button
                     type="button"
                     role="menuitem"
@@ -725,6 +726,30 @@
           <button type="submit" form="settings-form" class="btn btn-primary" id="settings-save" data-i18n="common.save">
             Save
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unsaved Changes (local vs GitHub library) -->
+  <div id="unsaved-backdrop" class="dialog-backdrop hidden" aria-hidden="true">
+    <div
+      class="dialog dialog-unsaved"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="unsaved-title"
+      id="unsaved-dialog"
+    >
+      <div class="dialog-header">
+        <h2 class="dialog-header-title" id="unsaved-title" data-i18n="unsaved.title">Unsaved Changes</h2>
+        <button type="button" class="dialog-close" id="unsaved-close" aria-label="Close" data-i18n-aria-label="common.close">
+          ×
+        </button>
+      </div>
+      <div class="dialog-body" id="unsaved-body"></div>
+      <div class="dialog-footer">
+        <div class="dialog-footer-actions">
+          <button type="button" class="btn btn-primary" id="unsaved-close-footer" data-i18n="common.close">Close</button>
         </div>
       </div>
     </div>

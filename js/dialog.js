@@ -82,6 +82,8 @@ export class MovieDialog {
     this.returnFocus = null;
     /** True while a single-movie TMDB refresh is in flight */
     this._metaUpdating = false;
+    /** View-only GitHub snapshot (Unsaved Changes → Removed). */
+    this._preview = false;
     this._keyHandler = (e) => this.onKey(e);
 
     this.btnSave.addEventListener('click', () => this.saveAndClose());
@@ -100,7 +102,7 @@ export class MovieDialog {
     // Event delegation: location pill is replaced often (edit ↔ display).
     // Per-node listeners on the temporary button are easy to lose; body stays put.
     this.body.addEventListener('click', (e) => {
-      if (this._metaUpdating) return;
+      if (this._metaUpdating || this._preview) return;
       const btn = e.target.closest?.('button[data-edit="location"]');
       if (!btn || !this.body.contains(btn)) return;
       e.preventDefault();
@@ -108,8 +110,17 @@ export class MovieDialog {
     });
   }
 
-  open(movie, returnFocus) {
+  /**
+   * Open a GitHub-snapshot movie for viewing only (Unsaved Changes → Removed).
+   * @param {object} movie
+   */
+  openPreview(movie) {
+    this.open(movie, undefined, { preview: true });
+  }
+
+  open(movie, returnFocus, opts = {}) {
     const wasOpen = this.isOpen();
+    this._preview = !!opts.preview;
     this.movie = movie;
     this.draft = this.draftFromMovie(movie);
     if (returnFocus !== undefined) {
@@ -128,6 +139,10 @@ export class MovieDialog {
     // Defer focus until after layout/stacking (e.g. opened above TMDB search)
     const focusAfterOpen = () => {
       this.body.scrollTop = 0;
+      if (this._preview) {
+        this.btnCancel?.focus();
+        return;
+      }
       // Empty location → start editing so user can type a slot immediately
       const locEmpty = !String(this.draft?.location || '').trim();
       if (locEmpty) {
@@ -160,7 +175,7 @@ export class MovieDialog {
    */
   navigate(delta) {
     if (!this.movie || !this.isOpen()) return;
-    if (this._metaUpdating) return;
+    if (this._metaUpdating || this._preview) return;
     if (isAppAlertOpen()) return;
 
     this.commitOpenLocationEdit();
@@ -220,6 +235,7 @@ export class MovieDialog {
     document.removeEventListener('keydown', this._keyHandler, true);
     this.movie = null;
     this.draft = null;
+    this._preview = false;
     // Do not focus returnFocus here for the filter field — app handles
     // desktop-only filter focus via pmi:modals-maybe-idle.
     // Only restore non-input return targets if needed later; clear for now.
@@ -377,9 +393,37 @@ export class MovieDialog {
     return false;
   }
 
+  applyPreviewChrome() {
+    const preview = !!this._preview;
+    if (this.btnDelete) this.btnDelete.hidden = preview;
+    if (this.btnSave) this.btnSave.hidden = preview;
+    if (this.btnPrev) this.btnPrev.hidden = preview;
+    if (this.btnNext) this.btnNext.hidden = preview;
+    if (this.btnUpdateMeta) {
+      this.btnUpdateMeta.hidden = preview || !this.movie?.tmdb_id;
+    }
+    if (this.btnCancel) {
+      this.btnCancel.textContent = preview ? t('common.close') : t('common.cancel');
+    }
+    if (!this.body) return;
+    this.body.querySelectorAll('#keyword-add, #format-add, .format-add-wrap').forEach((el) => {
+      el.hidden = preview;
+      if ('disabled' in el) el.disabled = preview;
+    });
+    this.body.querySelectorAll('.pill .x').forEach((el) => {
+      el.hidden = preview;
+    });
+    const locBtn = this.body.querySelector('button[data-edit="location"]');
+    if (locBtn) locBtn.disabled = preview;
+  }
+
   /** Commit draft → movie; mark dirty only if something changed; close. */
   saveAndClose() {
     if (this._metaUpdating) return;
+    if (this._preview) {
+      this.close();
+      return;
+    }
     if (!this.movie || !this.draft) {
       this.close();
       return;
@@ -401,7 +445,7 @@ export class MovieDialog {
   }
 
   async handleDelete() {
-    if (!this.movie || this._metaUpdating) return;
+    if (!this.movie || this._metaUpdating || this._preview) return;
     const ok = await showAppConfirm(t('dialog.deleteConfirm'), {
       title: t('dialog.deleteTitle'),
       okLabel: t('common.delete'),
@@ -451,7 +495,7 @@ export class MovieDialog {
   }
 
   async handleUpdateMetadata() {
-    if (!this.movie || this._metaUpdating) return;
+    if (!this.movie || this._metaUpdating || this._preview) return;
     if (typeof this.onUpdateMetadata !== 'function') return;
     await this.onUpdateMetadata(this.movie);
   }
@@ -657,6 +701,7 @@ export class MovieDialog {
 
     const posterBtn = this.body.querySelector('#dialog-poster-btn');
     posterBtn?.addEventListener('click', () => {
+      if (this._preview) return;
       if (this.movie && typeof this.onSelectPoster === 'function') {
         this.onSelectPoster(this.movie);
       }
@@ -724,6 +769,8 @@ export class MovieDialog {
         if (jsonIcon) jsonIcon.textContent = '▸';
       }
     });
+
+    this.applyPreviewChrome();
 
     jsonCopyBtn?.addEventListener('click', async (e) => {
       e.preventDefault();
@@ -1073,7 +1120,7 @@ export class MovieDialog {
   }
 
   beginEditLocation(btn) {
-    if (!this.draft || this._metaUpdating) return;
+    if (!this.draft || this._metaUpdating || this._preview) return;
 
     // Already editing — focus the live input (or repair a broken wrap)
     const openWrap = this.body.querySelector('.location-edit-wrap');

@@ -289,8 +289,9 @@ Matches the hamburger menu labels in the app:
 |---------|------|----------------|
 | **Collection** | Search Movies | TMDB search and add |
 | **Sort** | Title (asc) / Title (desc) / Release Date (asc) / Release Date (desc) | Order the poster grid |
-| **Actions** | Save to GitHub | Write full library to GitHub data file |
-| **Actions** | Export | Download full library as JSON |
+| **Save** | Unsaved Changes | Compare the in-memory library to GitHub and list added/removed/changed titles |
+| **Save** | Save (GitHub) | Write full library to GitHub data file |
+| **Save** | Export | Download full library as JSON |
 | **GitHub** | Data Changes | Open data file commit history |
 | **GitHub** | Deployments | Open GitHub Actions / deploy status |
 | **Configuration** | Settings | TMDB + GitHub API keys |

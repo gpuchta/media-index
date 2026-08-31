@@ -1579,6 +1579,82 @@ input {
   color: var(--ok);
 }
 
+.dialog-unsaved {
+  width: min(36rem, 100%);
+  max-height: var(--dialog-max-h);
+}
+
+.unsaved-summary {
+  margin: 0 0 1rem;
+  font-weight: 600;
+}
+
+.unsaved-status {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.unsaved-status.is-error {
+  color: var(--danger);
+}
+
+.unsaved-section {
+  margin: 0 0 1.1rem;
+}
+
+.unsaved-heading {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.unsaved-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.unsaved-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+}
+
+.unsaved-title-btn {
+  border: 0;
+  padding: 0.2rem 0;
+  background: transparent;
+  color: var(--focus);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.unsaved-title-btn:hover,
+.unsaved-title-btn:focus-visible {
+  color: var(--text);
+  outline: none;
+}
+
+.unsaved-title-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.unsaved-fields {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 .dialog-stats {
   width: min(720px, 100%);
   max-height: var(--dialog-max-h);

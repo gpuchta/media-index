@@ -64,6 +64,108 @@ export async function openGithubDeploymentView() {
 }
 
 /**
+ * Fetch the GitHub library file and diff it against the in-memory collection.
+ * Does not write. Shared by Save (GitHub) and Unsaved Changes.
+ *
+ * @param {{
+ *   token: string,
+ *   target: NonNullable<typeof GITHUB_TARGET>,
+ *   movies: object[],
+ *   onLog?: (message: string, opts?: { level?: string }) => void,
+ * }} opts
+ * @returns {Promise<{
+ *   content: string,
+ *   existing: { exists: boolean, sha?: string, content?: string },
+ *   remoteMovies: object[],
+ *   isCreate: boolean,
+ *   identicalSha: boolean,
+ *   diff: ReturnType<typeof diffLibraries>,
+ *   fullMessage: string,
+ *   commitMessage: string,
+ * }>}
+ */
+export async function buildLibraryDiff(opts) {
+  const log = typeof opts.onLog === 'function' ? opts.onLog : () => {};
+  const token = opts.token;
+  const { owner, repo, path } = opts.target;
+  const movies = Array.isArray(opts.movies) ? opts.movies : [];
+  const content = JSON.stringify(movies, null, 2);
+
+  log('Checking remote file…');
+  const existing = await getFileContent({ token, owner, repo, path });
+
+  /** @type {object[]} */
+  let remoteMovies = [];
+  let isCreate = false;
+  let identicalSha = false;
+
+  if (existing.exists) {
+    const shaShort = existing.sha
+      ? `${existing.sha.slice(0, 7)}…`
+      : '(unknown)';
+    log(`Remote file exists (sha ${shaShort}).`);
+
+    if (existing.sha) {
+      log('Comparing local payload to remote…');
+      const localSha = await computeGitBlobSha(content);
+      if (localSha === existing.sha) {
+        identicalSha = true;
+        log(
+          `No changes detected (sha ${localSha.slice(0, 7)}… matches remote).`
+        );
+      } else {
+        log(
+          `Local differs from remote (local ${localSha.slice(0, 7)}… ≠ remote ${shaShort}).`
+        );
+      }
+    }
+
+    if (!identicalSha) {
+      const parsed = parseLibraryJson(existing.content);
+      if (parsed == null) {
+        log(
+          'Warning: remote file is not a JSON array; treating remote as empty for the change summary.',
+          { level: 'warn' }
+        );
+        remoteMovies = [];
+      } else {
+        remoteMovies = parsed;
+        log(`Remote library: ${remoteMovies.length} movie(s).`);
+      }
+    } else {
+      remoteMovies = movies;
+    }
+  } else {
+    isCreate = true;
+    log('Remote file not found; will create.');
+    remoteMovies = [];
+  }
+
+  const diff = identicalSha
+    ? diffLibraries(movies, movies)
+    : diffLibraries(remoteMovies, movies);
+  const fullMessage = formatLibraryCommitMessage(diff, {
+    create: isCreate,
+    maxPerSection: Infinity,
+  });
+  const commitMessage = formatLibraryCommitMessage(diff, {
+    create: isCreate,
+    maxPerSection: 15,
+  });
+
+  return {
+    content,
+    existing,
+    remoteMovies,
+    isCreate,
+    identicalSha,
+    diff,
+    fullMessage,
+    commitMessage,
+  };
+}
+
+/**
  * @param {{
  *   saveJsonBtn: HTMLElement|null,
  *   getMovies: () => object[],
@@ -114,66 +216,25 @@ export function initGithubSave(opts) {
       appendSaveLog(`From commits URL (branch ${branch} for history links)`);
       appendSaveLog(`Target: ${owner}/${repo}/${path}`);
       appendSaveLog('Serializing library JSON…');
-      const content = JSON.stringify(movies, null, 2);
-      const bytes = new TextEncoder().encode(content).length;
-      appendSaveLog(`Payload: ${content.length} chars (~${bytes} bytes)`);
+      const contentPreview = JSON.stringify(movies, null, 2);
+      const bytes = new TextEncoder().encode(contentPreview).length;
+      appendSaveLog(`Payload: ${contentPreview.length} chars (~${bytes} bytes)`);
 
-      appendSaveLog('Checking remote file…');
-      const existing = await getFileContent({ token, owner, repo, path });
+      const compared = await buildLibraryDiff({
+        token,
+        target,
+        movies,
+        onLog: appendSaveLog,
+      });
 
-      /** @type {object[]} */
-      let remoteMovies = [];
-      let isCreate = false;
-
-      if (existing.exists) {
-        const shaShort = existing.sha
-          ? `${existing.sha.slice(0, 7)}…`
-          : '(unknown)';
-        appendSaveLog(`Remote file exists (sha ${shaShort}).`);
-
-        // Skip PUT when local payload matches the remote blob (no empty commit).
-        if (existing.sha) {
-          appendSaveLog('Comparing local payload to remote…');
-          const localSha = await computeGitBlobSha(content);
-          if (localSha === existing.sha) {
-            appendSaveLog(
-              `No changes detected (sha ${localSha.slice(0, 7)}… matches remote). Skipping commit.`
-            );
-            setDirty(false);
-            appendSaveLog(`Done. ${owner}/${repo}/${path}`);
-            return;
-          }
-          appendSaveLog(
-            `Local differs from remote (local ${localSha.slice(0, 7)}… ≠ remote ${shaShort}).`
-          );
-        }
-
-        const parsed = parseLibraryJson(existing.content);
-        if (parsed == null) {
-          appendSaveLog(
-            'Warning: remote file is not a JSON array; treating remote as empty for the change summary.'
-          );
-          remoteMovies = [];
-        } else {
-          remoteMovies = parsed;
-          appendSaveLog(`Remote library: ${remoteMovies.length} movie(s).`);
-        }
-      } else {
-        isCreate = true;
-        appendSaveLog('Remote file not found; will create.');
-        remoteMovies = [];
+      if (compared.identicalSha) {
+        appendSaveLog('Skipping commit.');
+        setDirty(false);
+        appendSaveLog(`Done. ${owner}/${repo}/${path}`);
+        return;
       }
 
-      const diff = diffLibraries(remoteMovies, movies);
-      const fullMessage = formatLibraryCommitMessage(diff, {
-        create: isCreate,
-        maxPerSection: Infinity,
-      });
-      const commitMessage = formatLibraryCommitMessage(diff, {
-        create: isCreate,
-        // Truncate each of Added / Removed / Changed independently
-        maxPerSection: 15,
-      });
+      const { existing, fullMessage, commitMessage, content } = compared;
 
       appendSaveLog('Change summary (full):');
       appendSaveLogMessage(fullMessage);

@@ -18,6 +18,7 @@ import {
   initGithubSave,
   openGithubDeploymentView,
 } from './github-save.js';
+import { initUnsavedChangesUi } from './unsaved-changes-ui.js';
 import { initLibraryHistory } from './library-history.js';
 import { initAppToast, showAppToast } from './app-toast.js';
 import { initMetaRefresh } from './meta-refresh.js';
@@ -51,6 +52,12 @@ const els = {
   activeFilters: document.getElementById('active-filters'),
   dirtyBanner: document.getElementById('dirty-banner'),
   saveJsonBtn: document.getElementById('save-json-btn'),
+  unsavedChangesBtn: document.getElementById('unsaved-changes-btn'),
+  unsavedBackdrop: document.getElementById('unsaved-backdrop'),
+  unsavedTitle: document.getElementById('unsaved-title'),
+  unsavedBody: document.getElementById('unsaved-body'),
+  unsavedClose: document.getElementById('unsaved-close'),
+  unsavedCloseFooter: document.getElementById('unsaved-close-footer'),
   libraryHistoryBtn: document.getElementById('library-history-btn'),
   githubDeploymentBtn: document.getElementById('github-deployment-btn'),
   historyBackdrop: document.getElementById('history-backdrop'),
@@ -218,6 +225,7 @@ function isAnyModalOpen() {
     shown(els.tmdbBackdrop) ||
     shown(els.tmdbPosterBackdrop) ||
     shown(els.saveProgressBackdrop) ||
+    shown(els.unsavedBackdrop) ||
     shown(els.settingsExportBackdrop) ||
     shown(els.clipboardImportBackdrop) ||
     shown(els.metaRefreshBackdrop) ||
@@ -685,6 +693,22 @@ const { saveJsonToGithub, isSaveInFlight } = initGithubSave({
 els.saveJsonBtn?.addEventListener('click', () => {
   closeMenu();
   void saveJsonToGithub();
+});
+
+initUnsavedChangesUi({
+  els: {
+    unsavedBtn: els.unsavedChangesBtn,
+    unsavedBackdrop: els.unsavedBackdrop,
+    unsavedTitle: els.unsavedTitle,
+    unsavedBody: els.unsavedBody,
+    unsavedClose: els.unsavedClose,
+    unsavedCloseFooter: els.unsavedCloseFooter,
+  },
+  closeMenu,
+  focusFilterWhenIdle,
+  getMovies: () => state.movies,
+  dialog,
+  isMovieDialogOpen: () => dialog.isOpen(),
 });
 
 els.githubDeploymentBtn?.addEventListener('click', () => {
