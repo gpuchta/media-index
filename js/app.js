@@ -4,7 +4,7 @@ import {
   GITHUB_TARGET,
   SORT_OPTIONS,
 } from './config.js';
-import { buildTypeaheadIndex } from './filters.js';
+import { buildTypeaheadIndexAsync } from './filters.js';
 import { PosterGrid } from './grid.js';
 import { MovieDialog } from './dialog.js';
 import { isAppAlertOpen } from './alert-dialog.js';
@@ -387,11 +387,45 @@ let refreshTmdbResultLibraryMarkers = () => {};
 /** Filled by initStatsUi — drop cached facet rankings when the library changes. */
 let invalidateStatsCache = () => {};
 
+/** Invalidate in-flight index builds when the library is replaced or mutated. */
+let typeaheadBuildGen = 0;
+
+/**
+ * Run `fn` after the current frame has painted, then yield so input can run.
+ * Used so LCP (poster grid) is not blocked by typeahead index construction.
+ */
+function afterNextPaint(fn) {
+  const kick = () => {
+    setTimeout(fn, 0);
+  };
+  requestAnimationFrame(() => {
+    requestAnimationFrame(kick);
+  });
+}
+
+function scheduleTypeaheadIndexBuild() {
+  const gen = ++typeaheadBuildGen;
+  const movies = state.movies;
+  afterNextPaint(() => {
+    if (gen !== typeaheadBuildGen) return;
+    void buildTypeaheadIndexAsync(movies, {
+      isCancelled: () => gen !== typeaheadBuildGen,
+    }).then((index) => {
+      if (!index || gen !== typeaheadBuildGen) return;
+      state.typeaheadIndex = index;
+      if (els.filterInput.value.trim()) refreshTypeahead();
+    }).catch((err) => {
+      if (gen !== typeaheadBuildGen) return;
+      console.error('Typeahead index failed', err);
+    });
+  });
+}
+
 /** Rebuild typeahead index and re-run filters + grid after library add/remove/edit. */
 function refreshLibraryAfterMutation() {
-  state.typeaheadIndex = buildTypeaheadIndex(state.movies);
   invalidateStatsCache();
   recompute({ resetScroll: false });
+  scheduleTypeaheadIndexBuild();
   if (isTmdbSearchOpen()) {
     refreshTmdbResultLibraryMarkers();
   }
@@ -444,6 +478,7 @@ const {
   closeAllChipMenus,
   closeTypeahead,
   loadFiltersFromHash,
+  refreshTypeahead,
 } = initFiltersUi({
   els,
   state,
@@ -828,15 +863,19 @@ window.addEventListener('beforeunload', (e) => {
 
 // —— Data load ——
 function finishLibraryLoad(movies) {
+  // Cancel any in-flight index before swapping the library.
+  typeaheadBuildGen += 1;
   state.movies = movies;
   state.dataReady = true;
-  state.typeaheadIndex = buildTypeaheadIndex(state.movies);
+  state.typeaheadIndex = null;
+  closeTypeahead();
   invalidateStatsCache();
   els.statusLoading.classList.add('hidden');
   els.statusError.classList.add('hidden');
   loadFiltersFromHash();
   recompute({ resetScroll: true, fromHash: true });
   focusFilterWhenIdle();
+  scheduleTypeaheadIndexBuild();
 }
 
 async function loadData() {

@@ -511,12 +511,66 @@ function binderLetterFromLocation(location) {
 }
 
 /**
- * Build typeahead index from movies: Map type -> sorted unique values.
- * Includes 4-digit release years from `year` / `released`.
- * Location index also includes binder letters (A, B, C…) derived from
- * letter+page slots so typeahead can pick a whole binder, not only A1.
+ * Shared collator for case/accent-insensitive order.
+ * `localeCompare(..., { sensitivity: 'base' })` constructs a Collator on every
+ * comparison; with ~34k unique actors that blocked first paint for seconds.
  */
-export function buildTypeaheadIndex(movies) {
+const BASE_COLLATOR = new Intl.Collator(undefined, { sensitivity: 'base' });
+
+function compareBaseStrings(a, b) {
+  return BASE_COLLATOR.compare(a, b);
+}
+
+/**
+ * Yield so the browser can paint and handle input between index chunks.
+ * Prefer `scheduler.yield()` when present (Chrome); otherwise a macrotask.
+ */
+function yieldToMain() {
+  const sched = globalThis.scheduler;
+  if (sched && typeof sched.yield === 'function') return sched.yield();
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
+
+/** Native-sort this many values in one turn; larger lists split and merge. */
+const TYPEAHEAD_SORT_CHUNK = 4000;
+
+function mergeSorted(left, right, cmp) {
+  const out = new Array(left.length + right.length);
+  let i = 0;
+  let j = 0;
+  let k = 0;
+  while (i < left.length && j < right.length) {
+    out[k++] = cmp(left[i], right[j]) <= 0 ? left[i++] : right[j++];
+  }
+  while (i < left.length) out[k++] = left[i++];
+  while (j < right.length) out[k++] = right[j++];
+  return out;
+}
+
+/**
+ * @param {string[]} arr
+ * @param {(a: string, b: string) => number} cmp
+ * @param {() => boolean} [isCancelled]
+ * @returns {Promise<string[]|null>}
+ */
+async function sortYielding(arr, cmp, isCancelled) {
+  if (arr.length <= TYPEAHEAD_SORT_CHUNK) {
+    arr.sort(cmp);
+    return arr;
+  }
+  const mid = arr.length >> 1;
+  const left = await sortYielding(arr.slice(0, mid), cmp, isCancelled);
+  if (!left || (isCancelled && isCancelled())) return null;
+  await yieldToMain();
+  const right = await sortYielding(arr.slice(mid), cmp, isCancelled);
+  if (!right || (isCancelled && isCancelled())) return null;
+  await yieldToMain();
+  return mergeSorted(left, right, cmp);
+}
+
+function collectTypeaheadSets(movies) {
   const sets = {
     title: new Set(),
     genre: new Set(),
@@ -546,22 +600,77 @@ export function buildTypeaheadIndex(movies) {
     for (const c of m.production_companies || []) if (c) sets.company.add(String(c));
     for (const k of m.keywords || []) if (k) sets.keyword.add(String(k));
   }
+  return sets;
+}
 
+function sortTypeaheadValues(type, values) {
+  if (type === 'year') {
+    // Newest first when browsing years
+    values.sort((a, b) => Number(b) - Number(a));
+    return values;
+  }
+  if (type === 'location') {
+    // Binder letters before their page slots (A, A1, A2…); then other labels
+    values.sort(compareLocationTypeahead);
+    return values;
+  }
+  values.sort(compareBaseStrings);
+  return values;
+}
+
+function indexFromTypeaheadSets(sets) {
+  /** @type {Record<string, string[]>} */
   const index = {};
   for (const [type, set] of Object.entries(sets)) {
+    index[type] = sortTypeaheadValues(type, Array.from(set));
+  }
+  index.binder = BINDER_FILTER_OPTIONS.map((o) => o.value);
+  return index;
+}
+
+/**
+ * Build typeahead index from movies: Map type -> sorted unique values.
+ * Includes 4-digit release years from `year` / `released`.
+ * Location index also includes binder letters (A, B, C…) derived from
+ * letter+page slots so typeahead can pick a whole binder, not only A1.
+ *
+ * Synchronous build. Prefer {@link buildTypeaheadIndexAsync} after first paint
+ * so sorting tens of thousands of names does not delay LCP.
+ */
+export function buildTypeaheadIndex(movies) {
+  return indexFromTypeaheadSets(collectTypeaheadSets(movies));
+}
+
+/**
+ * Same index as {@link buildTypeaheadIndex}, yielding between types and
+ * splitting large sorts so a 30k+ actor list does not monopolize the main thread.
+ *
+ * @param {object[]} movies
+ * @param {{ isCancelled?: () => boolean }} [opts]
+ * @returns {Promise<Record<string, string[]>|null>} null if cancelled
+ */
+export async function buildTypeaheadIndexAsync(movies, opts = {}) {
+  const isCancelled = opts.isCancelled || (() => false);
+  const sets = collectTypeaheadSets(movies);
+  if (isCancelled()) return null;
+
+  /** @type {Record<string, string[]>} */
+  const index = {};
+  for (const [type, set] of Object.entries(sets)) {
+    if (isCancelled()) return null;
+    await yieldToMain();
+    if (isCancelled()) return null;
+    const values = Array.from(set);
     if (type === 'year') {
-      // Newest first when browsing years
-      index[type] = Array.from(set).sort((a, b) => Number(b) - Number(a));
-    } else if (type === 'location') {
-      // Binder letters before their page slots (A, A1, A2…); then other labels
-      index[type] = Array.from(set).sort(compareLocationTypeahead);
+      index[type] = sortTypeaheadValues(type, values);
     } else {
-      index[type] = Array.from(set).sort((a, b) =>
-        a.localeCompare(b, undefined, { sensitivity: 'base' })
-      );
+      const cmp = type === 'location' ? compareLocationTypeahead : compareBaseStrings;
+      const sorted = await sortYielding(values, cmp, isCancelled);
+      if (!sorted) return null;
+      index[type] = sorted;
     }
   }
-  // Fixed choices (not derived from movie fields)
+  if (isCancelled()) return null;
   index.binder = BINDER_FILTER_OPTIONS.map((o) => o.value);
   return index;
 }
@@ -605,12 +714,12 @@ export function compareLocations(a, b) {
   if (ra.kind !== rb.kind) return ra.kind - rb.kind;
   if (ra.kind === 0) {
     if (ra.letter !== rb.letter) {
-      return ra.letter.localeCompare(rb.letter, undefined, { sensitivity: 'base' });
+      return BASE_COLLATOR.compare(ra.letter, rb.letter);
     }
     // Binder letter alone (page -1) before A1, A2, …; pages numeric
     if (ra.page !== rb.page) return ra.page - rb.page;
   }
-  return ra.raw.localeCompare(rb.raw, undefined, { sensitivity: 'base' });
+  return BASE_COLLATOR.compare(ra.raw, rb.raw);
 }
 
 /** Typeahead location list uses the same binder-aware order. */
@@ -714,7 +823,7 @@ export function queryTypeahead(index, query, limit = 40) {
 export function sortMovies(movies, sortId) {
   const list = movies.slice();
   const cmpTitle = (a, b) =>
-    String(a.title || '').localeCompare(String(b.title || ''), undefined, { sensitivity: 'base' });
+    BASE_COLLATOR.compare(String(a.title || ''), String(b.title || ''));
 
   switch (sortId) {
     case 'title-asc':
