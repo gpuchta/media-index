@@ -3040,7 +3040,11 @@
     "tmdb_id": "10200",
     "vote_average": 5.663,
     "vote_count": 3797,
-    "year": "2008"
+    "year": "2008",
+    "format": [
+      "DVD",
+      "Ripped (MKV)"
+    ]
   },
   {
     "actors": [
@@ -28209,7 +28213,11 @@
     "tmdb_id": "1538",
     "vote_average": 7.246,
     "vote_count": 6341,
-    "year": "2004"
+    "year": "2004",
+    "format": [
+      "DVD",
+      "Ripped (MKV)"
+    ]
   },
   {
     "actors": [
@@ -63651,7 +63659,11 @@
     "tmdb_id": "310",
     "vote_average": 6.728,
     "vote_count": 11568,
-    "year": "2003"
+    "year": "2003",
+    "format": [
+      "DVD",
+      "Ripped (MKV)"
+    ]
   },
   {
     "actors": [
@@ -78556,7 +78568,11 @@
     "tmdb_id": "384018",
     "vote_average": 6.829,
     "vote_count": 7831,
-    "year": "2019"
+    "year": "2019",
+    "format": [
+      "Blu-Ray",
+      "Ripped (MKV)"
+    ]
   },
   {
     "actors": [
@@ -108581,7 +108597,11 @@
     "tmdb_id": "640",
     "vote_average": 8,
     "vote_count": 17257,
-    "year": "2002"
+    "year": "2002",
+    "format": [
+      "DVD",
+      "Ripped (MKV)"
+    ]
   },
   {
     "actors": [
@@ -139133,7 +139153,11 @@
       "TSG Entertainment"
     ],
     "collection": "Avatar Collection",
-    "location": "R1"
+    "location": "R1",
+    "format": [
+      "Blu-Ray",
+      "Ripped (MKV)"
+    ]
   },
   {
     "tmdb_id": "76600",
@@ -139420,7 +139444,11 @@
       "TSG Entertainment"
     ],
     "collection": "Avatar Collection",
-    "location": "R1"
+    "location": "R1",
+    "format": [
+      "Blu-Ray",
+      "Ripped (MKV)"
+    ]
   },
   {
     "tmdb_id": "533533",
