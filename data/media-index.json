@@ -3040,11 +3040,7 @@
     "tmdb_id": "10200",
     "vote_average": 5.663,
     "vote_count": 3797,
-    "year": "2008",
-    "format": [
-      "DVD",
-      "Ripped (MKV)"
-    ]
+    "year": "2008"
   },
   {
     "actors": [
@@ -38740,7 +38736,11 @@
     "tmdb_id": "1900",
     "vote_average": 7.1,
     "vote_count": 2447,
-    "year": "2000"
+    "year": "2000",
+    "format": [
+      "DVD",
+      "Ripped (MKV)"
+    ]
   },
   {
     "actors": [
@@ -60546,7 +60546,11 @@
     "tmdb_id": "297",
     "vote_average": 7.368,
     "vote_count": 5829,
-    "year": "1998"
+    "year": "1998",
+    "format": [
+      "DVD",
+      "Ripped (MKV)"
+    ]
   },
   {
     "actors": [
@@ -63675,11 +63679,7 @@
     "tmdb_id": "310",
     "vote_average": 6.728,
     "vote_count": 11568,
-    "year": "2003",
-    "format": [
-      "DVD",
-      "Ripped (MKV)"
-    ]
+    "year": "2003"
   },
   {
     "actors": [
@@ -78584,11 +78584,7 @@
     "tmdb_id": "384018",
     "vote_average": 6.829,
     "vote_count": 7831,
-    "year": "2019",
-    "format": [
-      "Blu-Ray",
-      "Ripped (MKV)"
-    ]
+    "year": "2019"
   },
   {
     "actors": [
